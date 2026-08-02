@@ -1,0 +1,73 @@
+/* HUD: always visible at the top, includes cash balance and build button */
+.hud {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  background: rgba(10, 10, 20, 0.85);
+  border-bottom: 1px solid rgba(90, 110, 200, 0.35);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+}
+
+.hud-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hud-left .label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8ec6ff;
+}
+
+.hud-left .value {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 18px;
+  font-weight: 600;
+  color: #5fc3ff;
+}
+
+.hud-btn {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border: 1px solid rgba(90, 110, 200, 0.6);
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+}
+
+.hud-btn:hover {
+  background: linear-gradient(135deg, #4b93ff, #3b82f6);
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.6);
+  border-color: rgba(90, 200, 255, 0.8);
+}
+
+.hud-btn:disabled, .hud-btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(90, 110, 200, 0.3);
+  box-shadow: none;
+}
+
+.hud-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}

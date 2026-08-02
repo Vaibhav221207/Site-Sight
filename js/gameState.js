@@ -1,0 +1,15 @@
+/* js/gameState.js — persistent game state for Site Sight:
+ *   - cash balance
+ *   - HQ building status and tile position (if any)
+ */
+
+window.GameState = (function () {
+  var api = {
+    cash: 50000,             // starting cash
+    hqCost: 10000,            // fixed HQ cost
+    hqBuilt: false,           // has the player built an HQ yet?
+    hqTile: null,             // { col, row } of the HQ tile, or null
+  };
+
+  return api;
+})();

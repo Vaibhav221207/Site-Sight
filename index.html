@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Site Sight</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- Anime.js (CDN, required for popup micro-interactions) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+</head>
+<body>
+    <!-- Game canvas: extruded 3D isometric blocks, fills the browser window -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- HUD: always visible at the top, includes cash balance and build button -->
+    <div id="hud" class="hud">
+      <div class="hud-left">
+        <span class="label">CASH</span>
+        <span id="hud-cash" class="value">$0</span>
+      </div>
+      <button id="hud-build-btn" class="hud-btn">Build ConTech HQ</button>
+    </div>
+
+    <!-- Glassmorphism tile inspection popup (animation shell only) -->
+    <div id="tile-popup">
+      <div class="panel-header">
+        <span class="panel-title">SITE INSPECTION</span>
+        <button class="panel-close" aria-label="Close popup">×</button>
+      </div>
+      <div class="panel-body">
+        <div id="tile-coords" class="tile-coords">Tile: -, -</div>
+        <div id="tile-placeholder" class="placeholder">
+          NO DATA AVAILABLE — CONTECH HQ NOT YET CONSTRUCTED
+        </div>
+      </div>
+    </div>
+
+    <!-- Scripts loaded in dependency order (no bundler) -->
+    <script src="js/isoGrid.js"></script>
+    <script src="js/terrain.js"></script>
+    <script src="js/blockRender.js"></script>
+    <script src="js/input.js"></script>
+    <script src="js/panel.js"></script>
+    <script src="js/gameState.js"></script>
+    <script src="js/hqBuild.js"></script>
+    <script src="js/main.js"></script>
+  </body>
+</html>
+
