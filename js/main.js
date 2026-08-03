@@ -36,6 +36,9 @@ window.Main = (function () {
     if (el) {
       el.textContent = "$" + window.GameState.cash.toLocaleString();
     }
+    var btn = document.getElementById("hud-build-btn");
+    if (btn) btn.disabled = window.GameState.hqBuilt;
+    if (window.BuildMenu && window.BuildMenu.refresh) window.BuildMenu.refresh();
   };
 
   // click: pop the block up/down AND toggle the info panel (as before)
@@ -67,13 +70,17 @@ window.Main = (function () {
     window.GameState.cash = 50000;
     window.Main.updateHUD();
 
-    // wire up HQ button
+    // wire up Build button: toggles the build palette (toggle bar). While a
+    // building is being placed, clicking Build again cancels the placement.
     var buildBtn = document.getElementById("hud-build-btn");
     if (buildBtn) {
       buildBtn.addEventListener("click", function () {
+        if (window.BuildMenu && window.BuildMenu.isPlacing()) {
+          window.BuildMenu.cancel();
+          return;
+        }
         if (!window.GameState.hqBuilt) {
-          window.HQBuild.startPlacement();
-          window.InputHandler.setPlacementMode(true);
+          window.BuildMenu.toggle();
         }
       });
     }
@@ -81,6 +88,8 @@ window.Main = (function () {
     window.addEventListener("resize", onResize);
     window.InputHandler.init(api.canvas, api.grid, onTileClicked, onPan, window.Terrain);
     window.TilePanel.init();
+    window.HqPanel.init();
+    window.BuildMenu.init();
 
     onResize();
     loop();

@@ -27,14 +27,9 @@ window.HQBuild = (function () {
     window.GameState.hqBuilt = true;
     window.GameState.hqTile = { col, row };
 
-    // record the HQ tile as 'hq' in the terrain map (protected access)
-    var terrain = window.Terrain;
-    if (typeof terrain.setHQTile === "function") {
-      terrain.setHQTile(row, col);
-    } else {
-      // fallback for compatibility: add a hidden property to the map array
-      terrain.hqTileMap = terrain.hqTileMap || {};
-      terrain.hqTileMap[row + "," + col] = true;
+    // mark the tile as HQ in the terrain map (signature: setHQ(col, row))
+    if (window.Terrain && typeof window.Terrain.setHQ === "function") {
+      window.Terrain.setHQ(col, row);
     }
 
     api.isActive = false;
@@ -71,15 +66,15 @@ window.HQBuild = (function () {
     var cx = p.x, cy = p.y;
 
     ctx.save();
-    ctx.fillStyle = "#2a8";
-    ctx.strokeStyle = "#135";
+    ctx.fillStyle = "#4fc3f7";
+    ctx.strokeStyle = "#0288d1";
     ctx.lineWidth = 2;
 
     var height = iso * 1.8;
     var width = iso * 1.5;
     var topY = cy - height;
 
-    ctx.fillStyle = "#2a8";
+    ctx.fillStyle = "#4fc3f7";
     ctx.fillRect(cx - width / 2, topY, width, height);
 
     ctx.beginPath();
@@ -87,7 +82,7 @@ window.HQBuild = (function () {
     ctx.lineTo(cx + width * 0.4, topY);
     ctx.lineTo(cx, topY - iso * 0.6);
     ctx.closePath();
-    ctx.fillStyle = "#135";
+    ctx.fillStyle = "#0288d1";
     ctx.fill();
 
     ctx.restore();

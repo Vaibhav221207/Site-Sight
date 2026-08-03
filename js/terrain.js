@@ -21,17 +21,18 @@ window.Terrain = (function () {
 
   // elevation added to a tile's block total height (px). Hills draw their own
   // smooth mountain height in blockRender, so they stay at ground level.
-  var ELEVATION = { land: 0, hill: 0, trench: -5, river: 0 };
+  var ELEVATION = { land: 0, hill: 0, trench: -5, river: 0, hq: 0 };
 
   // base top-face palette (side faces get shaded darker in blockRender)
   var PALETTE = {
-    land: "#4d6847",   // flat land green — brightened for a vibrant, cohesive look
-    hill: "#5d4a33",
-    trench: "#262636",
-    river: "#1e4f7a",
+    land: "#6abf4a",   // bright grass green — vibrant, city-builder aesthetic
+    hill: "#5a8a3c",   // hill base drawn underneath rock formations
+    trench: "#7a6244", // warm earth brown — excavation pit
+    river: "#42a5f5",  // bright sky-blue water
+    hq: "#44ccaa",     // base tone under the HQ building (full hex for shade())
   };
 
-  var NAMES = ["land", "hill", "trench", "river"];
+  var NAMES = ["land", "hill", "trench", "river", "hq"];
 
   // deterministic PRNG (mulberry32) so the map is identical on every load
   function mulberry32(seed) {
@@ -178,11 +179,18 @@ window.Terrain = (function () {
     isHill: function (c, r) { return map[r][c] === T.HILL; },
     elevationAt: function (c, r) { return ELEVATION[NAMES[map[r][c]]]; },
     colorAt: function (c, r) { return PALETTE[NAMES[map[r][c]]]; },
+    // the color of the flat land tile drawn UNDERNEATH a tile. Hill tiles keep
+    // their normal flat land base (the peak shapes are drawn on top of it), so
+    // the grid always renders complete with no gaps.
+    baseColorAt: function (c, r) {
+      return map[r][c] === T.HILL ? PALETTE.land : PALETTE[NAMES[map[r][c]]];
+    },
     // -- HQ support ---------------------------------------------------
     isHQ: function (c, r) { return map[r][c] === T.HQ; },
     setHQ: function (c, r) { map[r][c] = T.HQ; },
     // render color for the HQ building (different from land color)
-    hqColor: "#2a8",
+    hqColor: "#4fc3f7",
+  };
 
   return api;
 })();

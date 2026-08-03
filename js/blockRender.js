@@ -4,11 +4,14 @@
  *   - hill tiles never draw as blocks; each hill cluster renders as a
  *     scattered rock/boulder formation at its correct depth position
  *   - the trench is one connected depression: a single flat floor polygon
- *     (darkest tone) sunk below the surrounding land, with light/dark
- *     flat-shaded wall quads only along its outer boundary (where the trench
- *     meets flat land); internal trench-trench edges share the floor, so the
- *     pit reads as one continuous carved hollow with no internal seams
+ *     (darkest tone) sunk below the surrounding land, drawn BEFORE the land
+ *     blocks so that adjacent tiles' side faces naturally cover the pit at
+ *     the boundary; flat-shaded wall quads around the outer boundary add
+ *     depth without bleeding onto the land tiles
  *   - a flowing shimmer highlights the river (moving bands along the current)
+ *   - the HQ tile renders a detailed ConTech building (ten-block-tall main
+ *     structure with windows, entrance door + badge, secondary roof module,
+ *     roof details and a ground shadow/cable) instead of a base block
  *
  * Rendering strategy (performance):
  *   - the full scene is cached in an offscreen layer (staticLayer)
@@ -154,15 +157,21 @@ window.BlockRender = (function () {
   // The trench is NOT drawn per-tile as flat blocks: it is a single hollow
   // carved into the land. After the main loop we build the union of all
   // trench-tile diamonds and draw:
-  //   - ONE flat floor polygon (darkest tone, sunk below the land surface)
+  //   - ONE flat floor polygon (dark purple tone, sunk below the land
+  //     surface) with flat-shaded purple wall quads around it
   //   - flat-shaded wall quads ONLY along the outer boundary edges where a
   //     trench tile meets flat land (light west-facing wall + darker
   //     east-facing wall, matching the existing block-face shading style)
   // Internal trench-trench edges are interior to the floor polygon, so the
   // pit reads as one continuous depression with no internal seams.
+  // The whole pit is clipped to the union of the trench tiles' ground
+  // diamonds so the dark fill never spills past the trench's tile footprint
+  // onto the adjacent land tiles.
   var TRENCH_DEPTH = 6;          // px the pit drops below the land surface
   var WALL_SHADE = 0.64;         // lit west-facing wall (matches LEFT_SHADE)
   var WALL_SHADOW = 0.40;        // shadowed east-facing wall (matches RIGHT_SHADE)
+  var FLOOR_TONE = "#262636";    // dark purple — the pit floor
+  var WALL_TONE = "#3a3050";     // base wall tone before west/east shading
 
   // deterministic per-rock jitter so every boulder is a different chunk
   function rockJit(cx, cy, size, k) {
@@ -246,68 +255,381 @@ window.BlockRender = (function () {
     return out;
   }
 
-  // outer boundary of the trench union: ordered screen-space points of the
-  // ground-level diamond corners. Internal edges shared by two trench tiles
-  // cancel out, leaving only the perimeter.
-  function trenchContour(tiles) {
-    var g = api.grid, iso = g.isoSize, half = iso / 2;
-    function corners(c, r) {
-      var p = g.worldToScreen(c, r);
-      return [
-        { x: p.x, y: p.y - half },            // N
-        { x: p.x + iso, y: p.y },             // E
-        { x: p.x, y: p.y + half },            // S
-        { x: p.x - iso, y: p.y },            // W
-      ];
+  // draw the whole trench as ONE recessed pit: every trench tile's diamond is
+  // sunk below the land surface into a single continuous floor, and wall quads
+  // are drawn ONLY along the outer boundary where a trench tile meets a
+  // non-trench tile (light west/north-facing walls, darker east/south-facing
+  // walls — matching the block side-face shading). Internal trench-trench
+  // edges share the floor, so the pit reads as one hollow with no seams.
+  // The pit is drawn BEFORE the land blocks in redrawStatic so that the
+  // adjacent land tiles' side faces paint over the pit floor at the boundary,
+  // preventing the dark fill from bleeding onto the land tiles' visible faces.
+  // The whole pit is also clipped to the union of the trench tiles' ground
+  // diamonds so the dark fill never spills past the trench's tile footprint.
+  function drawTrenchPit(layer) {
+    var g = api.grid;
+    var iso = g.isoSize, half = iso / 2;
+    var tiles = trenchTiles();
+    if (!tiles.length) return;
+
+    var isTrench = function (c, r) {
+      return c >= 0 && c < g.gridSize && r >= 0 && r < g.gridSize &&
+             api.terrain.typeAt(c, r) === "trench";
+    };
+
+    // 0) clip the whole pit to its own footprint (union of ground diamonds)
+    layer.save();
+    layer.beginPath();
+    for (var ci = 0; ci < tiles.length; ci++) {
+      var cp = g.worldToScreen(tiles[ci].c, tiles[ci].r);
+      layer.moveTo(cp.x, cp.y - half);
+      layer.lineTo(cp.x + iso, cp.y);
+      layer.lineTo(cp.x, cp.y + half);
+      layer.lineTo(cp.x - iso, cp.y);
+      layer.closePath();
     }
-    // directed edge -> remaining count; store geometry for each
-    var cnt = {}, pts = {};
-    function key(ax, ay, bx, by) { return ax + "," + ay + "->" + bx + "," + by; }
+    layer.clip();
+
+    // 1) continuous floor: the union of all trench diamonds, sunk by depth
     for (var i = 0; i < tiles.length; i++) {
-      var c = tiles[i].c, r = ti.r === undefined ? tiles[i].r : tiles[i].r;
-      var cr = corners(c, r);
-      // clockwise diamond: N->E, E->S, S->W, W->N
-      var seq = [[0, 1], [1, 2], [2, 3], [3, 0]];
-      for (var s = 0; s < seq.length; s++) {
-        var a = cr[seq[s][0]], b = cr[seq[s][1]];
-        var k = key(a.x, a.y, b.x, b.y);
-        var rk = key(b.x, b.y, a.x, a.y);
-        if (cnt[rk]) { cnt[rk]--; }             // reversed edge cancels
-        else { cnt[k] = 1; pts[k] = { fx: a.x, fy: a.y, tx: b.x, ty: b.y }; }
+      var t = tiles[i];
+      var p = g.worldToScreen(t.c, t.r);
+      var fy = p.y + TRENCH_DEPTH;
+      layer.beginPath();
+      layer.moveTo(p.x, fy - half);
+      layer.lineTo(p.x + iso, fy);
+      layer.lineTo(p.x, fy + half);
+      layer.lineTo(p.x - iso, fy);
+      layer.closePath();
+      layer.fillStyle = FLOOR_TONE;
+      layer.fill();
+    }
+
+    // 2) boundary walls: each edge facing a NON-trench tile grows a vertical
+    // quad down to the floor (N/W faces catch the light, E/S fall in shadow)
+    var shades = [WALL_SHADE, WALL_SHADOW, WALL_SHADOW, WALL_SHADE];
+    var nbrs = [
+      { dc: 0, dr: -1 },
+      { dc: 1, dr: 0 },
+      { dc: 0, dr: 1 },
+      { dc: -1, dr: 0 },
+    ];
+    for (var i = 0; i < tiles.length; i++) {
+      var t = tiles[i];
+      var p = g.worldToScreen(t.c, t.r);
+      var x = p.x, y = p.y;
+      var corners = [
+        { x: x, y: y - half },   // N
+        { x: x + iso, y: y },    // E
+        { x: x, y: y + half },   // S
+        { x: x - iso, y: y },    // W
+      ];
+      for (var e = 0; e < 4; e++) {
+        if (isTrench(t.c + nbrs[e].dc, t.r + nbrs[e].dr)) continue;
+        var a = corners[e], b = corners[(e + 1) % 4];
+        layer.beginPath();
+        layer.moveTo(a.x, a.y);
+        layer.lineTo(b.x, b.y);
+        layer.lineTo(b.x, b.y + TRENCH_DEPTH);
+        layer.lineTo(a.x, a.y + TRENCH_DEPTH);
+        layer.closePath();
+        layer.fillStyle = shade(WALL_TONE, shades[e]);
+        layer.fill();
       }
     }
-    // chain the surviving (boundary) edges into an ordered polygon
-    var order = [];
-    for (var k in cnt) {
-      if (cnt[k] > 0) {
-        var p = pts[k];
-        order.push({ x1: p.fx, y1: p.fy, x2: p.tx, y2: p.ty });
-      }
-    }
-    if (!order.length) return [];
-    // start at the topmost vertex, then walk the loop
-    var best = 0;
-    for (var j = 1; j < order.length; j++)
-      if (order[j].y1 < order[best].y1 || (order[j].y1 === order[best].y1 && order[j].x1 < order[best].x1)) best = j;
-    var polygon = [{ x: order[best].x1, y: order[best].y1 }];
-    var cur = { x: order[best].x2, y: order[best].y2 };
-    var used = [];
-    used.push(best);
-    polygon.push({ x: cur.x, y: cur.y });
-    for (var step = 0; step < order.length - 1; step++) {
-      var nxt = -1;
-      for (var m = 0; m < order.length; m++) {
-        if (used.indexOf(m) !== -1) continue;
-        if (dist2(order[m].x1, order[m].y1, cur.x, cur.y) < 0.5) { nxt = m; break; }
-      }
-      if (nxt === -1) break;                       // safety: stop if no link
-      used.push(nxt);
-      cur = { x: order[nxt].x2, y: order[nxt].y2 };
-      polygon.push({ x: cur.x, y: cur.y });
-    }
-    return polygon;
+
+    layer.restore();
   }
-  function dist2(a, b, c, d) { var dx = a - c, dy = b - d; return dx * dx + dy * dy; }
+
+  // ---- ConTech HQ building -------------------------------------------
+  // The HQ tile draws a detailed building instead of a base block: a main
+  // block ten flat-block-heights tall (same footprint as drawBlock) with
+  // flat-shaded faces, corner edge lines, a 3x3 window grid on each wall,
+  // an entrance door with a badge on the east wall, a secondary module
+  // offset toward the dish (west) corner, roof details (vent pipes,
+  // satellite dish, antenna with guy-wires + beacon) and a ground shadow
+  // + service cable. All details are flat-shaded shapes — no gradients.
+  var HQ_H = BASE_H * 10;        // main block height (px)
+  var HQ_TOP = "#8a97a0";        // main block roof tone
+  var HQ_LEFT = "#86847c";       // west-facing wall
+  var HQ_RIGHT = "#5e5c56";      // east-facing wall
+  var HQ_EDGE = "#3a3a36";       // corner edge lines
+  var WIN_LEFT = "#3f6f8f";      // windows on the west wall
+  var WIN_RIGHT = "#2c4f66";     // windows on the east wall
+  var DOOR_TONE = "#232321";     // entrance door
+  var BADGE_OUTER = "#c9c9c2";   // entrance badge ring
+  var BADGE_STROKE = "#4a4a45";
+  var BADGE_INNER = "#2c5d82";
+  var MOD_TOP = "#9fb0c4";       // secondary module roof
+  var MOD_LEFT = "#6f8296";      // module west wall
+  var MOD_RIGHT = "#4d5d6d";     // module east wall
+  var VENT_A = "#6f6f68";        // vent pipes (two tones for variety)
+  var VENT_B = "#5a5a54";
+  var VENT_CAP_A = "#4a4a45";
+  var VENT_CAP_B = "#3d3d3a";
+  var DISH_TONE = "#c9c9c2";     // satellite dish
+  var DISH_EDGE = "#8f8f89";
+  var DISH_POST = "#4a4a45";
+  var ANT_TONE = "#3d3d3a";      // antenna / guy-wires
+  var BEACON = "#e0483a";        // antenna beacon
+
+  // local point on the main block's west wall: u runs west -> east along
+  // the wall, v runs top -> bottom down the face
+  function leftWallPt(cx, topY, iso, half, H, u, v) {
+    return { x: cx - iso + u * iso, y: topY + u * half + v * H };
+  }
+
+  // local point on the main block's east wall (u: south -> north)
+  function rightWallPt(cx, topY, iso, half, H, u, v) {
+    return { x: cx + u * iso, y: topY + half * (1 - u) + v * H };
+  }
+
+  // point on the roof plane (the top diamond): u runs west -> east,
+  // v runs north -> south
+  function roofPt(cx, topY, iso, half, u, v) {
+    return { x: cx + (u - 0.5) * 2 * iso, y: topY + (v - 0.5) * iso };
+  }
+
+  // draw a wall detail (window/door) as a parallelogram following the wall
+  // slant: local center (u, v), wu = width in u units, hv = height in v
+  function drawWallQuad(ctx, wallPt, cx, topY, iso, half, H, u, v, wu, hv, fill) {
+    var tl = wallPt(cx, topY, iso, half, H, u - wu / 2, v - hv / 2);
+    var tr = wallPt(cx, topY, iso, half, H, u + wu / 2, v - hv / 2);
+    var br = { x: tr.x, y: tr.y + hv * H };
+    var bl = { x: tl.x, y: tl.y + hv * H };
+    ctx.beginPath();
+    ctx.moveTo(tl.x, tl.y);
+    ctx.lineTo(tr.x, tr.y);
+    ctx.lineTo(br.x, br.y);
+    ctx.lineTo(bl.x, bl.y);
+    ctx.closePath();
+    ctx.fillStyle = fill;
+    ctx.fill();
+  }
+
+  // draw a roof detail as a parallelogram on the roof plane
+  function drawRoofQuad(ctx, cx, topY, iso, half, u, v, wu, hv, fill) {
+    var tl = roofPt(cx, topY, iso, half, u - wu / 2, v - hv / 2);
+    var tr = roofPt(cx, topY, iso, half, u + wu / 2, v - hv / 2);
+    var br = roofPt(cx, topY, iso, half, u + wu / 2, v + hv / 2);
+    var bl = roofPt(cx, topY, iso, half, u - wu / 2, v + hv / 2);
+    ctx.beginPath();
+    ctx.moveTo(tl.x, tl.y);
+    ctx.lineTo(tr.x, tr.y);
+    ctx.lineTo(br.x, br.y);
+    ctx.lineTo(bl.x, bl.y);
+    ctx.closePath();
+    ctx.fillStyle = fill;
+    ctx.fill();
+  }
+
+  function drawHQBuilding(layer, c, r) {
+    var g = api.grid;
+    var iso = g.isoSize, half = iso / 2;
+    var p = g.worldToScreen(c, r);
+    var cx = p.x, cy = p.y;
+    var topY = cy - HQ_H;
+
+    // 1) ground: soft shadow under the footprint, then the service cable
+    layer.beginPath();
+    layer.ellipse(cx, cy + half * 0.2, iso, half, 0, 0, Math.PI * 2);
+    layer.fillStyle = "rgba(0, 0, 0, 0.15)";
+    layer.fill();
+
+    layer.beginPath();
+    layer.moveTo(cx, cy + half);
+    layer.quadraticCurveTo(
+      cx + iso * 0.35, cy + half + iso * 0.5,
+      cx + iso * 0.95, cy + half + iso * 0.55
+    );
+    layer.strokeStyle = HQ_EDGE;
+    layer.lineWidth = 3;
+    layer.lineCap = "round";
+    layer.stroke();
+
+    // 2) main block faces (flat shaded: top / west / east)
+    var n = { x: cx, y: topY - half };
+    var e = { x: cx + iso, y: topY };
+    var s = { x: cx, y: topY + half };
+    var w = { x: cx - iso, y: topY };
+    var wb = { x: cx - iso, y: cy };
+    var eb = { x: cx + iso, y: cy };
+    var sb = { x: cx, y: cy + half };
+
+    layer.beginPath();
+    layer.moveTo(w.x, w.y);
+    layer.lineTo(s.x, s.y);
+    layer.lineTo(sb.x, sb.y);
+    layer.lineTo(wb.x, wb.y);
+    layer.closePath();
+    layer.fillStyle = HQ_LEFT;
+    layer.fill();
+
+    layer.beginPath();
+    layer.moveTo(s.x, s.y);
+    layer.lineTo(e.x, e.y);
+    layer.lineTo(eb.x, eb.y);
+    layer.lineTo(sb.x, sb.y);
+    layer.closePath();
+    layer.fillStyle = HQ_RIGHT;
+    layer.fill();
+
+    layer.beginPath();
+    layer.moveTo(n.x, n.y);
+    layer.lineTo(e.x, e.y);
+    layer.lineTo(s.x, s.y);
+    layer.lineTo(w.x, w.y);
+    layer.closePath();
+    layer.fillStyle = HQ_TOP;
+    layer.fill();
+
+    // 3) corner edge lines: west, east and shared (south) vertical edges
+    layer.strokeStyle = HQ_EDGE;
+    layer.lineWidth = 1.5;
+    layer.globalAlpha = 0.5;
+    layer.beginPath();
+    layer.moveTo(w.x, w.y); layer.lineTo(wb.x, wb.y);
+    layer.moveTo(e.x, e.y); layer.lineTo(eb.x, eb.y);
+    layer.moveTo(s.x, s.y); layer.lineTo(sb.x, sb.y);
+    layer.stroke();
+    layer.globalAlpha = 1;
+
+    // 4) windows: 3x3 grid on each wall (~8% face width, 12% block height)
+    //    so the slits stay visible at typical tile sizes
+    var wus = [0.2, 0.45, 0.7];
+    var wvs = [0.15, 0.35, 0.55];
+    for (var wi = 0; wi < wus.length; wi++) {
+      for (var wj = 0; wj < wvs.length; wj++) {
+        drawWallQuad(layer, leftWallPt, cx, topY, iso, half, HQ_H, wus[wi], wvs[wj], 0.08, 0.12, WIN_LEFT);
+        drawWallQuad(layer, rightWallPt, cx, topY, iso, half, HQ_H, wus[wi], wvs[wj], 0.08, 0.12, WIN_RIGHT);
+      }
+    }
+
+    // 5) entrance door (east wall, upper half so the front tile never
+    //    occludes it) + badge above it
+    drawWallQuad(layer, rightWallPt, cx, topY, iso, half, HQ_H, 0.7, 0.65, 0.08, 0.2, DOOR_TONE);
+
+    var bd = rightWallPt(cx, topY, iso, half, HQ_H, 0.7, 0.47);
+    var br = iso * 0.045;
+    layer.beginPath();
+    layer.arc(bd.x, bd.y, br, 0, Math.PI * 2);
+    layer.fillStyle = BADGE_OUTER;
+    layer.fill();
+    layer.strokeStyle = BADGE_STROKE;
+    layer.lineWidth = 1.5;
+    layer.stroke();
+    layer.beginPath();
+    layer.arc(bd.x, bd.y, br * 0.6, 0, Math.PI * 2);
+    layer.fillStyle = BADGE_INNER;
+    layer.fill();
+
+    // 6) secondary module: ~35% footprint, ~20% height, offset toward the
+    //    dish (west) corner; base follows the roof plane, top stays flat
+    var mu = 0.2, mv = 0.5;
+    var mhw = 0.175, mhh = 0.0875;
+    var MH = HQ_H * 0.2;
+    var mb = {
+      n: roofPt(cx, topY, iso, half, mu, mv - mhh),
+      e: roofPt(cx, topY, iso, half, mu + mhw, mv),
+      s: roofPt(cx, topY, iso, half, mu, mv + mhh),
+      w: roofPt(cx, topY, iso, half, mu - mhw, mv),
+    };
+    var mt = {
+      n: { x: mb.n.x, y: mb.n.y - MH },
+      e: { x: mb.e.x, y: mb.e.y - MH },
+      s: { x: mb.s.x, y: mb.s.y - MH },
+      w: { x: mb.w.x, y: mb.w.y - MH },
+    };
+
+    layer.beginPath();
+    layer.moveTo(mt.w.x, mt.w.y);
+    layer.lineTo(mt.s.x, mt.s.y);
+    layer.lineTo(mb.s.x, mb.s.y);
+    layer.lineTo(mb.w.x, mb.w.y);
+    layer.closePath();
+    layer.fillStyle = MOD_LEFT;
+    layer.fill();
+
+    layer.beginPath();
+    layer.moveTo(mt.s.x, mt.s.y);
+    layer.lineTo(mt.e.x, mt.e.y);
+    layer.lineTo(mb.e.x, mb.e.y);
+    layer.lineTo(mb.s.x, mb.s.y);
+    layer.closePath();
+    layer.fillStyle = MOD_RIGHT;
+    layer.fill();
+
+    layer.beginPath();
+    layer.moveTo(mt.n.x, mt.n.y);
+    layer.lineTo(mt.e.x, mt.e.y);
+    layer.lineTo(mt.s.x, mt.s.y);
+    layer.lineTo(mt.w.x, mt.w.y);
+    layer.closePath();
+    layer.fillStyle = MOD_TOP;
+    layer.fill();
+
+    // corner edge line on the module's shared (south) vertical edge
+    layer.strokeStyle = HQ_EDGE;
+    layer.lineWidth = 1.5;
+    layer.globalAlpha = 0.5;
+    layer.beginPath();
+    layer.moveTo(mt.s.x, mt.s.y);
+    layer.lineTo(mb.s.x, mb.s.y);
+    layer.stroke();
+    layer.globalAlpha = 1;
+
+    // 7) roof details: two vent pipes (body + cap on the north end)
+    drawRoofQuad(layer, cx, topY, iso, half, 0.405, 0.6, 0.05, 0.1, VENT_A);
+    drawRoofQuad(layer, cx, topY, iso, half, 0.405, 0.565, 0.05, 0.03, VENT_CAP_A);
+    drawRoofQuad(layer, cx, topY, iso, half, 0.455, 0.6, 0.05, 0.1, VENT_B);
+    drawRoofQuad(layer, cx, topY, iso, half, 0.455, 0.565, 0.05, 0.03, VENT_CAP_B);
+
+    // 8) satellite dish mounted on the module roof (post + dish ellipse)
+    var dp = roofPt(cx, topY, iso, half, mu, mv);
+    var dBase = { x: dp.x, y: dp.y - MH };
+    var dTop = { x: dp.x, y: dBase.y - iso * 0.14 };
+    layer.beginPath();
+    layer.moveTo(dBase.x, dBase.y);
+    layer.lineTo(dTop.x, dTop.y);
+    layer.strokeStyle = DISH_POST;
+    layer.lineWidth = 2;
+    layer.stroke();
+    layer.beginPath();
+    layer.ellipse(dTop.x, dTop.y, iso * 0.1, iso * 0.05, 0, 0, Math.PI * 2);
+    layer.fillStyle = DISH_TONE;
+    layer.fill();
+    layer.strokeStyle = DISH_EDGE;
+    layer.lineWidth = 1;
+    layer.stroke();
+
+    // 9) central antenna + dashed guy-wires + red beacon
+    var ap = roofPt(cx, topY, iso, half, 0.5, 0.35);
+    var at = { x: ap.x, y: ap.y - iso * 0.22 };
+    layer.beginPath();
+    layer.moveTo(ap.x, ap.y);
+    layer.lineTo(at.x, at.y);
+    layer.strokeStyle = ANT_TONE;
+    layer.lineWidth = 2;
+    layer.stroke();
+
+    layer.strokeStyle = ANT_TONE;
+    layer.lineWidth = 1;
+    layer.globalAlpha = 0.5;
+    layer.setLineDash([4, 3]);
+    layer.beginPath();
+    layer.moveTo(at.x, at.y);
+    layer.lineTo(cx, topY - half);
+    layer.moveTo(at.x, at.y);
+    layer.lineTo(cx + iso, topY);
+    layer.stroke();
+    layer.setLineDash([]);
+    layer.globalAlpha = 1;
+
+    layer.beginPath();
+    layer.arc(at.x, at.y, iso * 0.045, 0, Math.PI * 2);
+    layer.fillStyle = BEACON;
+    layer.fill();
+  }
 
   // rebuild the offscreen cache of the whole scene in correct depth order
   api.redrawStatic = function () {
@@ -316,7 +638,7 @@ window.BlockRender = (function () {
     var g = api.grid;
     layer.setTransform(api._dpr, 0, 0, api._dpr, 0, 0);
     layer.clearRect(0, 0, g.canvasW, g.canvasH);
-    layer.fillStyle = "#0a0a14";
+    layer.fillStyle = "#2d4a2d";
     layer.fillRect(0, 0, g.canvasW, g.canvasH);
 
     // map each hill cluster to its front-most tile so the whole rock/boulder
@@ -336,16 +658,31 @@ window.BlockRender = (function () {
     }
     var drawnCluster = {};
 
+    // draw the trench pit first (below the land surface), so that land blocks
+    // painted later in the main loop naturally cover the pit at the boundary
+    // where their side faces meet the pit floor — preventing the dark fill
+    // from bleeding onto adjacent land tiles' side faces.
+    drawTrenchPit(layer);
+
     for (var i = 0; i < ORDER.length; i++) {
       var t = ORDER[i];
       var k = t.c + "," + t.r;
 
       // ---- terrain block overlays (hills, HQ, other) -------------------
       var isHQ = api.terrain.isHQ(t.c, t.r);
-      if (isHQ) {
-        // skip base block for HQ tiles (drawn later as distinct building)
+      var isTrench = api.terrain.typeAt(t.c, t.r) === "trench";
+      if (isTrench) {
+        // trench tiles never draw a base block — the pit was drawn before the
+        // main loop so land blocks paint over it at the boundary
         continue;
       }
+      if (isHQ) {
+        // HQ tiles skip the base block and draw the detailed building instead
+        drawHQBuilding(layer, t.c, t.r);
+        continue;
+      }
+      var isHill = api.terrain.isHill(t.c, t.r);
+      var isSel = api.selected && api.selected.col === t.c && api.selected.row === t.r;
 
       drawBlock(
         layer,
@@ -364,11 +701,6 @@ window.BlockRender = (function () {
           drawRocks(layer, clusters[ci]);
           drawnCluster[ci] = true;
         }
-      }
-
-      // render the HQ building if this tile hosts it (after all other terrain)
-      if (isHQ) {
-        api.hqBuild.render(layer, g, t.c, t.r);
       }
     }
   };
@@ -456,9 +788,8 @@ window.BlockRender = (function () {
   }
 
    // ---- services ----------------------------------------------------
-  api.hqBuild = window.HQBuild;
 
-  // per-frame update: rebuild cache only if dirty. The shimmer phase is
+   // per-frame update: rebuild cache only if dirty. The shimmer phase is
   // driven by anime.js; we fall back to manual advancement if it is missing.
   api.tick = function () {
     if (!shimmerAnim) {

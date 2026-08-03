@@ -12,7 +12,9 @@ window.TilePanel = (function () {
     panel: null,
     coordsEl: null,
     placeholderEl: null,
+    hqContent: null,
     closeBtn: null,
+    orderBtn: null,
     isOpen: false,
     currentTile: null, // { col, row } | null
     isHQ: false,       // true when the tile shows a ConTech HQ
@@ -38,8 +40,21 @@ window.TilePanel = (function () {
     api.panel = document.getElementById("tile-popup");
     api.coordsEl = document.getElementById("tile-coords");
     api.placeholderEl = document.getElementById("tile-placeholder");
+    api.hqContent = document.getElementById("hq-content");
     api.closeBtn = api.panel.querySelector(".panel-close");
+    api.orderBtn = document.getElementById("hq-order-drone");
     api.closeBtn.addEventListener("click", function () { api.toggle(); });
+    if (api.orderBtn) {
+      api.orderBtn.addEventListener("click", function () {
+        console.log("[ConTech HQ] Order Drone requested");
+        api.orderBtn.textContent = "Ordered!";
+        api.orderBtn.classList.add("hq-order-btn--flash");
+        setTimeout(function () {
+          api.orderBtn.textContent = "Order Drone";
+          api.orderBtn.classList.remove("hq-order-btn--flash");
+        }, 900);
+      });
+    }
     api._placeHidden(); // start off-screen right, invisible
   };
 
@@ -57,14 +72,16 @@ window.TilePanel = (function () {
     api.coordsEl.textContent = "Tile: " + col + ", " + row;
     api.currentTile = { col: col, row: row };
     api.isHQ = isHQ;
+    var titleEl = api.panel.querySelector(".panel-title");
     if (isHQ) {
-      api.placeholderEl.textContent = "CONTECH HQ — Site command center — operational";
-      var titleEl = api.panel.querySelector(".panel-title");
       if (titleEl) titleEl.textContent = "CONTECH HQ";
+      api.placeholderEl.style.display = "none";
+      api.hqContent.style.display = "";
     } else {
-      api.placeholderEl.textContent = "NO DATA AVAILABLE — CONTECH HQ NOT YET CONSTRUCTED";
-      var titleEl = api.panel.querySelector(".panel-title");
       if (titleEl) titleEl.textContent = "SITE INSPECTION";
+      api.placeholderEl.textContent = "NO DATA AVAILABLE — CONTECH HQ NOT YET CONSTRUCTED";
+      api.placeholderEl.style.display = "";
+      api.hqContent.style.display = "none";
     }
   };
 

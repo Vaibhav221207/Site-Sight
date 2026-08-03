@@ -1,7 +1,8 @@
 /* js/input.js — canvas mouse input: pan (click+drag) + tile click detection.
  *   - Drag threshold prevents accidental clicks during panning.
  *   - In placement mode (HQ build), only valid flat land tiles are clickable.
- *   - Normal mode: hill & river tiles are non-interactive scenery; only land and trench tiles trigger a click.
+ *   - Normal mode: hill & river tiles are non-interactive scenery; only land
+ *     and trench tiles trigger a click.
  */
 
 window.InputHandler = (function () {
@@ -11,8 +12,8 @@ window.InputHandler = (function () {
     canvas: null,
     grid: null,
     terrain: null,
-    onTileClick: null,  // (col, row) -> void
-    onPan: null,        // () -> void   (called after each pan frame)
+    _userOnTileClick: null, // (col, row) -> void  (normal-mode inspect click)
+    onPan: null,            // () -> void   (called after each pan frame)
     _pressed: false,
     _dragging: false,
     _dragStart: { x: 0, y: 0 },
@@ -24,7 +25,7 @@ window.InputHandler = (function () {
     api.canvas = canvas;
     api.grid = grid;
     api.terrain = terrain || null;
-    api.onTileClick = typeof onTileClick === "function" ? onTileClick : function () {};
+    api._userOnTileClick = typeof onTileClick === "function" ? onTileClick : function () {};
     api.onPan = typeof onPan === "function" ? onPan : function () {};
     bind(canvas);
   };
@@ -45,6 +46,7 @@ window.InputHandler = (function () {
   }
 
   function onDown(evt) {
+    if (window.HqPanel && window.HqPanel.isOpen) return;
     api._pressed = true;
     api._dragging = false;
     var pos = canvasPos(evt);
@@ -55,6 +57,7 @@ window.InputHandler = (function () {
 
   function onMove(evt) {
     if (!api._pressed) return;
+    if (window.HqPanel && window.HqPanel.isOpen) return;
     var pos = canvasPos(evt);
     var dx = pos.x - api._lastPos.x;
     var dy = pos.y - api._lastPos.y;
@@ -76,6 +79,8 @@ window.InputHandler = (function () {
     api._dragging = false;
     api.canvas.style.cursor = "grab";
 
+    if (window.HqPanel && window.HqPanel.isOpen) return;
+
     var pos = canvasPos(evt);
     var moved = Math.sqrt(
       Math.pow(pos.x - api._dragStart.x, 2) + Math.pow(pos.y - api._dragStart.y, 2)
@@ -93,7 +98,7 @@ window.InputHandler = (function () {
     var type = api.terrain.typeAt(c, r);
     if (type === "hill" || type === "river") return false;
     if (api._placementMode) {
-      if (!api.hqBuild || !api.hqBuild.isValid(c, r)) return false;
+      if (!window.HQBuild || !window.HQBuild.isValid(c, r)) return false;
     }
     return true;
   }
@@ -104,34 +109,37 @@ window.InputHandler = (function () {
   api.isPlacementMode = function () { return api._placementMode || false; };
   api.setPlacementMode = function (v) { api._placementMode = !!v; };
 
+  // single click router: placement mode builds the HQ, otherwise the normal
+  // inspect click is forwarded to the callback registered via init()
   api.onTileClick = function (col, row) {
-    if (api.isPlacementMode()) {
-      var success = api.hqBuild.attempt(col, row, function () {
-        api.setPlacementMode(false);
-        window.TilePanel.toggle(col, row);
-        api.onPan();
-      });
+    if (window.HqPanel && window.HqPanel.isOpen) return;
+    if (api._placementMode) {
+        var success = window.HQBuild && window.HQBuild.attempt(col, row, function () {
+          api.setPlacementMode(false);
+          if (window.BuildMenu && window.BuildMenu.onBuildSuccess) window.BuildMenu.onBuildSuccess();
+          if (window.Main && window.Main.updateHUD) window.Main.updateHUD();
+          if (window.HqPanel) {
+            window.HqPanel.open();
+          } else {
+            window.TilePanel.toggle(col, row);
+          }
+          if (typeof api.onPan === "function") api.onPan();
+        });
       if (!success) {
-        // optional: show a subtle invalid placement cue
+        // invalid spot (river/hill/trench, already built, or not enough cash) —
+        // stay in placement mode so the player can pick another tile
       }
-    } else {
-      onTileClicked(col, row);
+    } else if (typeof api._userOnTileClick === "function") {
+      var isHQ = window.Terrain && window.Terrain.isHQ(col, row);
+      if (isHQ && window.HqPanel) {
+        window.BlockRender.setSelected(col, row);
+        window.HqPanel.open();
+        if (typeof api.onPan === "function") api.onPan();
+      } else {
+        api._userOnTileClick(col, row);
+      }
     }
   };
 
   return api;
 })();
-
-var onTileClicked = function(col, row) {
-  window.BlockRender.setSelected(col, row);
-  var terrain = window.Terrain;
-  var panel = window.TilePanel;
-  var isHQ = terrain && terrain.isHQ(col, row);
-
-  if (isHQ) {
-    panel.toggle(col, row, true);
-  } else {
-    panel.toggle(col, row);
-  }
-  window.Main.render();
-};

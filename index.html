@@ -12,13 +12,63 @@
     <!-- Game canvas: extruded 3D isometric blocks, fills the browser window -->
     <canvas id="game-canvas"></canvas>
 
+    <!-- Build palette: toggle bar that slides up above the HUD when
+         "Build" is clicked; cards are generated from the BuildMenu registry -->
+    <div id="build-bar" class="build-bar hidden">
+      <div class="build-bar-head">
+        <span class="build-bar-title">BUILD MENU</span>
+      </div>
+      <div id="build-items" class="build-items"></div>
+    </div>
+
     <!-- HUD: always visible at the top, includes cash balance and build button -->
     <div id="hud" class="hud">
       <div class="hud-left">
         <span class="label">CASH</span>
         <span id="hud-cash" class="value">$0</span>
       </div>
-      <button id="hud-build-btn" class="hud-btn">Build ConTech HQ</button>
+      <button id="hud-build-btn" class="hud-btn">Build</button>
+    </div>
+
+    <!-- Full-screen HQ management overlay (terminal layout, separate from small tile popup) -->
+    <div id="hq-overlay">
+      <div id="hq-panel">
+        <div class="hq-fs-header">
+          <span class="hq-fs-title">CONTECH HQ</span>
+          <button id="hq-close-btn" class="hq-fs-close" aria-label="Close panel">×</button>
+        </div>
+        <div class="hq-fs-body">
+          <nav class="hq-fs-nav">
+            <button id="hq-nav-data" class="hq-fs-nav-item">DATA</button>
+            <button id="hq-nav-inventory" class="hq-fs-nav-item">INVENTORY</button>
+            <button id="hq-nav-store" class="hq-fs-nav-item hq-fs-nav-item--active">STORE</button>
+          </nav>
+          <div class="hq-fs-content">
+            <div id="hq-section-data" class="hq-fs-section" style="display:none">
+              <div class="hq-fs-placeholder">Coming soon</div>
+            </div>
+            <div id="hq-section-inventory" class="hq-fs-section" style="display:none">
+              <div class="hq-fs-placeholder">Coming soon</div>
+            </div>
+            <div id="hq-section-store" class="hq-fs-section">
+              <div class="hq-fs-status">
+                <div class="hq-fs-status-label">STATUS</div>
+                <div class="hq-fs-status-text">Site command center — operational</div>
+              </div>
+              <div class="hq-fs-section">
+                <div class="hq-fs-section-header">DRONE FLEET</div>
+                <div class="hq-fs-drone-row">
+                  <div class="hq-fs-drone-info">
+                    <span class="hq-fs-drone-name">Recon Drone</span>
+                    <span class="hq-fs-drone-cost">$5,000</span>
+                  </div>
+                  <button id="hq-order-drone-fs" class="hq-order-btn">Order Drone</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Glassmorphism tile inspection popup (animation shell only) -->
@@ -32,6 +82,22 @@
         <div id="tile-placeholder" class="placeholder">
           NO DATA AVAILABLE — CONTECH HQ NOT YET CONSTRUCTED
         </div>
+        <div id="hq-content" class="hq-content" style="display:none">
+          <div class="hq-status">
+            <div class="hq-status-label">STATUS</div>
+            <div class="hq-status-text">Site command center — operational</div>
+          </div>
+          <div class="hq-section">
+            <div class="hq-section-header">DRONE FLEET</div>
+            <div class="hq-drone-row">
+              <div class="hq-drone-info">
+                <span class="hq-drone-name">Recon Drone</span>
+                <span class="hq-drone-cost">$5,000</span>
+              </div>
+              <button id="hq-order-drone" class="hq-order-btn">Order Drone</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -43,6 +109,8 @@
     <script src="js/panel.js"></script>
     <script src="js/gameState.js"></script>
     <script src="js/hqBuild.js"></script>
+    <script src="js/buildMenu.js"></script>
+    <script src="js/hqPanel.js"></script>
     <script src="js/main.js"></script>
   </body>
 </html>
