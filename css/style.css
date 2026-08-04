@@ -29,8 +29,8 @@ body {
   top: 24px;
   right: 24px;
   width: 320px;
-  background: rgba(22, 36, 22, 0.82);
-  border: 1px solid rgba(100, 200, 100, 0.28);
+  background: rgba(12, 22, 38, 0.85);
+  border: 1px solid rgba(33, 150, 243, 0.28);
   border-radius: 14px;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -45,8 +45,8 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 14px 16px;
-  border-bottom: 1px solid rgba(100, 200, 100, 0.2);
-  background: rgba(100, 200, 100, 0.08);
+  border-bottom: 1px solid rgba(33, 150, 243, 0.2);
+  background: rgba(33, 150, 243, 0.08);
 }
 
 .panel-title {
@@ -54,7 +54,7 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #a0e090;
+  color: #64b5f6;
 }
 
 .panel-close {
@@ -62,7 +62,7 @@ body {
   height: 24px;
   border: none;
   border-radius: 6px;
-  background: rgba(100, 200, 100, 0.14);
+  background: rgba(33, 150, 243, 0.14);
   color: #e0f0d8;
   font-size: 15px;
   line-height: 1;
@@ -80,14 +80,14 @@ body {
 .tile-coords {
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 13px;
-  color: #90c880;
+  color: #4fc3f7;
   margin-bottom: 12px;
 }
 
 .placeholder {
   font-size: 12px;
   line-height: 1.6;
-  color: #b0d8a0;
+  color: #90caf9;
 }
 
 /* HUD bar — anchored to the bottom so it never overlaps the popup */
@@ -101,8 +101,8 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
-  background: rgba(12, 28, 12, 0.92);
-  border-top: 1px solid rgba(100, 200, 100, 0.35);
+  background: rgba(8, 18, 32, 0.94);
+  border-top: 1px solid rgba(33, 150, 243, 0.35);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
@@ -120,20 +120,20 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #b0d090;
+  color: #90caf9;
 }
 
 .hud-left .value {
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 18px;
   font-weight: 600;
-  color: #ffb300;
+  color: #29b6f6;
 }
 
 .hud-btn {
   padding: 8px 16px;
-  background: linear-gradient(135deg, #ffb300, #f57c00);
-  border: 1px solid rgba(255, 179, 0, 0.6);
+  background: linear-gradient(135deg, #29b6f6, #0288d1);
+  border: 1px solid rgba(41, 182, 246, 0.6);
   border-radius: 8px;
   color: #ffffff;
   font-size: 13px;
@@ -142,26 +142,26 @@ body {
   letter-spacing: 0.04em;
   cursor: pointer;
   transition: all 0.16s ease;
-  box-shadow: 0 2px 8px rgba(255, 179, 0, 0.4);
+  box-shadow: 0 2px 8px rgba(41, 182, 246, 0.4);
 }
 
 .hud-btn:hover {
-  background: linear-gradient(135deg, #ffc107, #ffb300);
-  box-shadow: 0 4px 14px rgba(255, 179, 0, 0.6);
-  border-color: rgba(255, 213, 79, 0.8);
+  background: linear-gradient(135deg, #4fc3f7, #29b6f6);
+  box-shadow: 0 4px 14px rgba(41, 182, 246, 0.6);
+  border-color: rgba(79, 195, 247, 0.8);
 }
 
 .hud-btn:disabled, .hud-btn[disabled] {
   opacity: 0.5;
   cursor: not-allowed;
   background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(100, 200, 100, 0.3);
+  border-color: rgba(33, 150, 243, 0.3);
   box-shadow: none;
 }
 
 .hud-btn:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(255, 179, 0, 0.3);
+  box-shadow: 0 0 0 3px rgba(41, 182, 246, 0.3);
 }
 
 /* Build palette — slides up above the HUD when "Build" is clicked */
@@ -175,8 +175,8 @@ body {
   align-items: center;
   gap: 10px;
   padding: 12px 16px;
-  background: rgba(12, 28, 12, 0.92);
-  border: 1px solid rgba(100, 200, 100, 0.35);
+  background: rgba(8, 18, 32, 0.94);
+  border: 1px solid rgba(33, 150, 243, 0.35);
   border-radius: 14px;
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
@@ -193,7 +193,7 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #b0d090;
+  color: #90caf9;
 }
 
 .build-items {
@@ -207,8 +207,8 @@ body {
   gap: 10px;
   padding: 10px 12px;
   min-width: 170px;
-  background: rgba(22, 36, 22, 0.9);
-  border: 1px solid rgba(100, 200, 100, 0.25);
+  background: rgba(12, 22, 38, 0.9);
+  border: 1px solid rgba(33, 150, 243, 0.25);
   border-radius: 10px;
   color: #e0f0d8;
   font-family: inherit;
@@ -218,15 +218,15 @@ body {
 }
 
 .build-item:hover {
-  border-color: rgba(255, 179, 0, 0.7);
-  box-shadow: 0 4px 14px rgba(255, 179, 0, 0.25);
+  border-color: rgba(41, 182, 246, 0.7);
+  box-shadow: 0 4px 14px rgba(41, 182, 246, 0.25);
   transform: translateY(-2px);
 }
 
 .build-item.selected {
-  border-color: #ffb300;
-  background: rgba(255, 179, 0, 0.12);
-  box-shadow: 0 0 0 2px rgba(255, 179, 0, 0.35);
+  border-color: #29b6f6;
+  background: rgba(41, 182, 246, 0.12);
+  box-shadow: 0 0 0 2px rgba(41, 182, 246, 0.35);
 }
 
 .build-item:disabled,
@@ -238,7 +238,7 @@ body {
 }
 
 .build-item:disabled:hover {
-  border-color: rgba(100, 200, 100, 0.25);
+  border-color: rgba(33, 150, 243, 0.25);
 }
 
 .build-item-icon {
@@ -268,7 +268,7 @@ body {
 .build-item-cost {
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 12px;
-  color: #ffb300;
+  color: #29b6f6;
 }
 
 /* ---- HQ panel sections ------------------------------------------------ */
@@ -283,7 +283,7 @@ body {
   flex-direction: column;
   gap: 4px;
   padding-bottom: 14px;
-  border-bottom: 1px solid rgba(100, 200, 100, 0.18);
+  border-bottom: 1px solid rgba(33, 150, 243, 0.18);
 }
 
 .hq-status-label {
@@ -291,12 +291,12 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #7ab86a;
+  color: #42a5f5;
 }
 
 .hq-status-text {
   font-size: 13px;
-  color: #b0d8a0;
+  color: #90caf9;
 }
 
 .hq-section {
@@ -310,9 +310,9 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #90c880;
+  color: #4fc3f7;
   padding-bottom: 6px;
-  border-bottom: 1px solid rgba(100, 200, 100, 0.15);
+  border-bottom: 1px solid rgba(33, 150, 243, 0.15);
 }
 
 .hq-drone-row {
@@ -337,13 +337,13 @@ body {
 .hq-drone-cost {
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 12px;
-  color: #ffb300;
+  color: #29b6f6;
 }
 
 .hq-order-btn {
   padding: 7px 14px;
-  background: linear-gradient(135deg, #4caf50, #388e3c);
-  border: 1px solid rgba(76, 175, 80, 0.6);
+  background: linear-gradient(135deg, #29b6f6, #0288d1);
+  border: 1px solid rgba(41, 182, 246, 0.6);
   border-radius: 8px;
   color: #fff;
   font-size: 12px;
@@ -353,13 +353,13 @@ body {
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.16s ease;
-  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.35);
+  box-shadow: 0 2px 8px rgba(41, 182, 246, 0.35);
 }
 
 .hq-order-btn:hover {
-  background: linear-gradient(135deg, #66bb6a, #43a047);
-  box-shadow: 0 4px 14px rgba(76, 175, 80, 0.55);
-  border-color: rgba(129, 199, 132, 0.8);
+  background: linear-gradient(135deg, #4fc3f7, #29b6f6);
+  box-shadow: 0 4px 14px rgba(41, 182, 246, 0.55);
+  border-color: rgba(79, 195, 247, 0.8);
 }
 
 .hq-order-btn:active {
@@ -389,8 +389,8 @@ body {
   width: 90vw;
   max-width: 800px;
   max-height: 85vh;
-  background: rgba(22, 36, 22, 0.92);
-  border: 1px solid rgba(100, 200, 100, 0.3);
+  background: rgba(12, 22, 38, 0.94);
+  border: 1px solid rgba(33, 150, 243, 0.3);
   border-radius: 18px;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -405,8 +405,8 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px;
-  border-bottom: 1px solid rgba(100, 200, 100, 0.2);
-  background: rgba(100, 200, 100, 0.08);
+  border-bottom: 1px solid rgba(33, 150, 243, 0.2);
+  background: rgba(33, 150, 243, 0.08);
 }
 
 .hq-fs-title {
@@ -414,7 +414,7 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #a0e090;
+  color: #64b5f6;
 }
 
 .hq-fs-close {
@@ -422,7 +422,7 @@ body {
   height: 32px;
   border: none;
   border-radius: 8px;
-  background: rgba(100, 200, 100, 0.14);
+  background: rgba(33, 150, 243, 0.14);
   color: #e0f0d8;
   font-size: 20px;
   line-height: 1;
@@ -446,7 +446,7 @@ body {
   display: flex;
   gap: 2px;
   padding: 12px 24px 0;
-  border-bottom: 1px solid rgba(100, 200, 100, 0.18);
+  border-bottom: 1px solid rgba(33, 150, 243, 0.18);
 }
 
 .hq-fs-nav-item {
@@ -454,7 +454,7 @@ body {
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
-  color: #708860;
+  color: #546e7a;
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 11px;
   font-weight: 700;
@@ -465,12 +465,12 @@ body {
 }
 
 .hq-fs-nav-item:hover {
-  color: #b0d8a0;
+  color: #90caf9;
 }
 
 .hq-fs-nav-item--active {
-  color: #a0e090;
-  border-bottom-color: #a0e090;
+  color: #64b5f6;
+  border-bottom-color: #64b5f6;
 }
 
 /* content area */
@@ -492,7 +492,7 @@ body {
 .hq-fs-placeholder {
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 14px;
-  color: #607850;
+  color: #78909c;
   padding: 32px 0;
   text-align: center;
 }
@@ -502,7 +502,7 @@ body {
   flex-direction: column;
   gap: 6px;
   padding-bottom: 20px;
-  border-bottom: 1px solid rgba(100, 200, 100, 0.18);
+  border-bottom: 1px solid rgba(33, 150, 243, 0.18);
 }
 
 .hq-fs-status-label {
@@ -510,12 +510,12 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #7ab86a;
+  color: #42a5f5;
 }
 
 .hq-fs-status-text {
   font-size: 15px;
-  color: #b0d8a0;
+  color: #90caf9;
 }
 
 .hq-fs-section {
@@ -527,9 +527,9 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #90c880;
+  color: #4fc3f7;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(100, 200, 100, 0.15);
+  border-bottom: 1px solid rgba(33, 150, 243, 0.15);
   margin-bottom: 12px;
 }
 
@@ -539,8 +539,8 @@ body {
   justify-content: space-between;
   gap: 16px;
   padding: 12px 16px;
-  background: rgba(100, 200, 100, 0.06);
-  border: 1px solid rgba(100, 200, 100, 0.12);
+  background: rgba(33, 150, 243, 0.06);
+  border: 1px solid rgba(33, 150, 243, 0.12);
   border-radius: 10px;
 }
 
@@ -559,5 +559,5 @@ body {
 .hq-fs-drone-cost {
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 13px;
-  color: #ffb300;
+  color: #29b6f6;
 }

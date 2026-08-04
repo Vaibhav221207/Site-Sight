@@ -25,11 +25,11 @@ window.Terrain = (function () {
 
   // base top-face palette (side faces get shaded darker in blockRender)
   var PALETTE = {
-    land: "#6abf4a",   // bright grass green — vibrant, city-builder aesthetic
-    hill: "#5a8a3c",   // hill base drawn underneath rock formations
-    trench: "#7a6244", // warm earth brown — excavation pit
-    river: "#42a5f5",  // bright sky-blue water
-    hq: "#44ccaa",     // base tone under the HQ building (full hex for shade())
+    land: "#5fbf4a",   // vivid grass green — bright saturated city-builder look
+    hill: "#4a9a3c",   // hill base drawn underneath rock formations
+    trench: "#7a5a50", // rich earth purple-brown — excavation pit
+    river: "#1e88e5",  // vivid saturated blue water
+    hq: "#44ccaa",     // base tone under the HQ building
   };
 
   var NAMES = ["land", "hill", "trench", "river", "hq"];

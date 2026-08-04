@@ -25,7 +25,7 @@ window.BlockRender = (function () {
   var POP_DUR = 280;    // ms
   var LEFT_SHADE = 0.62;   // brightness factor of the left side face
   var RIGHT_SHADE = 0.42;  // brightness factor of the right side face
-  var SELECT_STROKE = "rgba(0, 220, 255, 0.95)";
+  var SELECT_STROKE = "rgba(41, 182, 246, 0.95)";
   var TOP_STROKE = "rgba(8, 10, 22, 0.4)";
 
   var api = {
@@ -148,9 +148,9 @@ window.BlockRender = (function () {
   // sits flush on the ground plane and the flat land tile is drawn underneath
   // it, so the grid always renders complete with no gaps.
 
-  var ROCK_TOP = "#a9a49b";    // lighter flat stone — the top facet
-  var ROCK_LEFT = "#7d786f";   // medium gray — left-facing side
-  var ROCK_RIGHT = "#615d56";  // darker gray — right-facing side
+  var ROCK_TOP = "#b5b0a6";    // brighter flat stone — the top facet
+  var ROCK_LEFT = "#8a857c";   // medium gray — left-facing side
+  var ROCK_RIGHT = "#5a564f";  // darker gray — right-facing side (more contrast)
   var ROCK_TAPER = 0.55;       // top-face inset vs base width (chunky taper)
   var ROCK_JIT = 0.12;         // per-rock vertex irregularity (fraction of width)
   // ---- trench (one connected recessed pit) ---------------------------
@@ -170,8 +170,8 @@ window.BlockRender = (function () {
   var TRENCH_DEPTH = 6;          // px the pit drops below the land surface
   var WALL_SHADE = 0.64;         // lit west-facing wall (matches LEFT_SHADE)
   var WALL_SHADOW = 0.40;        // shadowed east-facing wall (matches RIGHT_SHADE)
-  var FLOOR_TONE = "#262636";    // dark purple — the pit floor
-  var WALL_TONE = "#3a3050";     // base wall tone before west/east shading
+  var FLOOR_TONE = "#2a2038";    // deep purple — the pit floor
+  var WALL_TONE = "#3e3058";    // base wall tone before west/east shading
 
   // deterministic per-rock jitter so every boulder is a different chunk
   function rockJit(cx, cy, size, k) {
