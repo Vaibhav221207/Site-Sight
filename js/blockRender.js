@@ -638,8 +638,7 @@ window.BlockRender = (function () {
     var g = api.grid;
     layer.setTransform(api._dpr, 0, 0, api._dpr, 0, 0);
     layer.clearRect(0, 0, g.canvasW, g.canvasH);
-    layer.fillStyle = "#1e3a1e";
-    layer.fillRect(0, 0, g.canvasW, g.canvasH);
+    // backdrop is transparent — the page's sky-to-ground gradient shows through
 
     // map each hill cluster to its front-most tile so the whole rock/boulder
     // formation is drawn at exactly that depth position (behind the tiles in

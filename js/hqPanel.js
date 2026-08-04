@@ -85,7 +85,7 @@ window.HqPanel = (function () {
       });
       anime({
         targets: api.overlayEl,
-        backgroundColor: "rgba(0,0,0,0.65)",
+        backgroundColor: "rgba(45, 53, 97, 0.45)",
         duration: OPEN_DUR,
         easing: "easeOutCubic",
       });
@@ -116,7 +116,7 @@ window.HqPanel = (function () {
       });
       anime({
         targets: api.overlayEl,
-        backgroundColor: "rgba(0,0,0,0)",
+        backgroundColor: "rgba(45, 53, 97, 0)",
         duration: CLOSE_DUR,
         easing: "easeInCubic",
         complete: finish,
