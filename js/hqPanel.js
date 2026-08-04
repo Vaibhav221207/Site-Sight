@@ -27,6 +27,8 @@ window.HqPanel = (function () {
     api.panelEl = document.getElementById("hq-panel");
     api.closeBtn = document.getElementById("hq-close-btn");
     api.orderBtn = document.getElementById("hq-order-drone-fs");
+    api.ownedEl = null;
+    api.msgEl = null;
 
     api.navItems = {};
     api.sections = {};
@@ -38,16 +40,20 @@ window.HqPanel = (function () {
     if (api.closeBtn) {
       api.closeBtn.addEventListener("click", function () { api.close(); });
     }
+
+    // owned-count readout, appended to the STORE listing next to the cost
     if (api.orderBtn) {
-      api.orderBtn.addEventListener("click", function () {
-        console.log("[ConTech HQ] Order Drone requested");
-        api.orderBtn.textContent = "Ordered!";
-        api.orderBtn.classList.add("hq-order-btn--flash");
-        setTimeout(function () {
-          api.orderBtn.textContent = "Order Drone";
-          api.orderBtn.classList.remove("hq-order-btn--flash");
-        }, 900);
-      });
+      var infoBlock = api.orderBtn.closest(".hq-fs-drone-row");
+      var infoEl = infoBlock ? infoBlock.querySelector(".hq-fs-drone-info") : null;
+      if (infoEl) {
+        api.ownedEl = document.createElement("span");
+        api.ownedEl.className = "hq-fs-drone-owned";
+        api.ownedEl.style.fontSize = "13px";
+        api.ownedEl.style.fontWeight = "700";
+        api.ownedEl.style.color = "#00838F";
+        infoEl.appendChild(api.ownedEl);
+      }
+      api.orderBtn.addEventListener("click", function () { api.buyDrone(); });
     }
 
     SECTIONS.forEach(function (name) {
@@ -68,12 +74,66 @@ window.HqPanel = (function () {
     api.currentSection = name;
   };
 
+  api.updateOwned = function () {
+    if (api.ownedEl) {
+      var n = window.GameState.inventory.droneCount;
+      api.ownedEl.textContent = "(Owned: " + n + ")";
+    }
+  };
+
+  api.showMsg = function (text, success) {
+    if (!api.msgEl) {
+      if (!api.orderBtn) return;
+      api.msgEl = document.createElement("div");
+      api.msgEl.style.textAlign = "right";
+      api.msgEl.style.fontSize = "12px";
+      api.msgEl.style.fontWeight = "700";
+      api.msgEl.style.marginTop = "8px";
+      api.msgEl.style.minHeight = "16px";
+      api.msgEl.style.transition = "opacity 0.3s ease";
+      var row = api.orderBtn.closest(".hq-fs-drone-row");
+      var holder = row && row.parentNode ? row.parentNode : api.orderBtn.parentNode;
+      holder.appendChild(api.msgEl);
+    }
+    api.msgEl.textContent = text;
+    // amber is reserved for warning moments; teal for positive confirmations
+    api.msgEl.style.color = success ? "#00ACC1" : "#FFA000";
+    api.msgEl.style.opacity = "1";
+    clearTimeout(api._msgTimer);
+    api._msgTimer = setTimeout(function () {
+      if (api.msgEl) api.msgEl.style.opacity = "0";
+    }, success ? 1200 : 1800);
+  };
+
+  api.buyDrone = function () {
+    var gs = window.GameState;
+    if (!gs) return;
+    if (gs.cash >= gs.droneCost) {
+      gs.cash -= gs.droneCost;
+      gs.inventory.droneCount += 1;
+      if (window.Main && window.Main.updateHUD) window.Main.updateHUD();
+      api.updateOwned();
+      if (api.orderBtn) {
+        api.orderBtn.textContent = "Ordered!";
+        api.orderBtn.classList.add("hq-order-btn--flash");
+        setTimeout(function () {
+          if (!api.orderBtn) return;
+          api.orderBtn.textContent = "Order Drone";
+          api.orderBtn.classList.remove("hq-order-btn--flash");
+        }, 900);
+      }
+    } else {
+      api.showMsg("Insufficient funds", false);
+    }
+  };
+
   api.open = function () {
     if (api.isOpen) return;
     api.isOpen = true;
     api.overlayEl.style.visibility = "visible";
     api.overlayEl.style.pointerEvents = "auto";
     api.switchSection("store");
+    api.updateOwned();
 
     if (typeof anime !== "undefined" && anime) {
       anime({
