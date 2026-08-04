@@ -118,11 +118,6 @@ window.InputHandler = (function () {
           api.setPlacementMode(false);
           if (window.BuildMenu && window.BuildMenu.onBuildSuccess) window.BuildMenu.onBuildSuccess();
           if (window.Main && window.Main.updateHUD) window.Main.updateHUD();
-          if (window.HqPanel) {
-            window.HqPanel.open();
-          } else {
-            window.TilePanel.toggle(col, row);
-          }
           if (typeof api.onPan === "function") api.onPan();
         });
       if (!success) {
