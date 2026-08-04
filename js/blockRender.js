@@ -148,9 +148,9 @@ window.BlockRender = (function () {
   // sits flush on the ground plane and the flat land tile is drawn underneath
   // it, so the grid always renders complete with no gaps.
 
-  var ROCK_TOP = "#b5b0a6";    // brighter flat stone — the top facet
-  var ROCK_LEFT = "#8a857c";   // medium gray — left-facing side
-  var ROCK_RIGHT = "#5a564f";  // darker gray — right-facing side (more contrast)
+  var ROCK_TOP = "#c0bbb0";    // bright flat stone — the top facet
+  var ROCK_LEFT = "#95908a";   // medium gray — left-facing side
+  var ROCK_RIGHT = "#605c55";  // darker gray — right-facing side
   var ROCK_TAPER = 0.55;       // top-face inset vs base width (chunky taper)
   var ROCK_JIT = 0.12;         // per-rock vertex irregularity (fraction of width)
   // ---- trench (one connected recessed pit) ---------------------------
@@ -638,7 +638,7 @@ window.BlockRender = (function () {
     var g = api.grid;
     layer.setTransform(api._dpr, 0, 0, api._dpr, 0, 0);
     layer.clearRect(0, 0, g.canvasW, g.canvasH);
-    layer.fillStyle = "#2d4a2d";
+    layer.fillStyle = "#1e3a1e";
     layer.fillRect(0, 0, g.canvasW, g.canvasH);
 
     // map each hill cluster to its front-most tile so the whole rock/boulder
