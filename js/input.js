@@ -50,6 +50,33 @@ window.InputHandler = (function () {
     canvas.addEventListener("dragstart", function (e) { e.preventDefault(); });
   }
 
+  // fat-finger tap snapping (touch devices only, where tiles are small):
+  // resolve the tap to the NEAREST tile center within a forgiving radius
+  // instead of requiring an exact hit inside the diamond. Checks all four
+  // candidate lattice centers around the tap (exact nearest by screen
+  // distance) and returns null when nothing is within radius.
+  function nearestTile(sx, sy) {
+    var g = api.grid;
+    var fr = g.screenToWorld(sx, sy);
+    var c0 = Math.floor(fr.col);
+    var r0 = Math.floor(fr.row);
+    var R = Math.max(18, g.isoSize * 0.8);
+    var best = null;
+    var bestD = Infinity;
+    for (var dc = 0; dc <= 1; dc++) {
+      for (var dr = 0; dr <= 1; dr++) {
+        var c = c0 + dc, r = r0 + dr;
+        if (c < 0 || c >= g.gridSize || r < 0 || r >= g.gridSize) continue;
+        var p = g.worldToScreen(c, r);
+        var dx = sx - p.x, dy = sy - p.y;
+        var d = dx * dx + dy * dy;
+        if (d < bestD) { bestD = d; best = { col: c, row: r }; }
+      }
+    }
+    if (!best || Math.sqrt(bestD) > R) return null;
+    return best;
+  }
+
   // pointer position in CSS pixels relative to the canvas
   function pointerPos(evt) {
     var rect = api.canvas.getBoundingClientRect();
@@ -119,6 +146,11 @@ window.InputHandler = (function () {
     );
     if (moved < DRAG_THRESHOLD) {
       var tile = api.grid.screenToTile(pos.x, pos.y);
+      // touch devices: exact diamond hit, else fat-finger snap to the
+      // nearest tile center (desktop keeps the strict hit test)
+      if (!tile && window.MobileUI && window.MobileUI.enabled) {
+        tile = nearestTile(pos.x, pos.y);
+      }
       if (tile && isClickable(tile.col, tile.row)) {
         api.onTileClick(tile.col, tile.row);
       }
