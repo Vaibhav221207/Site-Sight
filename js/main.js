@@ -53,9 +53,11 @@ window.Main = (function () {
     render();
   }
 
-  // panning moves the camera, so the cached scene must be rebuilt
+  // panning moves the camera, so the cached scene must be rebuilt (once per
+  // frame via tick() — never synchronously per pointer event, which would
+  // stall the frame loop and make animations jank mid-drag)
   function onPan() {
-    window.BlockRender.redrawStatic();
+    window.BlockRender.invalidate();
   }
 
   function loop() {

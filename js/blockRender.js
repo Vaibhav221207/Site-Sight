@@ -631,6 +631,15 @@ window.BlockRender = (function () {
     layer.fill();
   }
 
+  // mark the cached scene for rebuild — the actual redraw happens ONCE per
+  // frame in tick(). Call this instead of redrawStatic() from per-event pan
+  // handlers: redrawing the whole scene synchronously on every pointer-move
+  // stalls the main thread and freezes every rAF-driven animation (dropping
+  // frames while dragging is what made zone animations visibly glitch).
+  api.invalidate = function () {
+    api._dirty = true;
+  };
+
   // rebuild the offscreen cache of the whole scene in correct depth order
   api.redrawStatic = function () {
     if (!api.staticLayer) return;
