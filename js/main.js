@@ -31,6 +31,10 @@ window.Main = (function () {
     render();
   }
 
+  // exposed so the orientation/canvas-fit logic (or tests) can trigger a
+  // re-fit directly; idempotent
+  api.handleResize = onResize;
+
   api.updateHUD = function () {
     var el = document.getElementById("hud-cash");
     if (el) {
@@ -86,6 +90,9 @@ window.Main = (function () {
     }
 
     window.addEventListener("resize", onResize);
+    // orientation flips change the viewport dimensions (esp. iPad/Android) —
+    // re-fit the canvas so it re-fills and stays crisp under the new geometry
+    window.addEventListener("orientationchange", onResize);
     window.InputHandler.init(api.canvas, api.grid, onTileClicked, onPan, window.Terrain);
     window.TilePanel.init();
     window.HqPanel.init();

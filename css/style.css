@@ -11,6 +11,7 @@ body {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  overscroll-behavior: none; /* no pull-to-refresh / bounce-scroll on mobile */
   background: linear-gradient(180deg, #6EC6FF 0%, #A8E6A3 100%);
   font-family: "Baloo 2", sans-serif;
   color: #2D3561;
@@ -21,6 +22,7 @@ body {
   width: 100vw;
   height: 100vh;
   cursor: grab;
+  touch-action: none; /* block default browser touch gestures (scroll/pinch) */
 }
 
 /* ---- tile inspection popup (warm white card) -------------------------- */
@@ -388,6 +390,47 @@ body {
 
 .hq-order-btn:disabled:hover {
   transform: none;
+}
+
+/* ---- Mobile shell: portrait rotate overlay (touch devices only) ---- */
+.rotate-overlay {
+  position: fixed;
+  inset: 0;
+  /* above everything else in the game (hud: 1000, hq overlay: 1100) */
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #6EC6FF 0%, #A8E6A3 100%);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.rotate-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  max-width: 84vw;
+  padding: 28px 34px;
+  background: #FFFDF7;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+.rotate-icon {
+  width: 76px;
+  height: 76px;
+  flex: 0 0 auto;
+}
+
+.rotate-text {
+  font-size: 17px;
+  font-weight: 700;
+  color: #2D3561;
+  line-height: 1.4;
 }
 
 /* ---- Full-screen HQ management overlay ---- */

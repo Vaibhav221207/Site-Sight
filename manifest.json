@@ -1,0 +1,9 @@
+{
+  "name": "Site Sight",
+  "short_name": "Site Sight",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "start_url": "./index.html",
+  "background_color": "#6EC6FF",
+  "theme_color": "#00ACC1"
+}
