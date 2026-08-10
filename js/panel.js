@@ -88,7 +88,10 @@ window.TilePanel = (function () {
       api.hqContent.style.display = "";
     } else {
       if (titleEl) titleEl.textContent = "SITE INSPECTION";
-      api.placeholderEl.textContent = "NO DATA AVAILABLE — CONTECH HQ NOT YET CONSTRUCTED";
+      var isMobile = window.MobileUI && window.MobileUI.enabled;
+      api.placeholderEl.textContent = isMobile
+        ? "NO DATA — BUILD HQ"
+        : "NO DATA AVAILABLE — CONTECH HQ NOT YET CONSTRUCTED";
       api.placeholderEl.style.display = "";
       api.hqContent.style.display = "none";
     }
@@ -98,49 +101,76 @@ window.TilePanel = (function () {
     return api.currentTile && api.currentTile.col === col && api.currentTile.row === row && api.isHQ === (window.Terrain && window.Terrain.isHQ(col, row));
   };
 
-  // slide the panel in to the right of the viewport (CSS transition)
+// slide the panel in to the right of the viewport (CSS transition)
+  // On mobile: fade in at bottom-left (no slide across the map).
   api.show = function (col, row) {
     if (!api.panel) return;
     api._clearHideEnd();
-    clearTimeout(api._autoCloseTimer);  // cancel any previous auto-dismiss
+    clearTimeout(api._autoCloseTimer);
     var isHQ = window.Terrain && window.Terrain.isHQ(col, row);
     api.setContent(col, row, isHQ);
-    // start off-screen with transitions disabled, then let the composited
-    // CSS transition slide it in (committed jump before the transition kicks)
-    api._setPos(api._offscreenX(), false);
-    api.panel.style.visibility = "visible";
-    void api.panel.offsetWidth; // force reflow so the jump is committed
-    api._setPos(0, true, SHOW_DUR, "ease-out");
-    api.isOpen = true;
-    // mobile only: auto-dismiss after 3 s so the card never blocks the map
+
     if (window.MobileUI && window.MobileUI.enabled) {
+      // mobile: fade in at bottom-left, no slide
+      api.panel.style.transition = "opacity 0.1s ease-out";
+      api.panel.style.opacity = "0";
+      api.panel.style.visibility = "visible";
+      void api.panel.offsetWidth;
+      api.panel.style.opacity = "1";
+      api.isOpen = true;
       api._autoCloseTimer = setTimeout(function () {
         if (api.isOpen) api.hide();
       }, 3000);
+    } else {
+      // desktop: slide in from right
+      api._setPos(api._offscreenX(), false);
+      api.panel.style.visibility = "visible";
+      void api.panel.offsetWidth;
+      api._setPos(0, true, SHOW_DUR, "ease-out");
+      api.isOpen = true;
     }
   };
 
-  // slide the panel out to the right, then fully hide (CSS transition)
+// slide the panel out to the right, then fully hide (CSS transition)
+  // On mobile: fade out (no slide).
   api.hide = function (onComplete) {
     if (!api.panel) return;
-    clearTimeout(api._autoCloseTimer);  // cancel any pending auto-dismiss
+    clearTimeout(api._autoCloseTimer);
     api._clearHideEnd();
-    var ended = false;
-    api._animEnded = function () {
-      if (ended) return;
-      ended = true;
-      api._clearHideEnd();
-      api._setPos(api._offscreenX(), false); // park off-screen, no transition
-      api.panel.style.visibility = "hidden";
-      api.isOpen = false;
-      api.currentTile = null;
-      api.isHQ = false;
-      if (typeof onComplete === "function") onComplete();
-    };
-    api.panel.addEventListener("transitionend", api._animEnded);
-    // safety net: fire the end handler even if transitionend never arrives
-    api._hideTimer = setTimeout(api._animEnded, parseFloat(HIDE_DUR) * 1000 + 120);
-    api._setPos(api._offscreenX(), true, HIDE_DUR, "ease-in");
+
+    if (window.MobileUI && window.MobileUI.enabled) {
+      // mobile: quick fade out
+      var done = false;
+      api.panel.style.transition = "opacity 0.1s ease-in";
+      api.panel.style.opacity = "0";
+      setTimeout(function () {
+        if (done) return;
+        done = true;
+        api.panel.style.visibility = "hidden";
+        api.panel.style.opacity = "1";
+        api.isOpen = false;
+        api.currentTile = null;
+        api.isHQ = false;
+        if (typeof onComplete === "function") onComplete();
+      }, 120);
+    } else {
+      // desktop: slide out to right
+      var ended = false;
+      api._animEnded = function () {
+        if (ended) return;
+        ended = true;
+        api._clearHideEnd();
+        api._setPos(api._offscreenX(), false);
+        api.panel.style.visibility = "hidden";
+        api.isOpen = false;
+        api.currentTile = null;
+        api.isHQ = false;
+        if (typeof onComplete === "function") onComplete();
+      };
+      api.panel.addEventListener("transitionend", api._animEnded);
+      api._hideTimer = setTimeout(api._animEnded, parseFloat(HIDE_DUR) * 1000 + 120);
+      api._setPos(api._offscreenX(), true, HIDE_DUR, "ease-in");
+    }
   };
 
   // toggle strategy:

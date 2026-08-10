@@ -703,30 +703,33 @@ body {
   .hq-fs-drone-cost { font-size: 14px; }
   .hq-order-btn { padding: 7px 16px; font-size: 12px; }
 
-  /* Tile info popup: bottom-left chip on mobile so it never blocks the map;
-     tiny footprint, scrolls if content overflows. */
+  /* Tile info popup: tiny bottom-left chip on mobile so it never blocks
+     the map; fades in (panel.js drives opacity, not transform). */
   #tile-popup {
     width: auto;
-    max-width: 200px;
-    max-height: 160px;
-    overflow-y: auto;
+    max-width: 170px;
+    max-height: 120px;
+    overflow: hidden;
     top: auto;
     bottom: 60px;
     left: 12px;
     right: auto;
-    border-radius: 12px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    transform: none;
   }
   body.touch-ui #tile-popup {
+    top: auto;
     bottom: 60px;
     left: 12px;
     right: auto;
   }
-  .panel-header { padding: 8px 10px; }
-  .panel-title { font-size: 11px; }
-  .panel-close { width: 24px; height: 24px; font-size: 13px; }
-  .panel-body { padding: 8px 10px; }
-  .tile-coords { font-size: 11px; margin-bottom: 4px; }
-  .placeholder { font-size: 11px; line-height: 1.4; }
+  .panel-header { padding: 6px 8px; border-bottom: none; background: transparent; background-image: none; }
+  .panel-title { font-size: 10px; }
+  .panel-close { width: 20px; height: 20px; font-size: 12px; }
+  .panel-body { padding: 4px 8px 6px; }
+  .tile-coords { font-size: 11px; font-weight: 700; margin-bottom: 2px; }
+  .placeholder { font-size: 10px; line-height: 1.3; }
   .panel-header { padding: 10px 14px; }
   .panel-title { font-size: 12px; }
   .panel-close { width: 28px; height: 28px; font-size: 15px; }
