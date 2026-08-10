@@ -819,3 +819,31 @@ body.touch-ui .hud { display: none; }
 }
 
 body.touch-ui .rotate-enter { display: inline-flex; }
+
+/* ---- Fullscreen toggle (top-left corner, both desktop & mobile) ---- */
+.fs-btn {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 1200;           /* above game UI, below rotate overlay (9999) */
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: rgba(255, 253, 247, 0.88);
+  border: 1px solid #EFE8D8;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  touch-action: none;
+}
+
+.fs-btn:active { transform: scale(0.92); background: #E0F7FA; }
+
+.fs-btn svg {
+  width: 22px;
+  height: 22px;
+  fill: #00838F;
+}
