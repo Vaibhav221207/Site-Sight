@@ -372,10 +372,10 @@ window.DroneDeploy = (function () {
     var scan = {
       drones: drones,
       corners: corners,
-      // camera frame these cached screen coords were built in — renderZone
-      // shifts them by the camera delta while the player pans, keeping the
-      // beam and drone glued to the map
-      camStart: { x: g.camera.x, y: g.camera.y },
+      // camera + iso frame these cached screen coords were built in — renderZone
+      // re-projects them into the current frame per draw (panning AND
+      // fullscreen-triggered viewport resizes stay glued to the map)
+      camStart: { x: g.camera.x, y: g.camera.y, iso: g.isoSize },
       alpha: 0,       // overall cone+heatmap visibility (fade in/hold/fade out)
       pulse: CONE_PULSE_LO, // cone-opacity pulse multiplier during the hold
       heat: 0,        // heatmap gradient-drift phase during the hold
@@ -583,12 +583,15 @@ window.DroneDeploy = (function () {
     }
     api._stopExit(zone);
 
-    // camera anchor for the fly-away: the frame its cached screen positions
-    // were computed in (the scan-start frame when inheriting the scan's
-    // drones; the current frame when the fallback positions were built fresh
-    // just above), so panning keeps the departing drone glued to the map
+    // camera + iso anchor for the fly-away: the frame its cached screen
+    // positions were computed in (the scan-start frame when inheriting the
+    // scan's drones; the current frame when the fallback positions were
+    // built fresh just above), so panning AND viewport rescales keep the
+    // departing drone glued to the map
     var exitCam = window.IsoGrid ? window.IsoGrid.camera : null;
-    zone.camStart = (zone.scan && zone.scan.camStart) || (exitCam ? { x: exitCam.x, y: exitCam.y } : null);
+    var exitIso = window.IsoGrid ? window.IsoGrid.isoSize : 1;
+    zone.camStart = (zone.scan && zone.scan.camStart) ||
+      (exitCam ? { x: exitCam.x, y: exitCam.y, iso: exitIso } : null);
 
     zone.scan = null;
     zone.status = "exiting";
@@ -925,32 +928,46 @@ window.DroneDeploy = (function () {
     }
   };
 
-  // camera-delta shift for a cached screen-coordinate array (corners).
-  // Returns the same array when the camera hasn't moved (zero-copy fast path).
-  function offsetCorners(corners, dx, dy) {
-    if (!dx && !dy) return corners;
-    var out = [];
-    for (var i = 0; i < corners.length; i++) {
-      out.push({ x: corners[i].x + dx, y: corners[i].y + dy });
+  // viewed from: the screen point is projected back to world space using the
+  // cached anchor (camera offset + iso scale captured when the phase started),
+  // then forward to the CURRENT frame. This re-glues the point to the map both
+  // while panning (camera translation) AND when the viewport rescales mid-
+  // animation (fullscreen toggles re-fit isoSize and recenter the camera).
+  // Fast path: same anchor & camera -> the point is already current.
+  function projectFrom(anchor, p) {
+    var g = window.IsoGrid;
+    if (anchor.iso === g.isoSize && anchor.x === g.camera.x && anchor.y === g.camera.y) {
+      return p;
     }
-    return out;
+    var u = p.x - anchor.x;
+    var v = p.y - anchor.y;
+    var col = (u + 2 * v) / (2 * anchor.iso);
+    var row = (2 * v - u) / (2 * anchor.iso);
+    return g.worldToScreen(col, row);
+  }
+
+  // same re-projection for the cached areaCorners object (TL/TR/BR/BL)
+  function projectCorners(anchor, corners) {
+    return {
+      TL: projectFrom(anchor, corners.TL),
+      TR: projectFrom(anchor, corners.TR),
+      BR: projectFrom(anchor, corners.BR),
+      BL: projectFrom(anchor, corners.BL),
+    };
   }
 
   function renderZone(ctx, grid, zone) {
     var area = zone.area;
 
-    // camera-pan correction: the drone/corner screen coordinates cached in
-    // the scan/exit states were computed when that phase started. Shifting
-    // them by the camera delta keeps the beam and drones glued to the map
-    // while the player pans (world-space geometry like the outline is drawn
-    // from tile positions every frame, so it needs no correction).
+    // camera/viewport correction: the drone and corner screen coordinates
+    // cached in the scan/exit states live in the frame captured by their
+    // camStart anchor (camera offset AND iso scale at phase start).
+    // Re-projecting them into the current frame keeps the beam and drones
+    // glued to the map while panning and while the viewport rescales
+    // mid-animation (e.g. toggling fullscreen re-fits isoSize). World-space
+    // geometry like the outline is drawn from tile positions every frame
+    // and needs no correction.
     var anchor = (zone.scan && zone.scan.camStart) || zone.camStart;
-    var camDx = 0;
-    var camDy = 0;
-    if (anchor && grid.camera) {
-      camDx = grid.camera.x - anchor.x;
-      camDy = grid.camera.y - anchor.y;
-    }
     // 1) in-progress drop-in (the drone settling before the scan). The scan is
     //    already committed, so show the solid cyan outline (not a blueprint).
     if (zone.drop && zone.drop.drones && zone.drop.drones.length) {
@@ -972,11 +989,12 @@ window.DroneDeploy = (function () {
     if (zone.scan) {
       var s = zone.scan;
       if (area) {
-        var c = offsetCorners(s.corners, camDx, camDy);
+        var c = projectCorners(anchor, s.corners);
         drawHeatmap(ctx, area, c, s.alpha, s.heat, s.heatPulse);
         if (s.drones && s.drones.length) {
           var apexDrone = s.drones[0];
-          drawCone(ctx, area, c, { x: apexDrone.x + camDx, y: apexDrone.y + camDy - (s.bob || 0) * BOB_AMP }, s.alpha, s.pulse);
+          var apex = projectFrom(anchor, apexDrone);
+          drawCone(ctx, area, c, { x: apex.x, y: apex.y - (s.bob || 0) * BOB_AMP }, s.alpha, s.pulse);
         }
         drawSweep(ctx, c, s.alpha, s.sweep);
         drawAreaOutline(ctx, area, [], OUTLINE_COLOR, 1, 6, 2.5);
@@ -984,7 +1002,8 @@ window.DroneDeploy = (function () {
       for (var si = 0; si < s.drones.length; si++) {
         var sd = s.drones[si];
         // idle-bob: the drone lifts the same small offset during hold
-        drawMarkerAt(ctx, sd.x + camDx, sd.y + camDy - (s.bob || 0) * BOB_AMP, 1, { x: sd.hx, y: sd.hy });
+        var dp = projectFrom(anchor, sd);
+        drawMarkerAt(ctx, dp.x, dp.y - (s.bob || 0) * BOB_AMP, 1, { x: sd.hx, y: sd.hy });
       }
       return;
     }
@@ -998,7 +1017,8 @@ window.DroneDeploy = (function () {
       if (area) drawAreaOutline(ctx, area, [], OUTLINE_COLOR, eAlpha, 8, 2.5);
       for (var ei = 0; ei < zone.exit.drones.length; ei++) {
         var ed = zone.exit.drones[ei];
-        drawMarkerAt(ctx, ed.x + camDx, ed.y + camDy, ed.alpha, { x: ed.hx, y: ed.hy });
+        var ep = projectFrom(anchor, ed);
+        drawMarkerAt(ctx, ep.x, ep.y, ed.alpha, { x: ed.hx, y: ed.hy });
       }
       return;
     }
