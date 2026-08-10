@@ -2,7 +2,7 @@
  *
  * Activates ONLY on real touch devices (coarse pointer or multi-touch):
  *   - replaces the bottom HUD bar with a compact right-edge sidebar rail
- *     (CASH chip, Build button, DRONES chip)
+ *     (CASH chip and Build button)
  *   - panning is direct touch-drag on the canvas (Pointer Events in
  *     input.js); no button-based controls exist anymore
  *   - wiring is class-gated (body.touch-ui) so desktop is completely
@@ -53,18 +53,6 @@ window.MobileUI = (function () {
     build.textContent = "Build";
     rail.appendChild(build);
 
-    var drones = document.createElement("div");
-    drones.className = "mu-chip";
-    var droneLabel = document.createElement("span");
-    droneLabel.className = "mu-label";
-    droneLabel.textContent = "DRONES";
-    var droneVal = document.createElement("span");
-    droneVal.id = "mu-drones";
-    droneVal.className = "mu-value";
-    drones.appendChild(droneLabel);
-    drones.appendChild(droneVal);
-    rail.appendChild(drones);
-
     ui.appendChild(rail);
     document.body.appendChild(ui);
 
@@ -81,8 +69,6 @@ window.MobileUI = (function () {
     if (!api.enabled) return;
     var cash = document.getElementById("mu-cash");
     if (cash) cash.textContent = "$" + (window.GameState.cash || 0).toLocaleString();
-    var drones = document.getElementById("mu-drones");
-    if (drones) drones.textContent = String(window.GameState.droneCount || 0);
     var build = document.getElementById("mu-build");
     if (build) build.disabled = !!(window.GameState.hqBuilt);
   };
