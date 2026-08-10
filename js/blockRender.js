@@ -801,11 +801,24 @@ window.BlockRender = (function () {
     }
   };
 
-  // per-frame render: blit the cached scene, then draw the river shimmer
+  // per-frame render: clear the whole canvas first (device-pixel exact under
+  // the dpr transform), then draw the cached scene under 'copy' compositing so
+  // every pixel is written unconditionally — the frame buffer can never retain
+  // content from an earlier blit (which previously stacked duplicate copies of
+  // the grid during camera panning). The river shimmer draws afterwards with
+  // normal source-over blending.
   api.renderFrame = function (ctx) {
     if (!api.staticLayer) return;
+    var gc = ctx.globalCompositeOperation;
+    ctx.globalCompositeOperation = "copy";
+    ctx.clearRect(0, 0, api.grid.canvasW, api.grid.canvasH);
     ctx.drawImage(api.staticLayer, 0, 0, api.grid.canvasW, api.grid.canvasH);
+    ctx.globalCompositeOperation = "source-over";
     drawShimmer(ctx);
+    // placement preview + deployed drone marker (drawn on top, per-frame so
+    // the drop-in animation and the cursor-following preview stay smooth)
+    if (window.DroneDeploy) window.DroneDeploy.renderMain(ctx, api.grid);
+    if (gc) ctx.globalCompositeOperation = gc;
   };
 
   function animateRise(c, r, targetRise) {

@@ -376,6 +376,20 @@ body {
   box-shadow: 0 0 14px rgba(0, 172, 193, 0.5);
 }
 
+/* ONE-TIME purchase state: permanently grayed out once the Drone System has
+   been bought (same disabled pattern as .build-item for Build HQ). */
+.hq-order-btn:disabled,
+.hq-order-btn[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.hq-order-btn:disabled:hover {
+  transform: none;
+}
+
 /* ---- Full-screen HQ management overlay ---- */
 #hq-overlay {
   position: fixed;

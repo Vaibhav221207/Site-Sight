@@ -19,6 +19,8 @@ window.InputHandler = (function () {
     _dragStart: { x: 0, y: 0 },
     _lastPos: { x: 0, y: 0 },
     _placementMode: false,
+    _droneMode: false,      // drone placement mode (click-to-place a drone)
+    _cursor: "grab",
   };
 
   api.init = function (canvas, grid, onTileClick, onPan, terrain) {
@@ -52,13 +54,18 @@ window.InputHandler = (function () {
     var pos = canvasPos(evt);
     api._dragStart = pos;
     api._lastPos = pos;
-    api.canvas.style.cursor = "grabbing";
+    if (!api._droneMode) api.canvas.style.cursor = "grabbing";
   }
 
-  function onMove(evt) {
+   function onMove(evt) {
+    var pos = canvasPos(evt);
+    // drone placement preview follows the cursor even without a press
+    if (api._droneMode && window.DroneDeploy) {
+      var tile = api.grid.screenToTile(pos.x, pos.y);
+      window.DroneDeploy.setHover(tile ? tile.col : null, tile ? tile.row : null);
+    }
     if (!api._pressed) return;
     if (window.HqPanel && window.HqPanel.isOpen) return;
-    var pos = canvasPos(evt);
     var dx = pos.x - api._lastPos.x;
     var dy = pos.y - api._lastPos.y;
     var dist = Math.sqrt(dx * dx + dy * dy);
@@ -77,7 +84,7 @@ window.InputHandler = (function () {
     if (!api._pressed) return;
     api._pressed = false;
     api._dragging = false;
-    api.canvas.style.cursor = "grab";
+    if (!api._droneMode) api.canvas.style.cursor = api._cursor;
 
     if (window.HqPanel && window.HqPanel.isOpen) return;
 
@@ -95,11 +102,17 @@ window.InputHandler = (function () {
 
   function isClickable(c, r) {
     if (!api.terrain) return true;
+    // placement modes defer to their own module validation (e.g. drones can
+    // target hill/river/trench tiles, which are scenery in normal inspect mode)
+    if (api._placementMode) {
+      return !!(window.HQBuild && window.HQBuild.isValid(c, r));
+    }
+    if (api._droneMode) {
+      return !!(window.DroneDeploy && window.DroneDeploy.isValid(c, r));
+    }
+    // normal inspect mode: hills & rivers are non-interactive scenery
     var type = api.terrain.typeAt(c, r);
     if (type === "hill" || type === "river") return false;
-    if (api._placementMode) {
-      if (!window.HQBuild || !window.HQBuild.isValid(c, r)) return false;
-    }
     return true;
   }
 
@@ -108,11 +121,25 @@ window.InputHandler = (function () {
   };
   api.isPlacementMode = function () { return api._placementMode || false; };
   api.setPlacementMode = function (v) { api._placementMode = !!v; };
+  api.isDroneMode = function () { return api._droneMode || false; };
+  api.setDroneMode = function (v) { api._droneMode = !!v; };
+  // set the canvas cursor (placement modes manage this rather than the grab
+  // cursor that onDown/onUp would otherwise restore)
+  api.setCursor = function (v) {
+    api._cursor = v || "grab";
+    if (api.canvas) api.canvas.style.cursor = api._cursor;
+  };
 
-  // single click router: placement mode builds the HQ, otherwise the normal
-  // inspect click is forwarded to the callback registered via init()
+  // single click router: drone placement -> DroneDeploy.attempt;
+  // placement mode -> HQBuild.attempt; otherwise normal inspect click
   api.onTileClick = function (col, row) {
     if (window.HqPanel && window.HqPanel.isOpen) return;
+    if (api._droneMode) {
+      if (window.DroneDeploy) {
+        window.DroneDeploy.attempt(col, row);
+      }
+      return;
+    }
     if (api._placementMode) {
         var success = window.HQBuild && window.HQBuild.attempt(col, row, function () {
           api.setPlacementMode(false);

@@ -20,7 +20,7 @@ window.HqPanel = (function () {
     isOpen: false,
   };
 
-  var SECTIONS = ["data", "inventory", "store"];
+   var SECTIONS = ["data", "inventory", "store"];
 
   api.init = function () {
     api.overlayEl = document.getElementById("hq-overlay");
@@ -30,11 +30,19 @@ window.HqPanel = (function () {
     api.ownedEl = null;
     api.msgEl = null;
 
+    // INVENTORY tab elements (built from JS so the list is dynamic)
+    api.inventorySection = null;
+    api.inventoryListEl = null;
+    api.inventoryDeployContainer = null;
+
     api.navItems = {};
     api.sections = {};
     SECTIONS.forEach(function (name) {
       api.navItems[name] = document.getElementById("hq-nav-" + name);
       api.sections[name] = document.getElementById("hq-section-" + name);
+      if (name === "inventory") {
+        api.inventorySection = api.sections[name];
+      }
     });
 
     if (api.closeBtn) {
@@ -56,6 +64,10 @@ window.HqPanel = (function () {
       api.orderBtn.addEventListener("click", function () { api.buyDrone(); });
     }
 
+    // ONE-TIME PURCHASE: reflect the permanent purchase state on the button
+    // (disabled once the Drone System has been bought, even after deployment).
+    api.refreshDronePurchaseState();
+
     SECTIONS.forEach(function (name) {
       if (api.navItems[name]) {
         api.navItems[name].addEventListener("click", function () {
@@ -72,6 +84,9 @@ window.HqPanel = (function () {
       if (api.sections[s]) api.sections[s].style.display = s === name ? "" : "none";
     });
     api.currentSection = name;
+    if (name === "inventory") {
+      api.renderInventory();
+    }
   };
 
   api.updateOwned = function () {
@@ -81,18 +96,173 @@ window.HqPanel = (function () {
     }
   };
 
-  api.showMsg = function (text, success) {
+  // ONE-TIME PURCHASE state: the STORE Order Drone button is permanently
+  // disabled once the Drone System has been purchased — the same permanent
+  // pattern as the Build HQ button. The flag survives deployment/consumption
+  // (droneCount can return to 0), so the button NEVER re-enables.
+  api.refreshDronePurchaseState = function () {
+    if (!api.orderBtn) return;
+    var purchased = !!(window.GameState && window.GameState.droneSystemPurchased);
+    api.orderBtn.disabled = purchased;
+  };
+
+  // (Re)builds the INVENTORY tab contents from GameState.inventory:
+  // - owned drones listed individually (selectable)
+  // - empty state when none are owned
+  // - Deploy button container toggled by selection state
+  api.renderInventory = function () {
+    if (!api.inventorySection) return;
+    api.inventorySection.innerHTML = "";
+    api.inventoryListEl = null;
+    api.inventoryDeployContainer = null;
+
+    var header = document.createElement("div");
+    header.className = "hq-fs-section-header";
+    header.textContent = "DRONE FLEET";
+    api.inventorySection.appendChild(header);
+
+    var list = document.createElement("div");
+    list.className = "hq-fs-inventory-list";
+    api.inventorySection.appendChild(list);
+    api.inventoryListEl = list;
+
+    var n = window.GameState.inventory.droneCount;
+    if (!n || n <= 0) {
+      var empty = document.createElement("div");
+      empty.className = "hq-fs-placeholder";
+      empty.textContent = "No Drone Systems in inventory. Order one from the STORE tab.";
+      api.inventorySection.appendChild(empty);
+      return;
+    }
+
+    // Each owned drone is its own selectable entry. The Drone System is a
+    // ONE-TIME purchase, so the fleet can only ever hold a single unit — the
+    // row is labeled plainly (no #1 numbering).
+    for (var i = 1; i <= n; i++) {
+      var id = "drone-" + i;
+      var entry = document.createElement("div");
+      entry.className = "hq-fs-inventory-item";
+      entry.dataset.droneId = id;
+      entry.style.cssText =
+        "display:flex;align-items:center;justify-content:space-between;" +
+        "padding:14px 18px;margin-bottom:8px;background:#F5F9FB;" +
+        "border:2px solid transparent;border-radius:16px;cursor:pointer;" +
+        "transition:border-color 0.15s ease,background 0.15s ease;";
+      entry.innerHTML =
+        '<span class="hq-fs-inventory-item-name" style="font-size:17px;font-weight:700;color:#2D3561">Drone System</span>';
+      entry.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        api.selectDrone(this);
+      });
+      // keep selection in GameState in sync with the visual state
+      if (window.GameState.inventory.selectedDroneId === id) {
+        api.markSelected(entry, true);
+      }
+      list.appendChild(entry);
+    }
+
+    // Deploy button (placeholder acknowledgement for now)
+    var deployBox = document.createElement("div");
+    deployBox.className = "hq-fs-inventory-deploy";
+    deployBox.style.marginTop = "16px";
+    deployBox.style.display = "none";
+    deployBox.style.display = "flex";
+    deployBox.style.justifyContent = "flex-end";
+    var deployBtn = document.createElement("button");
+    deployBtn.type = "button";
+    deployBtn.className = "hq-order-btn";
+    deployBtn.textContent = "Deploy";
+    deployBtn.addEventListener("click", function (ev) {
+      ev.stopPropagation();
+      api.deployDrone();
+    });
+    deployBox.appendChild(deployBtn);
+    api.inventorySection.appendChild(deployBox);
+    api.inventoryDeployContainer = deployBox;
+
+    api.refreshDeployVisibility();
+  };
+
+  // Toggle the selected state of an inventory entry element.
+  api.markSelected = function (entry, selected) {
+    entry.style.borderColor = selected ? "#00ACC1" : "transparent";
+    entry.style.background = selected ? "#E0F7FA" : "#F5F9FB";
+  };
+
+  // Select (or deselect) a drone entry. Single-select: picking a new one
+  // deselects the previous; clicking the active one deselects it.
+  api.selectDrone = function (entry) {
+    var id = entry.dataset.droneId;
+    var gs = window.GameState;
+    if (!gs) return;
+    var wasSelected = gs.inventory.selectedDroneId === id;
+
+    // clear any active entry visually
+    if (api.inventoryListEl) {
+      var items = api.inventoryListEl.querySelectorAll(".hq-fs-inventory-item");
+      for (var i = 0; i < items.length; i++) {
+        api.markSelected(items[i], false);
+      }
+    }
+
+    if (wasSelected) {
+      gs.inventory.selectedDroneId = null;
+    } else {
+      gs.inventory.selectedDroneId = id;
+      api.markSelected(entry, true);
+    }
+    api.refreshDeployVisibility();
+  };
+
+  // Show the Deploy button only while a drone is selected.
+  api.refreshDeployVisibility = function () {
+    var hasSelection = !!window.GameState.inventory.selectedDroneId;
+    if (api.inventoryDeployContainer) {
+      api.inventoryDeployContainer.style.display = hasSelection ? "" : "none";
+    }
+  };
+
+  // Wire the Deploy button to whole-map, no-click drone deployment. Closes the
+  // terminal and immediately starts a full-map sweep (no placement mode, no
+  // cursor preview, no click targeting). DroneDeploy.startDeployment handles
+  // consuming the unit, clearing the selection and refreshing the STORE owned
+  // count; the 8-chunk / 2-concurrent sweep runs on the map.
+  api.deployDrone = function () {
+    var id = window.GameState.inventory.selectedDroneId;
+    if (!id) return;
+    var started = !!(window.DroneDeploy && window.DroneDeploy.startDeployment());
+    console.log("[HQ] Deploy: selected " + id + " -> " + (started ? "whole-map drone sweep started" : "deploy failed (no Drone Systems available)"));
+    // close the terminal so the map is interactive and the sweep is visible
+    if (api.isOpen) api.close();
+    if (!started) {
+      api.showMsg("[DEPLOY] no Drone Systems available", false, api.inventoryDeployContainer);
+    }
+  };
+
+  api.showMsg = function (text, success, container) {
+    var holder = container || null;
     if (!api.msgEl) {
-      if (!api.orderBtn) return;
       api.msgEl = document.createElement("div");
       api.msgEl.style.textAlign = "right";
       api.msgEl.style.fontSize = "12px";
       api.msgEl.style.fontWeight = "700";
-      api.msgEl.style.marginTop = "8px";
       api.msgEl.style.minHeight = "16px";
       api.msgEl.style.transition = "opacity 0.3s ease";
-      var row = api.orderBtn.closest(".hq-fs-drone-row");
-      var holder = row && row.parentNode ? row.parentNode : api.orderBtn.parentNode;
+      if (holder) {
+        api.msgEl.style.marginTop = "8px";
+        holder.appendChild(api.msgEl);
+      } else if (api.orderBtn) {
+        api.msgEl.style.marginTop = "8px";
+        var row = api.orderBtn.closest(".hq-fs-drone-row");
+        var parent = row && row.parentNode ? row.parentNode : api.orderBtn.parentNode;
+        parent.appendChild(api.msgEl);
+      } else {
+        // fall back to the active section if no explicit holder was given
+        var sec = api.sections && api.sections[api.currentSection];
+        if (sec) sec.appendChild(api.msgEl);
+      }
+    } else if (holder && api.msgEl.parentNode !== holder) {
+      // move the existing message element into the requested container
       holder.appendChild(api.msgEl);
     }
     api.msgEl.textContent = text;
@@ -108,32 +278,39 @@ window.HqPanel = (function () {
   api.buyDrone = function () {
     var gs = window.GameState;
     if (!gs) return;
+    // ONE-TIME PURCHASE: once bought (even if later deployed/consumed), the
+    // button stays disabled for the rest of the session — no second purchase.
+    if (gs.droneSystemPurchased) return;
     if (gs.cash >= gs.droneCost) {
       gs.cash -= gs.droneCost;
       gs.inventory.droneCount += 1;
+      gs.droneSystemPurchased = true;
       if (window.Main && window.Main.updateHUD) window.Main.updateHUD();
       api.updateOwned();
+      api.refreshDronePurchaseState();
       if (api.orderBtn) {
-        api.orderBtn.textContent = "Ordered!";
-        api.orderBtn.classList.add("hq-order-btn--flash");
-        setTimeout(function () {
-          if (!api.orderBtn) return;
-          api.orderBtn.textContent = "Order Drone";
-          api.orderBtn.classList.remove("hq-order-btn--flash");
-        }, 900);
+          api.orderBtn.textContent = "Ordered!";
+          api.orderBtn.classList.add("hq-order-btn--flash");
+          setTimeout(function () {
+            if (!api.orderBtn) return;
+            api.orderBtn.textContent = "Order Drone";
+            api.orderBtn.classList.remove("hq-order-btn--flash");
+          }, 900);
       }
     } else {
       api.showMsg("Insufficient funds", false);
     }
   };
 
-  api.open = function () {
+   api.open = function () {
     if (api.isOpen) return;
     api.isOpen = true;
     api.overlayEl.style.visibility = "visible";
     api.overlayEl.style.pointerEvents = "auto";
     api.switchSection("store");
     api.updateOwned();
+    api.renderInventory();
+    api.refreshDronePurchaseState();
 
     if (typeof anime !== "undefined" && anime) {
       anime({
