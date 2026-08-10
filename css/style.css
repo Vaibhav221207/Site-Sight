@@ -851,3 +851,53 @@ body.touch-ui .rotate-enter { display: inline-flex; }
   height: 22px;
   fill: #00838F;
 }
+
+/* ---- mobile polish: safe-area insets + tap behavior (later-file overrides) --
+ * viewport-fit=cover puts the page under the notch / home indicator on
+ * phones; env() insets push every fixed UI element back inside the visible
+ * area. Also kill the iOS tap grey-flash / long-press callout and the
+ * double-tap zoom delay on buttons. */
+html,
+body {
+  -webkit-tap-highlight-color: transparent; /* no grey flash on tap */
+  -webkit-touch-callout: none;              /* no iOS long-press callout */
+}
+
+button {
+  touch-action: manipulation; /* no double-tap zoom delay on UI taps */
+}
+
+.fs-btn {
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  left: calc(env(safe-area-inset-left, 0px) + 12px);
+  touch-action: manipulation;
+}
+
+/* 44px minimum touch targets on the compact mobile controls */
+body.touch-ui .fs-btn {
+  width: 44px;
+  height: 44px;
+}
+
+.mu-btn {
+  min-height: 44px;
+}
+
+.mu-sidebar {
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  right: calc(env(safe-area-inset-right, 0px) + 12px);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+}
+
+#tile-popup {
+  top: calc(env(safe-area-inset-top, 0px) + 8px);
+  right: calc(env(safe-area-inset-right, 0px) + 8px);
+}
+
+body.touch-ui #tile-popup {
+  right: calc(env(safe-area-inset-right, 0px) + 84px);
+}
+
+.hud {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+}

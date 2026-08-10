@@ -18,7 +18,10 @@ window.Main = (function () {
   }
 
   function onResize() {
-    var dpr = window.devicePixelRatio || 1;
+    // cap the backing resolution on high-DPR devices: full-screen fillrate
+    // scales with dpr^2, so 3x canvas pixels is pure waste on small screens —
+    // 2x stays crisp at a fraction of the pixel cost (biggest mobile win)
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
     var w = window.innerWidth;
     var h = window.innerHeight;
     api.canvas.width = w * dpr;
