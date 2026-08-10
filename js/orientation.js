@@ -57,6 +57,28 @@ window.Orientation = (function () {
     if (!api.overlay) return;
     api.isTouch = isTouchDevice();
 
+    // touch-only "Enter Site Sight" button: best-effort landscape lock.
+    // Unsupported browsers (iOS Safari / non-fullscreen pages) just see the
+    // button switch to a "Rotate manually" hint; never an uncaught error.
+    var enterBtn = document.getElementById("rotate-enter-btn");
+    if (enterBtn) {
+      enterBtn.addEventListener("click", function () {
+        if (window.screen && window.screen.orientation &&
+            typeof window.screen.orientation.lock === "function") {
+          try {
+            var p = window.screen.orientation.lock("landscape");
+            if (p && typeof p.catch === "function") {
+              p.catch(function () { enterBtn.textContent = "Rotate manually"; });
+            }
+          } catch (e) {
+            enterBtn.textContent = "Rotate manually";
+          }
+        } else {
+          enterBtn.textContent = "Rotate manually";
+        }
+      });
+    }
+
     // best-effort landscape lock. Must fail silently on browsers that do not
     // support it (iOS Safari / non-fullscreen pages) — never an uncaught
     // error, never a broken page.

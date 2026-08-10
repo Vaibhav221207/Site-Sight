@@ -121,6 +121,9 @@
           <path d="M53 9 L58 10 M53 9 L55 14" stroke="#FFB300" stroke-width="4" fill="none" stroke-linecap="round" />
         </svg>
         <p class="rotate-text">Please rotate your device to landscape mode</p>
+        <!-- touch-only: best-effort automatic landscape lock (wired in
+             js/orientation.js); hidden on desktop -->
+        <button id="rotate-enter-btn" class="rotate-enter" type="button">Enter Site Sight</button>
       </div>
     </div>
 
@@ -136,6 +139,7 @@
     <script src="js/buildMenu.js"></script>
     <script src="js/hqPanel.js"></script>
     <script src="js/main.js"></script>
+    <script src="js/mobileUI.js"></script>
     <script src="js/orientation.js"></script>
   </body>
 </html>

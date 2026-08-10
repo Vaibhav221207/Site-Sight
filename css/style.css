@@ -628,3 +628,223 @@ body {
   font-weight: 700;
   color: #00838F;
 }
+
+/* ---- Mobile breakpoint: small viewports (mobile landscape especially) ----
+   Scoped strictly to small screens via media query; ALL desktop sizing above
+   this point is untouched. Mobile landscape heights are typically only
+   ~350-420px, so panels cap themselves above a compact HUD chip instead of
+   overlapping it. */
+
+@media (max-height: 500px), (max-width: 640px) {
+
+  /* HUD: compact bottom-LEFT chip so the center-bottom stays clear for the
+     HQ terminal and panels get more vertical room. */
+  .hud {
+    height: 40px;
+    min-width: 0;
+    bottom: 8px;
+    left: 8px;
+    transform: none;
+    padding: 0 12px;
+    border-radius: 12px;
+  }
+  .hud-left .label { font-size: 10px; }
+  .hud-left .value { font-size: 18px; }
+  .hud-btn { padding: 8px 16px; font-size: 12px; }
+
+  /* HQ terminal: nearly full-width, height-capped above the HUD chip so it
+     can never overlap it, compact paddings/fonts to fit short heights. */
+  #hq-panel {
+    width: 94vw;
+    max-width: none;
+    max-height: calc(100vh - 104px);
+  }
+  .hq-fs-header { padding: 12px 16px; }
+  .hq-fs-title { font-size: 16px; }
+  .hq-fs-close { width: 32px; height: 32px; font-size: 18px; }
+  /* body height tracks the compact header (64px) + the capped panel height */
+  .hq-fs-body { height: calc(100vh - 104px - 64px); }
+  .hq-fs-nav { padding: 10px 16px 8px; }
+  .hq-fs-nav-item { padding: 6px 12px; font-size: 12px; }
+  .hq-fs-content { padding: 14px 16px; }
+  .hq-fs-status { padding-bottom: 12px; }
+  .hq-fs-status-text { font-size: 15px; }
+  .hq-fs-section { margin-top: 12px; }
+  .hq-fs-section-header { font-size: 12px; padding-bottom: 8px; margin-bottom: 8px; }
+  .hq-fs-drone-row { padding: 10px 12px; gap: 10px; }
+  .hq-fs-drone-name { font-size: 15px; }
+  .hq-fs-drone-cost { font-size: 14px; }
+  .hq-order-btn { padding: 7px 16px; font-size: 12px; }
+
+  /* Tile info popup: viewport-relative width (no fixed 320px) + height cap
+     above the HUD chip; scrolls if the content is taller than the space. */
+  #tile-popup {
+    width: auto;
+    max-width: 76vw;
+    max-height: calc(100vh - 104px);
+    overflow-y: auto;
+    top: 8px;
+    right: 8px;
+  }
+  .panel-header { padding: 10px 14px; }
+  .panel-title { font-size: 12px; }
+  .panel-close { width: 28px; height: 28px; font-size: 15px; }
+  .panel-body { padding: 12px 14px; }
+  .tile-coords { font-size: 12px; margin-bottom: 8px; }
+  .placeholder { font-size: 12px; }
+
+  /* INVENTORY rows are authored with inline styles in hqPanel.js — compact
+     them at this breakpoint only (desktop keeps the authored sizes). */
+  .hq-fs-inventory-item {
+    padding: 10px 12px !important;
+    margin-bottom: 6px !important;
+    border-radius: 12px !important;
+  }
+  .hq-fs-inventory-item-name { font-size: 15px !important; }
+
+  /* Build palette sits above the HUD chip; smaller cards so it fits. */
+  .build-bar { bottom: 56px; padding: 10px 12px; gap: 8px; }
+  .build-item { padding: 8px 10px; min-width: 120px; }
+  .build-item-name { font-size: 13px; }
+  .build-item-cost { font-size: 12px; }
+  .build-item-icon { width: 36px; height: 36px; }
+}
+
+/* ---- Mobile interaction layer (MobileUI) — touch devices ONLY ----
+   body.touch-ui is set by js/mobileUI.js at boot. The desktop HUD bar is
+   replaced by a right-edge sidebar rail + a hold-to-pan D-pad. Every rule
+   here is scoped to touch so desktop layouts (and small-desktop windows)
+   stay untouched. The rail sits under all popups/modals in z-order and is
+   inert while an overlay is open. */
+
+body.touch-ui .hud { display: none; }
+
+#mobile-ui {
+  position: fixed;
+  inset: 0;
+  /* under tile popup (900), build palette (1001), HQ overlay (1100) */
+  z-index: 850;
+  pointer-events: none;
+}
+
+.mu-sidebar {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  bottom: 152px;   /* clears the D-pad stack at the bottom */
+  width: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  pointer-events: auto;
+}
+
+.mu-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 6px;
+  background: rgba(255, 253, 247, 0.94);
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.mu-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #00838F;
+}
+
+.mu-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #2D3561;
+}
+
+.mu-btn {
+  padding: 12px 6px;
+  background: linear-gradient(180deg, #4DD0E1 0%, #00ACC1 100%);
+  border: none;
+  border-radius: 14px;
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: "Baloo 2", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  box-shadow: 0 4px 12px rgba(0, 172, 193, 0.35);
+  cursor: pointer;
+}
+
+.mu-btn:active { transform: scale(0.96); }
+
+.mu-btn:disabled {
+  opacity: 0.5;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.mu-dpad {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  width: 144px;
+  height: 144px;
+  display: grid;
+  grid-template-columns: 48px 48px 48px;
+  grid-template-rows: 48px 48px 48px;
+  grid-template-areas: ". up ." "left . right" ". down .";
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.mu-dpad-btn {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 253, 247, 0.94);
+  border: 1px solid #EFE8D8;
+  border-radius: 12px;
+  color: #2D3561;
+  font-size: 16px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  touch-action: none;
+}
+
+.mu-dpad-btn[data-dir="up"] { grid-area: up; }
+.mu-dpad-btn[data-dir="left"] { grid-area: left; }
+.mu-dpad-btn[data-dir="right"] { grid-area: right; }
+.mu-dpad-btn[data-dir="down"] { grid-area: down; }
+
+.mu-dpad-btn:active { background: #E0F7FA; transform: scale(0.92); }
+
+/* Build palette floats above the D-pad on touch (desktop keeps 92px) */
+body.touch-ui .build-bar { bottom: 172px; }
+
+/* "Enter Site Sight" button: touch-only (desktop never shows the overlay) */
+.rotate-enter {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 22px;
+  background: linear-gradient(180deg, #4DD0E1 0%, #00ACC1 100%);
+  border: none;
+  border-radius: 20px;
+  color: #FFFFFF;
+  font-family: "Baloo 2", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  box-shadow: 0 4px 12px rgba(0, 172, 193, 0.35);
+  cursor: pointer;
+}
+
+body.touch-ui .rotate-enter { display: inline-flex; }

@@ -29,8 +29,16 @@ window.IsoGrid = (function () {
   api.resize = function (w, h) {
     api.canvasW = w;
     api.canvasH = h;
-    var availW = w - PADDING * 2;
-    var availH = h - PADDING * 2;
+    // adaptive border padding: full PADDING on desktop-sized viewports, but a
+    // much smaller margin on small screens (phones — especially landscape,
+    // where the height is ~350-420px) so the map auto-fits reasonably large
+    // instead of rendering tiny in the middle of a mostly-empty canvas.
+    var minDim = Math.min(w, h);
+    var pad = (minDim < 560)
+      ? Math.min(PADDING, Math.max(16, Math.round(minDim * 0.08)))
+      : PADDING;
+    var availW = w - pad * 2;
+    var availH = h - pad * 2;
     // 20 tiles span 2*(GRID_SIZE-1) horizontally and (GRID_SIZE-1) vertically (in iso units)
     var isoByW = availW / (2 * (GRID_SIZE - 1));
     var isoByH = availH / (GRID_SIZE - 1);

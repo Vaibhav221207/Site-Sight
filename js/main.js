@@ -43,6 +43,7 @@ window.Main = (function () {
     var btn = document.getElementById("hud-build-btn");
     if (btn) btn.disabled = window.GameState.hqBuilt;
     if (window.BuildMenu && window.BuildMenu.refresh) window.BuildMenu.refresh();
+    if (window.MobileUI && window.MobileUI.update) window.MobileUI.update();
   };
 
   // click: pop the block up/down AND toggle the info panel (as before)
@@ -93,6 +94,12 @@ window.Main = (function () {
     // orientation flips change the viewport dimensions (esp. iPad/Android) —
     // re-fit the canvas so it re-fills and stays crisp under the new geometry
     window.addEventListener("orientationchange", onResize);
+    // mobile browsers collapse/expand their chrome dynamically (URL bar).
+    // The visual viewport reports the ACTUAL visible area, so any change there
+    // re-fits the canvas too — never a stale layout height.
+    if (window.visualViewport && typeof window.visualViewport.addEventListener === "function") {
+      window.visualViewport.addEventListener("resize", onResize);
+    }
     window.InputHandler.init(api.canvas, api.grid, onTileClicked, onPan, window.Terrain);
     window.TilePanel.init();
     window.HqPanel.init();

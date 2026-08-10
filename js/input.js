@@ -18,6 +18,7 @@ window.InputHandler = (function () {
     _dragging: false,
     _dragStart: { x: 0, y: 0 },
     _lastPos: { x: 0, y: 0 },
+    _lastTouchAt: 0, // ms timestamp of the last handled touch (synthetic mouse guard)
     _placementMode: false,
     _droneMode: false,      // drone placement mode (click-to-place a drone)
     _cursor: "grab",
@@ -39,6 +40,13 @@ window.InputHandler = (function () {
     canvas.addEventListener("mouseup", onUp);
     canvas.addEventListener("mouseleave", onUp);
     canvas.addEventListener("dragstart", function (e) { e.preventDefault(); });
+    // touch: mobile browsers synthesize mouse events after touches, which
+    // would double-process taps/drags. Handle touch natively and suppress
+    // the synthetic pair via preventDefault().
+    canvas.addEventListener("touchstart", onTouchStart, { passive: false });
+    canvas.addEventListener("touchmove", onTouchMove, { passive: false });
+    canvas.addEventListener("touchend", onTouchEnd, { passive: false });
+    canvas.addEventListener("touchcancel", onTouchEnd, { passive: false });
   }
 
   // mouse position in CSS pixels relative to the canvas
@@ -47,19 +55,27 @@ window.InputHandler = (function () {
     return { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
   }
 
-  function onDown(evt) {
+  // swallow the compatibility mouse-event stream a real touch leaves behind
+  function ignoreSyntheticMouse() {
+    return Date.now() - api._lastTouchAt < 700;
+  }
+
+  function handleDown(pos) {
     if (window.HqPanel && window.HqPanel.isOpen) return;
     api._pressed = true;
     api._dragging = false;
-    var pos = canvasPos(evt);
     api._dragStart = pos;
     api._lastPos = pos;
     if (!api._droneMode) api.canvas.style.cursor = "grabbing";
   }
 
-   function onMove(evt) {
-    var pos = canvasPos(evt);
-    // drone placement preview follows the cursor even without a press
+  function onDown(evt) {
+    if (ignoreSyntheticMouse()) return;
+    handleDown(canvasPos(evt));
+  }
+
+  function handleMove(pos) {
+    // drone placement preview follows the pointer even without a press
     if (api._droneMode && window.DroneDeploy) {
       var tile = api.grid.screenToTile(pos.x, pos.y);
       window.DroneDeploy.setHover(tile ? tile.col : null, tile ? tile.row : null);
@@ -80,7 +96,12 @@ window.InputHandler = (function () {
     }
   }
 
-  function onUp(evt) {
+  function onMove(evt) {
+    if (ignoreSyntheticMouse()) return;
+    handleMove(canvasPos(evt));
+  }
+
+  function handleUp(pos) {
     if (!api._pressed) return;
     api._pressed = false;
     api._dragging = false;
@@ -88,7 +109,6 @@ window.InputHandler = (function () {
 
     if (window.HqPanel && window.HqPanel.isOpen) return;
 
-    var pos = canvasPos(evt);
     var moved = Math.sqrt(
       Math.pow(pos.x - api._dragStart.x, 2) + Math.pow(pos.y - api._dragStart.y, 2)
     );
@@ -98,6 +118,38 @@ window.InputHandler = (function () {
         api.onTileClick(tile.col, tile.row);
       }
     }
+  }
+
+  function onUp(evt) {
+    if (ignoreSyntheticMouse()) return;
+    handleUp(canvasPos(evt));
+  }
+
+  // touch: same gesture pipeline as mouse, driven by native touch events.
+  // preventDefault() keeps the browser from scrolling/zooming over the game
+  // and from firing the synthetic mouse pair.
+  function touchPos(t) {
+    var rect = api.canvas.getBoundingClientRect();
+    return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+  }
+
+  function onTouchStart(evt) {
+    evt.preventDefault();
+    api._lastTouchAt = Date.now();
+    var t = evt.touches[0];
+    if (t) handleDown(touchPos(t));
+  }
+
+  function onTouchMove(evt) {
+    evt.preventDefault();
+    var t = evt.touches[0];
+    if (t) handleMove(touchPos(t));
+  }
+
+  function onTouchEnd(evt) {
+    evt.preventDefault();
+    var t = evt.changedTouches[0];
+    if (t) handleUp(touchPos(t));
   }
 
   function isClickable(c, r) {
