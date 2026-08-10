@@ -712,7 +712,8 @@ body {
 
 /* ---- Mobile interaction layer (MobileUI) — touch devices ONLY ----
    body.touch-ui is set by js/mobileUI.js at boot. The desktop HUD bar is
-   replaced by a right-edge sidebar rail + a hold-to-pan D-pad. Every rule
+   replaced by a right-edge sidebar rail (Cash / Build / Drones). Panning on
+   touch is direct canvas drag via Pointer Events (input.js). Every rule
    here is scoped to touch so desktop layouts (and small-desktop windows)
    stay untouched. The rail sits under all popups/modals in z-order and is
    inert while an overlay is open. */
@@ -731,7 +732,7 @@ body.touch-ui .hud { display: none; }
   position: absolute;
   top: 12px;
   right: 12px;
-  bottom: 152px;   /* clears the D-pad stack at the bottom */
+  bottom: 12px;
   width: 64px;
   display: flex;
   flex-direction: column;
@@ -787,46 +788,6 @@ body.touch-ui .hud { display: none; }
   box-shadow: none;
   cursor: not-allowed;
 }
-
-.mu-dpad {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
-  width: 144px;
-  height: 144px;
-  display: grid;
-  grid-template-columns: 48px 48px 48px;
-  grid-template-rows: 48px 48px 48px;
-  grid-template-areas: ". up ." "left . right" ". down .";
-  pointer-events: auto;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.mu-dpad-btn {
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 253, 247, 0.94);
-  border: 1px solid #EFE8D8;
-  border-radius: 12px;
-  color: #2D3561;
-  font-size: 16px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
-  touch-action: none;
-}
-
-.mu-dpad-btn[data-dir="up"] { grid-area: up; }
-.mu-dpad-btn[data-dir="left"] { grid-area: left; }
-.mu-dpad-btn[data-dir="right"] { grid-area: right; }
-.mu-dpad-btn[data-dir="down"] { grid-area: down; }
-
-.mu-dpad-btn:active { background: #E0F7FA; transform: scale(0.92); }
-
-/* Build palette floats above the D-pad on touch (desktop keeps 92px) */
-body.touch-ui .build-bar { bottom: 172px; }
 
 /* "Enter Site Sight" button: touch-only (desktop never shows the overlay) */
 .rotate-enter {

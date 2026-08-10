@@ -1,8 +1,13 @@
-/* js/input.js — canvas mouse input: pan (click+drag) + tile click detection.
+/* js/input.js — canvas pointer input: pan (press+drag) + tile click
+ * detection. Uses the Pointer Events API so mouse and touch share ONE
+ * code path (pointerdown/pointermove/pointerup fire identically for both).
  *   - Drag threshold prevents accidental clicks during panning.
- *   - In placement mode (HQ build), only valid flat land tiles are clickable.
- *   - Normal mode: hill & river tiles are non-interactive scenery; only land
- *     and trench tiles trigger a click.
+ *   - Pointer capture keeps the drag smooth even off-canvas and releases
+ *     cleanly, so no mouseleave-style handler is needed.
+ *   - In placement mode (HQ build), only valid flat land tiles are
+ *     clickable.
+ *   - Normal mode: hill & river tiles are non-interactive scenery; only
+ *     land and trench tiles trigger a click.
  */
 
 window.InputHandler = (function () {
@@ -16,9 +21,9 @@ window.InputHandler = (function () {
     onPan: null,            // () -> void   (called after each pan frame)
     _pressed: false,
     _dragging: false,
+    _activePointer: null,   // pointerId currently tracked (multi-touch guard)
     _dragStart: { x: 0, y: 0 },
     _lastPos: { x: 0, y: 0 },
-    _lastTouchAt: 0, // ms timestamp of the last handled touch (synthetic mouse guard)
     _placementMode: false,
     _droneMode: false,      // drone placement mode (click-to-place a drone)
     _cursor: "grab",
@@ -35,46 +40,43 @@ window.InputHandler = (function () {
 
   function bind(canvas) {
     canvas.style.cursor = "grab";
-    canvas.addEventListener("mousedown", onDown);
-    canvas.addEventListener("mousemove", onMove);
-    canvas.addEventListener("mouseup", onUp);
-    canvas.addEventListener("mouseleave", onUp);
+    // Pointer Events: one code path for mouse + touch. touch-action must be
+    // none (CSS also sets it) so the browser never hijacks a drag for
+    // scrolling/zooming and pointermove keeps streaming.
+    canvas.addEventListener("pointerdown", onPointerDown);
+    canvas.addEventListener("pointermove", onPointerMove);
+    canvas.addEventListener("pointerup", onPointerUp);
+    canvas.addEventListener("pointercancel", onPointerUp);
     canvas.addEventListener("dragstart", function (e) { e.preventDefault(); });
-    // touch: mobile browsers synthesize mouse events after touches, which
-    // would double-process taps/drags. Handle touch natively and suppress
-    // the synthetic pair via preventDefault().
-    canvas.addEventListener("touchstart", onTouchStart, { passive: false });
-    canvas.addEventListener("touchmove", onTouchMove, { passive: false });
-    canvas.addEventListener("touchend", onTouchEnd, { passive: false });
-    canvas.addEventListener("touchcancel", onTouchEnd, { passive: false });
   }
 
-  // mouse position in CSS pixels relative to the canvas
-  function canvasPos(evt) {
+  // pointer position in CSS pixels relative to the canvas
+  function pointerPos(evt) {
     var rect = api.canvas.getBoundingClientRect();
     return { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
   }
 
-  // swallow the compatibility mouse-event stream a real touch leaves behind
-  function ignoreSyntheticMouse() {
-    return Date.now() - api._lastTouchAt < 700;
-  }
-
-  function handleDown(pos) {
+  function onPointerDown(evt) {
     if (window.HqPanel && window.HqPanel.isOpen) return;
+    if (api._pressed) return; // ignore secondary pointers (multi-touch)
     api._pressed = true;
     api._dragging = false;
+    api._activePointer = evt.pointerId;
+    // capture so the drag keeps tracking (and the release arrives) even
+    // when the pointer leaves the canvas mid-drag
+    if (api.canvas.setPointerCapture) {
+      try { api.canvas.setPointerCapture(evt.pointerId); } catch (e) { /* ignore */ }
+    }
+    var pos = pointerPos(evt);
     api._dragStart = pos;
     api._lastPos = pos;
     if (!api._droneMode) api.canvas.style.cursor = "grabbing";
   }
 
-  function onDown(evt) {
-    if (ignoreSyntheticMouse()) return;
-    handleDown(canvasPos(evt));
-  }
-
-  function handleMove(pos) {
+  function onPointerMove(evt) {
+    // only the pointer that started the gesture drives it
+    if (api._pressed && evt.pointerId !== api._activePointer) return;
+    var pos = pointerPos(evt);
     // drone placement preview follows the pointer even without a press
     if (api._droneMode && window.DroneDeploy) {
       var tile = api.grid.screenToTile(pos.x, pos.y);
@@ -96,19 +98,22 @@ window.InputHandler = (function () {
     }
   }
 
-  function onMove(evt) {
-    if (ignoreSyntheticMouse()) return;
-    handleMove(canvasPos(evt));
-  }
-
-  function handleUp(pos) {
+  function onPointerUp(evt) {
+    if (evt.pointerId !== api._activePointer) return;
+    var cancelled = evt.type === "pointercancel";
     if (!api._pressed) return;
     api._pressed = false;
     api._dragging = false;
+    api._activePointer = null;
+    if (api.canvas.releasePointerCapture) {
+      try { api.canvas.releasePointerCapture(evt.pointerId); } catch (e) { /* ignore */ }
+    }
     if (!api._droneMode) api.canvas.style.cursor = api._cursor;
 
     if (window.HqPanel && window.HqPanel.isOpen) return;
+    if (cancelled) return; // gesture was interrupted (no click)
 
+    var pos = pointerPos(evt);
     var moved = Math.sqrt(
       Math.pow(pos.x - api._dragStart.x, 2) + Math.pow(pos.y - api._dragStart.y, 2)
     );
@@ -118,38 +123,6 @@ window.InputHandler = (function () {
         api.onTileClick(tile.col, tile.row);
       }
     }
-  }
-
-  function onUp(evt) {
-    if (ignoreSyntheticMouse()) return;
-    handleUp(canvasPos(evt));
-  }
-
-  // touch: same gesture pipeline as mouse, driven by native touch events.
-  // preventDefault() keeps the browser from scrolling/zooming over the game
-  // and from firing the synthetic mouse pair.
-  function touchPos(t) {
-    var rect = api.canvas.getBoundingClientRect();
-    return { x: t.clientX - rect.left, y: t.clientY - rect.top };
-  }
-
-  function onTouchStart(evt) {
-    evt.preventDefault();
-    api._lastTouchAt = Date.now();
-    var t = evt.touches[0];
-    if (t) handleDown(touchPos(t));
-  }
-
-  function onTouchMove(evt) {
-    evt.preventDefault();
-    var t = evt.touches[0];
-    if (t) handleMove(touchPos(t));
-  }
-
-  function onTouchEnd(evt) {
-    evt.preventDefault();
-    var t = evt.changedTouches[0];
-    if (t) handleUp(touchPos(t));
   }
 
   function isClickable(c, r) {
