@@ -372,6 +372,10 @@ window.DroneDeploy = (function () {
     var scan = {
       drones: drones,
       corners: corners,
+      // camera frame these cached screen coords were built in — renderZone
+      // shifts them by the camera delta while the player pans, keeping the
+      // beam and drone glued to the map
+      camStart: { x: g.camera.x, y: g.camera.y },
       alpha: 0,       // overall cone+heatmap visibility (fade in/hold/fade out)
       pulse: CONE_PULSE_LO, // cone-opacity pulse multiplier during the hold
       heat: 0,        // heatmap gradient-drift phase during the hold
@@ -578,6 +582,14 @@ window.DroneDeploy = (function () {
       positions = [{ x: cp.x, y: groundTopY(ct.col, ct.row) - FLY_LIFT }];
     }
     api._stopExit(zone);
+
+    // camera anchor for the fly-away: the frame its cached screen positions
+    // were computed in (the scan-start frame when inheriting the scan's
+    // drones; the current frame when the fallback positions were built fresh
+    // just above), so panning keeps the departing drone glued to the map
+    var exitCam = window.IsoGrid ? window.IsoGrid.camera : null;
+    zone.camStart = (zone.scan && zone.scan.camStart) || (exitCam ? { x: exitCam.x, y: exitCam.y } : null);
+
     zone.scan = null;
     zone.status = "exiting";
 
@@ -913,8 +925,32 @@ window.DroneDeploy = (function () {
     }
   };
 
+  // camera-delta shift for a cached screen-coordinate array (corners).
+  // Returns the same array when the camera hasn't moved (zero-copy fast path).
+  function offsetCorners(corners, dx, dy) {
+    if (!dx && !dy) return corners;
+    var out = [];
+    for (var i = 0; i < corners.length; i++) {
+      out.push({ x: corners[i].x + dx, y: corners[i].y + dy });
+    }
+    return out;
+  }
+
   function renderZone(ctx, grid, zone) {
     var area = zone.area;
+
+    // camera-pan correction: the drone/corner screen coordinates cached in
+    // the scan/exit states were computed when that phase started. Shifting
+    // them by the camera delta keeps the beam and drones glued to the map
+    // while the player pans (world-space geometry like the outline is drawn
+    // from tile positions every frame, so it needs no correction).
+    var anchor = (zone.scan && zone.scan.camStart) || zone.camStart;
+    var camDx = 0;
+    var camDy = 0;
+    if (anchor && grid.camera) {
+      camDx = grid.camera.x - anchor.x;
+      camDy = grid.camera.y - anchor.y;
+    }
     // 1) in-progress drop-in (the drone settling before the scan). The scan is
     //    already committed, so show the solid cyan outline (not a blueprint).
     if (zone.drop && zone.drop.drones && zone.drop.drones.length) {
@@ -936,18 +972,19 @@ window.DroneDeploy = (function () {
     if (zone.scan) {
       var s = zone.scan;
       if (area) {
-        drawHeatmap(ctx, area, s.corners, s.alpha, s.heat, s.heatPulse);
+        var c = offsetCorners(s.corners, camDx, camDy);
+        drawHeatmap(ctx, area, c, s.alpha, s.heat, s.heatPulse);
         if (s.drones && s.drones.length) {
           var apexDrone = s.drones[0];
-          drawCone(ctx, area, s.corners, { x: apexDrone.x, y: apexDrone.y - (s.bob || 0) * BOB_AMP }, s.alpha, s.pulse);
+          drawCone(ctx, area, c, { x: apexDrone.x + camDx, y: apexDrone.y + camDy - (s.bob || 0) * BOB_AMP }, s.alpha, s.pulse);
         }
-        drawSweep(ctx, s.corners, s.alpha, s.sweep);
+        drawSweep(ctx, c, s.alpha, s.sweep);
         drawAreaOutline(ctx, area, [], OUTLINE_COLOR, 1, 6, 2.5);
       }
       for (var si = 0; si < s.drones.length; si++) {
         var sd = s.drones[si];
         // idle-bob: the drone lifts the same small offset during hold
-        drawMarkerAt(ctx, sd.x, sd.y - (s.bob || 0) * BOB_AMP, 1, { x: sd.hx, y: sd.hy });
+        drawMarkerAt(ctx, sd.x + camDx, sd.y + camDy - (s.bob || 0) * BOB_AMP, 1, { x: sd.hx, y: sd.hy });
       }
       return;
     }
@@ -961,7 +998,7 @@ window.DroneDeploy = (function () {
       if (area) drawAreaOutline(ctx, area, [], OUTLINE_COLOR, eAlpha, 8, 2.5);
       for (var ei = 0; ei < zone.exit.drones.length; ei++) {
         var ed = zone.exit.drones[ei];
-        drawMarkerAt(ctx, ed.x, ed.y, ed.alpha, { x: ed.hx, y: ed.hy });
+        drawMarkerAt(ctx, ed.x + camDx, ed.y + camDy, ed.alpha, { x: ed.hx, y: ed.hy });
       }
       return;
     }
