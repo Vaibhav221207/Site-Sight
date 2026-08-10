@@ -922,7 +922,10 @@ body.touch-ui .fs-btn {
 }
 
 body.touch-ui #tile-popup {
-  right: calc(env(safe-area-inset-right, 0px) + 84px);
+  top: auto;
+  bottom: 60px;
+  left: 12px;
+  right: auto;
 }
 
 .hud {
