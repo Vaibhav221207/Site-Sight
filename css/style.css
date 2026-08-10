@@ -703,20 +703,30 @@ body {
   .hq-fs-drone-cost { font-size: 14px; }
   .hq-order-btn { padding: 7px 16px; font-size: 12px; }
 
-  /* Tile info popup: shift left on touch-ui to avoid the right-edge rail;
-     viewport-relative width, scrolls if content is taller than the space. */
+  /* Tile info popup: bottom-left chip on mobile so it never blocks the map;
+     tiny footprint, scrolls if content overflows. */
   #tile-popup {
     width: auto;
-    max-width: 58vw;
-    max-height: calc(100vh - 104px);
+    max-width: 200px;
+    max-height: 160px;
     overflow-y: auto;
-    top: 8px;
-    right: 8px;
+    top: auto;
+    bottom: 60px;
+    left: 12px;
+    right: auto;
+    border-radius: 12px;
   }
   body.touch-ui #tile-popup {
-    right: 84px;
-    max-width: calc(58vw - 76px);
+    bottom: 60px;
+    left: 12px;
+    right: auto;
   }
+  .panel-header { padding: 8px 10px; }
+  .panel-title { font-size: 11px; }
+  .panel-close { width: 24px; height: 24px; font-size: 13px; }
+  .panel-body { padding: 8px 10px; }
+  .tile-coords { font-size: 11px; margin-bottom: 4px; }
+  .placeholder { font-size: 11px; line-height: 1.4; }
   .panel-header { padding: 10px 14px; }
   .panel-title { font-size: 12px; }
   .panel-close { width: 28px; height: 28px; font-size: 15px; }

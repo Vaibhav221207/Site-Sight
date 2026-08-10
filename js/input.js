@@ -145,6 +145,11 @@ window.InputHandler = (function () {
       Math.pow(pos.x - api._dragStart.x, 2) + Math.pow(pos.y - api._dragStart.y, 2)
     );
     if (moved < DRAG_THRESHOLD) {
+      // if the tile popup is open, close it first — a tap anywhere on the
+      // canvas should dismiss the card so it never blocks the map on mobile
+      if (window.TilePanel && window.TilePanel.isOpen) {
+        window.TilePanel.hide();
+      }
       var tile = api.grid.screenToTile(pos.x, pos.y);
       // touch devices: exact diamond hit, else fat-finger snap to the
       // nearest tile center (desktop keeps the strict hit test)
