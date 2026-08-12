@@ -87,6 +87,222 @@ window.HqPanel = (function () {
     if (name === "inventory") {
       api.renderInventory();
     }
+    if (name === "data") {
+      api.initDataMap();
+    }
+  };
+
+  // ---- DATA tab: isometric survey map -------------------------------------
+  api._dataMapInit = false;
+  api._dataMapAnim = null;
+
+  api.initDataMap = function () {
+    if (api._dataMapInit) return;
+    api._dataMapInit = true;
+
+    var canvas = document.getElementById("hq-data-map");
+    var select = document.getElementById("hq-data-layer");
+    var legendEl = document.getElementById("hq-data-legend");
+    var legendToggle = document.getElementById("hq-data-legend-toggle");
+    var summaryEl = document.getElementById("hq-data-summary");
+
+    if (!canvas || !window.LandData || !window.IsoGrid) return;
+
+    var ctx = canvas.getContext("2d");
+    var grid = window.IsoGrid;
+    var iso = grid.isoSize;
+    var half = iso / 2;
+
+    // match the panel's internal scale (css pixels) — canvas is 600x600
+    var cs = 600;
+    canvas.width = cs;
+    canvas.height = cs;
+    canvas.style.width = cs + "px";
+    canvas.style.height = cs + "px";
+
+    var layers = [
+      { id: "terrain", name: "Terrain", getColor: function (t) { return window.LandData.TERRAIN_COLORS[t.terrain] || "#333"; } },
+      { id: "quality", name: "Soil Quality", getColor: function (t) { return window.LandData.getQualityColor(t.quality); } },
+      { id: "stability", name: "Stability", getColor: function (t) { return window.LandData.getStabilityColor(t.stability); } },
+      { id: "water", name: "Water Table", getColor: function (t) { return window.LandData.getWaterColor(t.waterTable); } },
+      { id: "mineral", name: "Minerals", getColor: function (t) { return window.LandData.MINERAL_COLORS[t.mineral] || "transparent"; } },
+      { id: "scanned", name: "Scanned", getColor: function (t) { return t.scanned ? "#00cc66" : "#2a2038"; } }
+    ];
+
+    var currentLayer = 0;
+
+    function drawMap() {
+      ctx.clearRect(0, 0, cs, cs);
+      // center the 20x20 grid in the 600x600 canvas
+      var originX = cs / 2;
+      var originY = cs / 2 - (GRID_SIZE - 1) * half / 2;
+
+      var tiles = window.LandData.getAllTiles();
+
+      for (var i = 0; i < tiles.length; i++) {
+        var t = tiles[i];
+        var p = grid.worldToScreen(t.col, t.row);
+        // convert grid screen coords to canvas coords
+        var cx = originX + p.x;
+        var cy = originY + p.y - t.elevation; // elevation raises the tile
+
+        var layer = layers[currentLayer];
+        var color = layer.getColor(t);
+
+        // draw diamond (tile top face)
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - half);
+        ctx.lineTo(cx + iso, cy);
+        ctx.lineTo(cx, cy + half);
+        ctx.lineTo(cx - iso, cy);
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
+
+        // subtle grid lines
+        ctx.strokeStyle = "rgba(255,255,255,0.03)";
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+
+        // HQ marker
+        if (t.isHQ) {
+          ctx.fillStyle = "#ffcc00";
+          ctx.beginPath();
+          ctx.arc(cx, cy - half - 4, 5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+
+    function renderSummary() {
+      if (!summaryEl) return;
+      var s = window.LandData.getSummary();
+      var tc = s.terrainCounts;
+      summaryEl.innerHTML =
+        '<div class="hq-data-summary-row"><span>Tiles Scanned</span><strong>' + s.scannedTiles + ' / ' + s.totalTiles + ' (' + s.scannedPct + '%)</strong></div>' +
+        '<div class="hq-data-summary-row"><span>Avg Soil Quality</span><strong>' + s.avgQuality + '/100</strong></div>' +
+        '<div class="hq-data-summary-row"><span>Avg Stability</span><strong>' + s.avgStability + '/100</strong></div>' +
+        '<div class="hq-data-summary-row"><span>Avg Water Table</span><strong>' + s.avgWaterTable + 'm</strong></div>' +
+        '<div class="hq-data-summary-row"><span>Land / Hill / River / Trench / HQ</span><strong>' + tc.land + ' / ' + tc.hill + ' / ' + tc.river + ' / ' + tc.trench + ' / ' + tc.hq + '</strong></div>' +
+        '<div class="hq-data-summary-row"><span>Minerals Found</span><strong>Iron: ' + s.mineralCounts.iron + '  Copper: ' + s.mineralCounts.copper + '  Gold: ' + s.mineralCounts.gold + '</strong></div>';
+    }
+
+    function animateLayerSwitch() {
+      if (api._dataMapAnim) api._dataMapAnim.pause();
+      var layer = layers[currentLayer];
+      // fade out canvas, swap, fade in
+      api._dataMapAnim = anime({
+        targets: canvas,
+        opacity: [1, 0],
+        duration: 150,
+        easing: "easeOutQuad",
+        complete: function () {
+          drawMap();
+          anime({
+            targets: canvas,
+            opacity: [0, 1],
+            duration: 250,
+            easing: "easeOutCubic"
+          });
+        }
+      });
+      // animate layer label
+      var title = document.querySelector(".hq-data-map-title");
+      if (title) {
+        anime({
+          targets: title,
+          opacity: [1, 0, 1],
+          translateY: [0, -8, 0],
+          duration: 300,
+          easing: "easeOutCubic"
+        });
+      }
+    }
+
+    function updateLegend() {
+      if (!legendEl) return;
+      var layer = layers[currentLayer];
+      var html = '<div class="hq-data-legend-title">' + layer.name + '</div>';
+
+      if (layer.id === "terrain") {
+        html += '<div class="hq-data-legend-row"><span class="hq-data-legend-swatch" style="background:#4a5a3a"></span>Land</div>';
+        html += '<div class="hq-data-legend-row"><span class="hq-data-legend-swatch" style="background:#7a6a4a"></span>Hill</div>';
+        html += '<div class="hq-data-legend-row"><span class="hq-data-legend-swatch" style="background:#1a5a8a"></span>River</div>';
+        html += '<div class="hq-data-legend-row"><span class="hq-data-legend-swatch" style="background:#2a1a3a"></span>Trench</div>';
+        html += '<div class="hq-data-legend-row"><span class="hq-data-legend-swatch" style="background:#ffcc00"></span>HQ</div>';
+      } else if (layer.id === "mineral") {
+        html += '<div class="hq-data-legend-row"><span class="hq-data-legend-swatch" style="background:#a05030"></span>Iron</div>';
+        html += '<div class="hq-data-legend-row"><span class="hq-data-legend-swatch" style="background:#b87333"></span>Copper</div>';
+        html += '<div class="hq-data-legend-row"><span class="hq-data-legend-swatch" style="background:#ffd700"></span>Gold</div>';
+        html += '<div class="hq-data-legend-row"><span class="hq-data-legend-swatch" style="background:repeating-linear-gradient(45deg,transparent,transparent 5px,#333 5px,#333 10px)"></span>None</div>';
+      } else if (layer.id === "scanned") {
+        html += '<div class="hq-data-legend-row"><span class="hq-data-legend-swatch" style="background:#00cc66"></span>Scanned</div>';
+        html += '<div class="hq-data-legend-row"><span class="hq-data-legend-swatch" style="background:#2a2038"></span>Unscanned</div>';
+      } else {
+        // gradient bar for continuous values
+        var stops = 5;
+        var grad = 'linear-gradient(to right, ';
+        if (layer.id === "quality") {
+          grad += '#2a2038, #4a3068, #007b8f, #00b87c, #7fff4f';
+        } else if (layer.id === "stability") {
+          grad += '#381010, #8b2020, #cc7700, #007b40, #00cc66';
+        } else if (layer.id === "water") {
+          grad += '#081830, #0a3060, #0060a0, #00a0d0, #40d0ff';
+        }
+        grad += ')';
+        html += '<div class="hq-data-legend-gradient" style="background:' + grad + '"></div>';
+        html += '<div class="hq-data-legend-labels"><span>Low</span><span>High</span></div>';
+      }
+      legendEl.innerHTML = html;
+    }
+
+    // initial draw
+    drawMap();
+    renderSummary();
+    updateLegend();
+
+    // layer select
+    if (select) {
+      select.addEventListener("change", function () {
+        currentLayer = layers.findIndex(function (l) { return l.id === select.value; });
+        animateLayerSwitch();
+        updateLegend();
+      });
+    }
+
+    // legend toggle
+    if (legendToggle && legendEl) {
+      legendToggle.addEventListener("click", function () {
+        legendEl.classList.toggle("hidden");
+        var open = !legendEl.classList.contains("hidden");
+        anime({
+          targets: legendEl,
+          opacity: [open ? 0 : 1, open ? 1 : 0],
+          height: open ? [0, "auto"] : ["auto", 0],
+          duration: 200,
+          easing: "easeOutCubic"
+        });
+      });
+    }
+
+    // initial entrance animation
+    if (typeof anime !== "undefined" && anime) {
+      anime({
+        targets: canvas,
+        opacity: [0, 1],
+        scale: [0.95, 1],
+        duration: 500,
+        easing: "easeOutCubic"
+      });
+      anime({
+        targets: ".hq-data-map-header, .hq-data-summary",
+        opacity: [0, 1],
+        translateY: [10, 0],
+        delay: anime.stagger(80),
+        duration: 400,
+        easing: "easeOutCubic"
+      });
+    }
   };
 
   api.updateOwned = function () {

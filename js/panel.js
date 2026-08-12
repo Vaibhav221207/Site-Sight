@@ -82,18 +82,60 @@ window.TilePanel = (function () {
     api.currentTile = { col: col, row: row };
     api.isHQ = isHQ;
     var titleEl = api.panel.querySelector(".panel-title");
+    var bodyEl = api.panel.querySelector(".panel-body");
+
     if (isHQ) {
       if (titleEl) titleEl.textContent = "CONTECH HQ";
       api.placeholderEl.style.display = "none";
       api.hqContent.style.display = "";
-    } else {
-      if (titleEl) titleEl.textContent = "SITE INSPECTION";
-      var isMobile = window.MobileUI && window.MobileUI.enabled;
+      if (bodyEl) bodyEl.style.display = "";
+      return;
+    }
+
+    if (titleEl) titleEl.textContent = "SITE INSPECTION";
+    api.hqContent.style.display = "none";
+    api.placeholderEl.style.display = "none";
+
+    // realistic tile data from LandData
+    var data = window.LandData && window.LandData.getTileData(col, row);
+    var isMobile = window.MobileUI && window.MobileUI.enabled;
+
+    if (!data) {
       api.placeholderEl.textContent = isMobile
         ? "NO DATA — BUILD HQ"
         : "NO DATA AVAILABLE — CONTECH HQ NOT YET CONSTRUCTED";
       api.placeholderEl.style.display = "";
-      api.hqContent.style.display = "none";
+      if (bodyEl) bodyEl.style.display = "none";
+      return;
+    }
+
+    // build rich data rows
+    var L = window.LandData;
+    var gradeLabel = L.GRADE_LABELS[data.grade] || data.grade;
+    var soilLabel = L.SOIL_LABELS[data.soil] || data.soil;
+    var vegLabel = L.VEGETATION_LABELS[data.vegetation] || data.vegetation;
+    var mineralLabel = data.mineral === "none" ? "None detected" : data.mineral.toUpperCase() + " deposit";
+
+    var rows = [
+      { label: "GRADE", value: gradeLabel, class: "panel-data-grade" },
+      { label: "TERRAIN", value: data.terrain.toUpperCase() },
+      { label: "ELEVATION", value: data.elevation + "m" },
+      { label: "SOIL TYPE", value: soilLabel },
+      { label: "SOIL QUALITY", value: data.quality + "/100" },
+      { label: "STABILITY", value: data.stability + "/100" },
+      { label: "WATER TABLE", value: data.waterTable + "m depth" },
+      { label: "VEGETATION", value: vegLabel },
+      { label: "MINERALS", value: mineralLabel }
+    ];
+
+    if (bodyEl) {
+      bodyEl.style.display = "";
+      bodyEl.innerHTML = rows.map(function (r) {
+        return '<div class="panel-data-row' + (r.class ? " " + r.class : "") + '">' +
+          '<span class="panel-data-label">' + r.label + '</span>' +
+          '<span class="panel-data-value">' + r.value + '</span>' +
+        '</div>';
+      }).join("");
     }
   };
 

@@ -50,8 +50,28 @@
           </nav>
           <div class="hq-fs-content">
             <div id="hq-section-data" class="hq-fs-section" style="display:none">
-              <div class="hq-fs-placeholder">Coming soon</div>
+          <div class="hq-data-map-wrap">
+            <div class="hq-data-map-header">
+              <span class="hq-data-map-title">SITE SURVEY MAP</span>
+              <div class="hq-data-map-controls">
+                <select id="hq-data-layer" class="hq-data-select">
+                  <option value="terrain">Terrain</option>
+                  <option value="quality">Soil Quality</option>
+                  <option value="stability">Stability</option>
+                  <option value="water">Water Table</option>
+                  <option value="mineral">Minerals</option>
+                  <option value="scanned">Scanned Status</option>
+                </select>
+                <button id="hq-data-legend-toggle" class="hq-data-btn" title="Toggle Legend">🗝</button>
+              </div>
             </div>
+            <div class="hq-data-map-canvas-wrap">
+              <canvas id="hq-data-map" width="600" height="600"></canvas>
+            </div>
+            <div id="hq-data-legend" class="hq-data-legend hidden"></div>
+          </div>
+          <div class="hq-data-summary" id="hq-data-summary"></div>
+        </div>
             <div id="hq-section-inventory" class="hq-fs-section" style="display:none">
               <div class="hq-fs-placeholder">Coming soon</div>
             </div>
@@ -146,7 +166,8 @@
     <script src="js/input.js"></script>
     <script src="js/panel.js"></script>
     <script src="js/gameState.js"></script>
-      <script src="js/hqBuild.js"></script>
+      <script src="js/landData.js"></script>
+    <script src="js/hqBuild.js"></script>
     <script src="js/droneDeploy.js"></script>
     <script src="js/buildMenu.js"></script>
     <script src="js/hqPanel.js"></script>
