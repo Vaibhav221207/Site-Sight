@@ -583,7 +583,14 @@ window.GprDeploy = (function () {
   function drawGroundGlow(ctx, area, corners, rover, alpha, ground) {
     if (!area || !corners || !rover || alpha <= 0.01) return;
     var a = alpha * (0.4 + 0.6 * ground);
-    var grad = ctx.createRadialGradient(rover.x, rover.y, 1, rover.x, rover.y, (corners.BR.x - corners.TL.x) * 0.75);
+    // radius from the POSITIVE bounding box of the iso-projected quad (never a
+    // negative span, which would throw on createRadialGradient)
+    var xs = [corners.TL.x, corners.TR.x, corners.BL.x, corners.BR.x];
+    var ys = [corners.TL.y, corners.TR.y, corners.BL.y, corners.BR.y];
+    var maxX = Math.max.apply(null, xs), minX = Math.min.apply(null, xs);
+    var maxY = Math.max.apply(null, ys), minY = Math.min.apply(null, ys);
+    var rr = Math.max(maxX - minX, maxY - minY) * 0.6;
+    var grad = ctx.createRadialGradient(rover.x, rover.y, 1, rover.x, rover.y, rr);
     grad.addColorStop(0, "rgba(193, 124, 255, " + (0.45 * a) + ")");
     grad.addColorStop(0.5, "rgba(150, 60, 200, " + (0.28 * a) + ")");
     grad.addColorStop(1, "rgba(90, 30, 150, " + (0.04 * a) + ")");
@@ -607,7 +614,13 @@ window.GprDeploy = (function () {
     if (!corners || !rover || alpha <= 0.01) return;
     var a = alpha * (pulse != null ? pulse : 1);
     if (a <= 0.01) return;
-    var maxR = (corners.BR.x - corners.TL.x) * 0.95;
+    // positive bounding-box radius of the iso-projected quad (never negative,
+    // so ellipse() never throws)
+    var xs = [corners.TL.x, corners.TR.x, corners.BL.x, corners.BR.x];
+    var ys = [corners.TL.y, corners.TR.y, corners.BL.y, corners.BR.y];
+    var maxX = Math.max.apply(null, xs), minX = Math.min.apply(null, xs);
+    var maxY = Math.max.apply(null, ys), minY = Math.min.apply(null, ys);
+    var maxR = Math.max(maxX - minX, maxY - minY) * 0.5;
     var ySquash = 0.5;
     var RING_COUNT = 5;
     ctx.save();

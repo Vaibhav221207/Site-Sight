@@ -64,8 +64,17 @@ window.Main = (function () {
   }
 
   function loop() {
-    window.BlockRender.tick();
-    render();
+    try {
+      window.BlockRender.tick();
+      render();
+    } catch (err) {
+      // A single bad frame must NEVER kill the rAF loop (that would freeze
+      // every animation on the map). Log once and keep going.
+      if (!loop._warned) {
+        loop._warned = true;
+        console.error("[Main] render frame error (suppressed to keep loop alive):", err);
+      }
+    }
     rafId = requestAnimationFrame(loop);
   }
 
