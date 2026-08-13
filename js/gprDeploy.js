@@ -33,17 +33,17 @@ window.GprDeploy = (function () {
   var DROP_DUR = 420;          // rover drives in
   var SCAN_MOVE_DUR = 600;     // rover settles to its survey position
   var SCAN_FADE_IN_DUR = 450;  // radar rings + ground pulse fade in
-  var SCAN_HOLD_DUR = 2800;    // hold at full visibility (looping radar pulse)
+  var SCAN_HOLD_DUR = 6500;    // hold at full visibility (calm, a couple of sweep passes)
   var SCAN_FADE_OUT_DUR = 450; // radar rings + ground pulse fade out
   var EXIT_DUR = 550;          // rover drives away + fades
   var EXIT_RISE = 60;          // px the departing rover slides (it drives off)
   var HOVER_RISE = 0;          // ground-based: rover sits ON the surface
   var RING_PULSE_LO = 0.2;     // ring-opacity pulse floor during the hold
   var RING_PULSE_HI = 0.85;    // ring-opacity pulse ceiling during the hold
-  var RING_PULSE_DUR = 675;    // ring pulse half-cycle (ms, alternate)
+  var RING_PULSE_DUR = 1500;   // glow/scanline brightness pulse half-cycle (ms)
   var GROUND_PULSE_LO = 0.18;  // ground glow pulse floor
   var GROUND_PULSE_HI = 0.5;   // ground glow pulse ceiling
-  var GROUND_LOOP_DUR = 675;   // ground glow drift loop (ms, alternate)
+  var GROUND_LOOP_DUR = 2000;  // one-way scan-line pass (ms) — slow, calm sweep
 
   var AREA_W = 5;
   var AREA_H = 10;
@@ -280,6 +280,7 @@ window.GprDeploy = (function () {
       ground: GROUND_PULSE_LO,
       ringPhase: 0,
       sweep: 0,
+      maxSweep: 0,
       progress: 0,
       t0: Date.now(),
       tween: null,
@@ -353,11 +354,13 @@ window.GprDeploy = (function () {
         update: function () { if (zone.scan) scanProgress(); },
       });
       s.sweep = 0;
+      s.maxSweep = 0;
       s.sweepTween = anime({
         targets: s,
         sweep: [0, 1],
         duration: GROUND_LOOP_DUR,
         easing: "easeInOutSine",
+        direction: "alternate",
         loop: true,
         update: function () { if (zone.scan) scanProgress(); },
       });
@@ -610,11 +613,13 @@ window.GprDeploy = (function () {
   }
 
   // GPR ground read: every tile in the chunk footprint draws as an isometric
-  // diamond. Tiles the scanline has already passed (rowFrac <= sweep) light up
-  // in amber and fade with "age"; tiles not yet reached show only a faint
-  // outline. Everything is drawn at real tile positions, so the effect is
-  // strictly confined to the land — no waves leaving the survey area.
-  function drawGprTileRead(ctx, area, anchor, alpha, sweep) {
+  // diamond. A tile stays "read" once the scan-line has ever reached it
+  // (coverage = litSweep, which only grows), so the survey doesn't un-record
+  // data when the line reverses. Brightness follows the CURRENT line position
+  // (sweep), so a glow travels with the sensor both down and back up. Tiles not
+  // yet reached show only a faint outline. Everything is drawn at real tile
+  // positions, so the effect is strictly confined to the land.
+  function drawGprTileRead(ctx, area, anchor, alpha, litSweep, sweep) {
     if (!area || !area.tiles || !area.tiles.length || alpha <= 0.01) return;
     var g = window.IsoGrid;
     if (!g) return;
@@ -626,9 +631,10 @@ window.GprDeploy = (function () {
       var rowFrac = (t.row - area.rMin) / span;
       var p = projectFrom(anchor, { x: tileScreen(t.col, t.row).x, y: groundTopY(t.col, t.row) });
       var cx = p.x, cy = p.y;
-      if (rowFrac <= sweep + 0.015) {
-        var age = Math.max(0, sweep - rowFrac);
-        var a2 = alpha * (0.22 + 0.6 * Math.max(0, 1 - age * 1.3));
+      if (rowFrac <= litSweep + 0.015) {
+        // distance from the current scan-line -> glow follows the sensor
+        var dist = Math.abs(sweep - rowFrac);
+        var a2 = alpha * (0.2 + 0.62 * Math.max(0, 1 - dist * 1.6));
         ctx.globalAlpha = a2;
         ctx.fillStyle = RING_COLOR;
         ctx.beginPath();
@@ -772,11 +778,12 @@ window.GprDeploy = (function () {
 
     if (zone.scan) {
       var s = zone.scan;
+      s.maxSweep = Math.max(s.maxSweep || 0, s.sweep);
       if (area) {
         var c = projectCorners(anchor, s.corners);
         // footprint-confined ground scan (no expanding rings off the land)
         drawGroundGlow(ctx, area, c, s.alpha, s.ground);
-        drawGprTileRead(ctx, area, anchor, s.alpha, s.sweep);
+        drawGprTileRead(ctx, area, anchor, s.alpha, s.maxSweep, s.sweep);
         drawGprScanline(ctx, c, s.alpha, s.sweep);
         drawGprDepthTicks(ctx, c, s.alpha, s.sweep);
         drawAreaOutline(ctx, area, [], OUTLINE_COLOR, 1, 6, 2.5);
