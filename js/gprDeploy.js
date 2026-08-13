@@ -686,16 +686,16 @@ window.GprDeploy = (function () {
     var g = window.IsoGrid;
     if (!g) return;
     var iso = g.isoSize, half = iso / 2;
-    var span = (area.rMax - area.rMin) || 1;
+    var cspan = (area.cMax - area.cMin) || 1;
     ctx.save();
     for (var i = 0; i < area.tiles.length; i++) {
       var t = area.tiles[i];
-      var rowFrac = (t.row - area.rMin) / span;
+      var colFrac = (t.col - area.cMin) / cspan;
       var p = projectFrom(anchor, { x: tileScreen(t.col, t.row).x, y: groundTopY(t.col, t.row) });
       var cx = p.x, cy = p.y;
-      if (rowFrac <= litSweep + 0.015) {
+      if (colFrac <= litSweep + 0.015) {
         // distance from the current scan-line -> glow follows the sensor
-        var dist = Math.abs(sweep - rowFrac);
+        var dist = Math.abs(sweep - colFrac);
         var a2 = alpha * (0.2 + 0.62 * Math.max(0, 1 - dist * 1.6));
         ctx.globalAlpha = a2;
         ctx.fillStyle = RING_COLOR;
@@ -722,20 +722,20 @@ window.GprDeploy = (function () {
     ctx.restore();
   }
 
-  // GPR scan-line: a single bright amber line sweeping north->south across the
-  // footprint, clipped to the exact chunk quad so it never crosses the land
-  // boundary. This replaces the old expanding-ring pulse.
+  // GPR scan-line: a single bright amber line (running north<->south across the
+  // footprint) that sweeps west->east across the surface, clipped to the exact
+  // chunk quad so it never crosses the land boundary.
   function drawGprScanline(ctx, corners, alpha, sweep) {
     if (!corners || alpha <= 0.01) return;
     var g = window.IsoGrid;
     var iso = g ? g.isoSize : 48;
     var topPt = {
-      x: corners.TL.x + (corners.BL.x - corners.TL.x) * sweep,
-      y: corners.TL.y + (corners.BL.y - corners.TL.y) * sweep
+      x: corners.TL.x + (corners.TR.x - corners.TL.x) * sweep,
+      y: corners.TL.y + (corners.TR.y - corners.TL.y) * sweep
     };
     var botPt = {
-      x: corners.TR.x + (corners.BR.x - corners.TR.x) * sweep,
-      y: corners.TR.y + (corners.BR.y - corners.TR.y) * sweep
+      x: corners.BL.x + (corners.BR.x - corners.BL.x) * sweep,
+      y: corners.BL.y + (corners.BR.y - corners.BL.y) * sweep
     };
     ctx.save();
     ctx.beginPath();
@@ -771,12 +771,12 @@ window.GprDeploy = (function () {
     var g = window.IsoGrid;
     var iso = g ? g.isoSize : 48;
     var topPt = {
-      x: corners.TL.x + (corners.BL.x - corners.TL.x) * sweep,
-      y: corners.TL.y + (corners.BL.y - corners.TL.y) * sweep
+      x: corners.TL.x + (corners.TR.x - corners.TL.x) * sweep,
+      y: corners.TL.y + (corners.TR.y - corners.TL.y) * sweep
     };
     var botPt = {
-      x: corners.TR.x + (corners.BR.x - corners.TR.x) * sweep,
-      y: corners.TR.y + (corners.BR.y - corners.TR.y) * sweep
+      x: corners.BL.x + (corners.BR.x - corners.BL.x) * sweep,
+      y: corners.BL.y + (corners.BR.y - corners.BL.y) * sweep
     };
     ctx.save();
     ctx.strokeStyle = "rgba(255, 196, 96, " + (0.5 * alpha) + ")";
@@ -850,11 +850,11 @@ window.GprDeploy = (function () {
         drawGprDepthTicks(ctx, c, s.alpha, s.sweep);
         drawAreaOutline(ctx, area, [], OUTLINE_COLOR, 1, 6, 2.5);
       }
-      // the rover drives the scan-line, sitting on the land at the current row
+      // the rover drives the scan-line, moving west->east along a fixed row
       var roverScreen = area
         ? projectFrom(anchor, {
-            x: tileScreen(area.centerCol, area.rMin + s.sweep * (area.rMax - area.rMin)).x,
-            y: groundTopY(area.centerCol, area.rMin + s.sweep * (area.rMax - area.rMin))
+            x: tileScreen(area.cMin + s.sweep * (area.cMax - area.cMin), area.row).x,
+            y: groundTopY(area.cMin + s.sweep * (area.cMax - area.cMin), area.row)
           })
         : (s.rovers && s.rovers.length ? projectFrom(anchor, s.rovers[0]) : null);
       if (roverScreen) drawRoverAt(ctx, roverScreen.x, roverScreen.y, 1);
