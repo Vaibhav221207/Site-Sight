@@ -358,7 +358,6 @@ window.GprDeploy = (function () {
         sweep: [0, 1],
         duration: GROUND_LOOP_DUR,
         easing: "easeInOutSine",
-        direction: "alternate",
         loop: true,
         update: function () { if (zone.scan) scanProgress(); },
       });
@@ -581,22 +580,23 @@ window.GprDeploy = (function () {
     ctx.restore();
   }
 
-  // ground radar glow: fills the chunk footprint with a violet radial gradient
-  // from the rover position outward, pulsing with `ground`.
-  function drawGroundGlow(ctx, area, corners, rover, alpha, ground) {
-    if (!area || !corners || !rover || alpha <= 0.01) return;
-    var a = alpha * (0.4 + 0.6 * ground);
-    // radius from the POSITIVE bounding box of the iso-projected quad (never a
-    // negative span, which would throw on createRadialGradient)
+  // ground radar glow: a soft amber wash confined to the chunk footprint,
+  // pulsing with `ground`. Centered on the footprint centroid (never the rover),
+  // so it never spills outside the surveyed land.
+  function drawGroundGlow(ctx, area, corners, alpha, ground) {
+    if (!area || !corners || alpha <= 0.01) return;
+    var a = alpha * (0.18 + 0.22 * ground);
+    var cx = (corners.TL.x + corners.TR.x + corners.BR.x + corners.BL.x) / 4;
+    var cy = (corners.TL.y + corners.TR.y + corners.BR.y + corners.BL.y) / 4;
     var xs = [corners.TL.x, corners.TR.x, corners.BL.x, corners.BR.x];
     var ys = [corners.TL.y, corners.TR.y, corners.BL.y, corners.BR.y];
     var maxX = Math.max.apply(null, xs), minX = Math.min.apply(null, xs);
     var maxY = Math.max.apply(null, ys), minY = Math.min.apply(null, ys);
     var rr = Math.max(maxX - minX, maxY - minY) * 0.6;
-    var grad = ctx.createRadialGradient(rover.x, rover.y, 1, rover.x, rover.y, rr);
-    grad.addColorStop(0, "rgba(255, 210, 122, " + (0.5 * a) + ")");
-    grad.addColorStop(0.5, "rgba(255, 176, 46, " + (0.3 * a) + ")");
-    grad.addColorStop(1, "rgba(120, 60, 10, " + (0.04 * a) + ")");
+    var grad = ctx.createRadialGradient(cx, cy, 1, cx, cy, rr);
+    grad.addColorStop(0, "rgba(255, 200, 110, " + (0.5 * a) + ")");
+    grad.addColorStop(0.5, "rgba(255, 176, 46, " + (0.28 * a) + ")");
+    grad.addColorStop(1, "rgba(120, 60, 10, " + (0.02 * a) + ")");
     ctx.save();
     ctx.fillStyle = grad;
     ctx.beginPath();
@@ -609,59 +609,66 @@ window.GprDeploy = (function () {
     ctx.restore();
   }
 
-  // expanding radar rings centered on the rover, on the ground plane (isometric
-  // ellipses). `ringPhase` 0..1 drives the leading ring; a trailing set of rings
-  // lags behind for a continuous pulse. Brighter + more rings than the prototype
-  // so the GPR sweep clearly reads as "scanning the earth".
-  function drawRadarRings(ctx, corners, rover, alpha, pulse, ringPhase) {
-    if (!corners || !rover || alpha <= 0.01) return;
-    var a = alpha * (pulse != null ? pulse : 1);
-    if (a <= 0.01) return;
-    // positive bounding-box radius of the iso-projected quad (never negative,
-    // so ellipse() never throws)
-    var xs = [corners.TL.x, corners.TR.x, corners.BL.x, corners.BR.x];
-    var ys = [corners.TL.y, corners.TR.y, corners.BL.y, corners.BR.y];
-    var maxX = Math.max.apply(null, xs), minX = Math.min.apply(null, xs);
-    var maxY = Math.max.apply(null, ys), minY = Math.min.apply(null, ys);
-    var maxR = Math.max(maxX - minX, maxY - minY) * 0.5;
-    var ySquash = 0.5;
-    var RING_COUNT = 5;
+  // GPR ground read: every tile in the chunk footprint draws as an isometric
+  // diamond. Tiles the scanline has already passed (rowFrac <= sweep) light up
+  // in amber and fade with "age"; tiles not yet reached show only a faint
+  // outline. Everything is drawn at real tile positions, so the effect is
+  // strictly confined to the land — no waves leaving the survey area.
+  function drawGprTileRead(ctx, area, anchor, alpha, sweep) {
+    if (!area || !area.tiles || !area.tiles.length || alpha <= 0.01) return;
+    var g = window.IsoGrid;
+    if (!g) return;
+    var iso = g.isoSize, half = iso / 2;
+    var span = (area.rMax - area.rMin) || 1;
     ctx.save();
-    ctx.strokeStyle = RING_COLOR;
-    ctx.shadowColor = RING_COLOR;
-    ctx.shadowBlur = 12;
-    for (var k = 0; k < RING_COUNT; k++) {
-      var ph = (ringPhase + k / RING_COUNT) % 1;
-      var r = ph * maxR;
-      var ringAlpha = a * (1 - ph) * 1.0;
-      ctx.globalAlpha = ringAlpha;
-      ctx.lineWidth = Math.max(1.5, (1 - ph) * 4);
-      ctx.beginPath();
-      ctx.ellipse(rover.x, rover.y, r, r * ySquash, 0, 0, Math.PI * 2);
-      ctx.stroke();
+    for (var i = 0; i < area.tiles.length; i++) {
+      var t = area.tiles[i];
+      var rowFrac = (t.row - area.rMin) / span;
+      var p = projectFrom(anchor, { x: tileScreen(t.col, t.row).x, y: groundTopY(t.col, t.row) });
+      var cx = p.x, cy = p.y;
+      if (rowFrac <= sweep + 0.015) {
+        var age = Math.max(0, sweep - rowFrac);
+        var a2 = alpha * (0.22 + 0.6 * Math.max(0, 1 - age * 1.3));
+        ctx.globalAlpha = a2;
+        ctx.fillStyle = RING_COLOR;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - half);
+        ctx.lineTo(cx + iso, cy);
+        ctx.lineTo(cx, cy + half);
+        ctx.lineTo(cx - iso, cy);
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        ctx.globalAlpha = alpha * 0.08;
+        ctx.strokeStyle = RING_COLOR;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - half);
+        ctx.lineTo(cx + iso, cy);
+        ctx.lineTo(cx, cy + half);
+        ctx.lineTo(cx - iso, cy);
+        ctx.closePath();
+        ctx.stroke();
+      }
     }
-    // bright pulsing center marker on the rover
-    ctx.globalAlpha = a;
-    ctx.fillStyle = RING_COLOR;
-    ctx.shadowColor = RING_COLOR;
-    ctx.shadowBlur = 16;
-    ctx.beginPath();
-    ctx.arc(rover.x, rover.y, 3 + 2 * pulse, 0, Math.PI * 2);
-    ctx.fill();
     ctx.restore();
   }
 
-  // moving ground scan-line that sweeps across the chunk footprint during the
-  // hold (driven by `sweepPhase` 0..1), clipped to the exact quad so it stays
-  // inside the surveyed area — mirrors the Drone's aerial sweep line but on the
-  // ground plane (violet, not warm white).
-  function drawGroundSweep(ctx, corners, alpha, sweepPhase) {
+  // GPR scan-line: a single bright amber line sweeping north->south across the
+  // footprint, clipped to the exact chunk quad so it never crosses the land
+  // boundary. This replaces the old expanding-ring pulse.
+  function drawGprScanline(ctx, corners, alpha, sweep) {
     if (!corners || alpha <= 0.01) return;
-    var xs = [corners.TL.x, corners.TR.x, corners.BL.x, corners.BR.x];
-    var ys = [corners.TL.y, corners.TR.y, corners.BL.y, corners.BR.y];
-    var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs);
-    var y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
-    var sy = y0 + (y1 - y0) * sweepPhase;
+    var g = window.IsoGrid;
+    var iso = g ? g.isoSize : 48;
+    var topPt = {
+      x: corners.TL.x + (corners.BL.x - corners.TL.x) * sweep,
+      y: corners.TL.y + (corners.BL.y - corners.TL.y) * sweep
+    };
+    var botPt = {
+      x: corners.TR.x + (corners.BR.x - corners.TR.x) * sweep,
+      y: corners.TR.y + (corners.BR.y - corners.TR.y) * sweep
+    };
     ctx.save();
     ctx.beginPath();
     ctx.moveTo(corners.TL.x, corners.TL.y);
@@ -670,14 +677,55 @@ window.GprDeploy = (function () {
     ctx.lineTo(corners.BL.x, corners.BL.y);
     ctx.closePath();
     ctx.clip();
-    ctx.strokeStyle = "rgba(255, 214, 140, " + (0.9 * alpha) + ")";
-    ctx.lineWidth = Math.max(2, Math.min(4, (x1 - x0) * 0.006));
+    ctx.strokeStyle = "rgba(255, 226, 160, " + (0.95 * alpha) + ")";
+    ctx.lineWidth = Math.max(2.5, iso * 0.05);
     ctx.shadowColor = RING_COLOR;
-    ctx.shadowBlur = 10;
+    ctx.shadowBlur = 14;
     ctx.beginPath();
-    ctx.moveTo(x0 - 4, sy);
-    ctx.lineTo(x1 + 4, sy);
+    ctx.moveTo(topPt.x, topPt.y);
+    ctx.lineTo(botPt.x, botPt.y);
     ctx.stroke();
+    // small bright leading node on the scan-line
+    var mid = { x: (topPt.x + botPt.x) / 2, y: (topPt.y + botPt.y) / 2 };
+    ctx.fillStyle = "rgba(255, 240, 200, " + (0.9 * alpha) + ")";
+    ctx.beginPath();
+    ctx.arc(mid.x, mid.y, Math.max(2, iso * 0.04), 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Depth ticks: short amber strokes dropping below the scan-line to suggest the
+  // radar wave penetrating into the ground (the "subsurface" part of GPR) rather
+  // than radiating outward. They hang straight down from the line, so they stay
+  // within the survey strip.
+  function drawGprDepthTicks(ctx, corners, alpha, sweep) {
+    if (!corners || alpha <= 0.01) return;
+    var g = window.IsoGrid;
+    var iso = g ? g.isoSize : 48;
+    var topPt = {
+      x: corners.TL.x + (corners.BL.x - corners.TL.x) * sweep,
+      y: corners.TL.y + (corners.BL.y - corners.TL.y) * sweep
+    };
+    var botPt = {
+      x: corners.TR.x + (corners.BR.x - corners.TR.x) * sweep,
+      y: corners.TR.y + (corners.BR.y - corners.TR.y) * sweep
+    };
+    ctx.save();
+    ctx.strokeStyle = "rgba(255, 196, 96, " + (0.5 * alpha) + ")";
+    ctx.lineWidth = 2;
+    ctx.shadowColor = RING_COLOR;
+    ctx.shadowBlur = 6;
+    var N = 5;
+    for (var k = 0; k <= N; k++) {
+      var f = k / N;
+      var px = topPt.x + (botPt.x - topPt.x) * f;
+      var py = topPt.y + (botPt.y - topPt.y) * f;
+      var len = (10 + 12 * Math.sin(f * Math.PI)) * (iso / 48);
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      ctx.lineTo(px, py + len);
+      ctx.stroke();
+    }
     ctx.restore();
   }
 
@@ -726,16 +774,21 @@ window.GprDeploy = (function () {
       var s = zone.scan;
       if (area) {
         var c = projectCorners(anchor, s.corners);
-        var rover = s.rovers && s.rovers.length ? projectFrom(anchor, s.rovers[0]) : null;
-        drawGroundGlow(ctx, area, c, rover, s.alpha, s.ground);
-        drawRadarRings(ctx, c, rover, s.alpha, s.pulse, s.ringPhase);
-        drawGroundSweep(ctx, c, s.alpha, s.sweep);
+        // footprint-confined ground scan (no expanding rings off the land)
+        drawGroundGlow(ctx, area, c, s.alpha, s.ground);
+        drawGprTileRead(ctx, area, anchor, s.alpha, s.sweep);
+        drawGprScanline(ctx, c, s.alpha, s.sweep);
+        drawGprDepthTicks(ctx, c, s.alpha, s.sweep);
         drawAreaOutline(ctx, area, [], OUTLINE_COLOR, 1, 6, 2.5);
       }
-      for (var si = 0; si < s.rovers.length; si++) {
-        var sd = projectFrom(anchor, s.rovers[si]);
-        drawRoverAt(ctx, sd.x, sd.y, 1);
-      }
+      // the rover drives the scan-line, sitting on the land at the current row
+      var roverScreen = area
+        ? projectFrom(anchor, {
+            x: tileScreen(area.centerCol, area.rMin + s.sweep * (area.rMax - area.rMin)).x,
+            y: groundTopY(area.centerCol, area.rMin + s.sweep * (area.rMax - area.rMin))
+          })
+        : (s.rovers && s.rovers.length ? projectFrom(anchor, s.rovers[0]) : null);
+      if (roverScreen) drawRoverAt(ctx, roverScreen.x, roverScreen.y, 1);
       return;
     }
 
