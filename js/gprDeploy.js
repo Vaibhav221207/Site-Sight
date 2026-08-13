@@ -235,6 +235,7 @@ window.GprDeploy = (function () {
       if (zone.scan.tween) { try { zone.scan.tween.pause(); } catch (e) {} }
       if (zone.scan.pulseTween) { try { zone.scan.pulseTween.pause(); } catch (e) {} }
       if (zone.scan.groundTween) { try { zone.scan.groundTween.pause(); } catch (e) {} }
+      if (zone.scan.sweepTween) { try { zone.scan.sweepTween.pause(); } catch (e) {} }
     }
     if (zone) zone.scan = null;
   };
@@ -275,11 +276,13 @@ window.GprDeploy = (function () {
       pulse: RING_PULSE_LO,
       ground: GROUND_PULSE_LO,
       ringPhase: 0,
+      sweep: 0,
       progress: 0,
       t0: Date.now(),
       tween: null,
       pulseTween: null,
       groundTween: null,
+      sweepTween: null,
     };
     zone.scan = scan;
 
@@ -346,6 +349,16 @@ window.GprDeploy = (function () {
         loop: true,
         update: function () { if (zone.scan) scanProgress(); },
       });
+      s.sweep = 0;
+      s.sweepTween = anime({
+        targets: s,
+        sweep: [0, 1],
+        duration: GROUND_LOOP_DUR,
+        easing: "easeInOutSine",
+        direction: "alternate",
+        loop: true,
+        update: function () { if (zone.scan) scanProgress(); },
+      });
       var holdState = { v: 0 };
       var t2 = anime({
         targets: holdState,
@@ -368,14 +381,17 @@ window.GprDeploy = (function () {
       if (!s) return;
       if (s.pulseTween) { try { s.pulseTween.pause(); } catch (e) {} }
       if (s.groundTween) { try { s.groundTween.pause(); } catch (e) {} }
+      if (s.sweepTween) { try { s.sweepTween.pause(); } catch (e) {} }
       if (typeof anime !== "undefined" && anime && typeof anime.remove === "function") {
         try { anime.remove(s); } catch (e) {}
       }
       s.pulseTween = null;
       s.groundTween = null;
+      s.sweepTween = null;
       s.pulse = RING_PULSE_LO;
       s.ground = GROUND_PULSE_LO;
       s.ringPhase = 0;
+      s.sweep = 0;
       var t3 = anime({
         targets: s,
         alpha: 0,
@@ -585,27 +601,67 @@ window.GprDeploy = (function () {
 
   // expanding radar rings centered on the rover, on the ground plane (isometric
   // ellipses). `ringPhase` 0..1 drives the leading ring; a trailing set of rings
-  // lags behind for a continuous pulse.
+  // lags behind for a continuous pulse. Brighter + more rings than the prototype
+  // so the GPR sweep clearly reads as "scanning the earth".
   function drawRadarRings(ctx, corners, rover, alpha, pulse, ringPhase) {
     if (!corners || !rover || alpha <= 0.01) return;
     var a = alpha * (pulse != null ? pulse : 1);
     if (a <= 0.01) return;
-    var maxR = (corners.BR.x - corners.TL.x) * 0.9;
+    var maxR = (corners.BR.x - corners.TL.x) * 0.95;
     var ySquash = 0.5;
+    var RING_COUNT = 5;
     ctx.save();
     ctx.strokeStyle = RING_COLOR;
     ctx.shadowColor = RING_COLOR;
-    ctx.shadowBlur = 6;
-    for (var k = 0; k < 3; k++) {
-      var ph = (ringPhase + k / 3) % 1;
+    ctx.shadowBlur = 12;
+    for (var k = 0; k < RING_COUNT; k++) {
+      var ph = (ringPhase + k / RING_COUNT) % 1;
       var r = ph * maxR;
-      var ringAlpha = a * (1 - ph) * 0.9;
+      var ringAlpha = a * (1 - ph) * 1.0;
       ctx.globalAlpha = ringAlpha;
-      ctx.lineWidth = Math.max(1.5, (1 - ph) * 3);
+      ctx.lineWidth = Math.max(1.5, (1 - ph) * 4);
       ctx.beginPath();
       ctx.ellipse(rover.x, rover.y, r, r * ySquash, 0, 0, Math.PI * 2);
       ctx.stroke();
     }
+    // bright pulsing center marker on the rover
+    ctx.globalAlpha = a;
+    ctx.fillStyle = RING_COLOR;
+    ctx.shadowColor = RING_COLOR;
+    ctx.shadowBlur = 16;
+    ctx.beginPath();
+    ctx.arc(rover.x, rover.y, 3 + 2 * pulse, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // moving ground scan-line that sweeps across the chunk footprint during the
+  // hold (driven by `sweepPhase` 0..1), clipped to the exact quad so it stays
+  // inside the surveyed area — mirrors the Drone's aerial sweep line but on the
+  // ground plane (violet, not warm white).
+  function drawGroundSweep(ctx, corners, alpha, sweepPhase) {
+    if (!corners || alpha <= 0.01) return;
+    var xs = [corners.TL.x, corners.TR.x, corners.BL.x, corners.BR.x];
+    var ys = [corners.TL.y, corners.TR.y, corners.BL.y, corners.BR.y];
+    var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs);
+    var y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
+    var sy = y0 + (y1 - y0) * sweepPhase;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(corners.TL.x, corners.TL.y);
+    ctx.lineTo(corners.TR.x, corners.TR.y);
+    ctx.lineTo(corners.BR.x, corners.BR.y);
+    ctx.lineTo(corners.BL.x, corners.BL.y);
+    ctx.closePath();
+    ctx.clip();
+    ctx.strokeStyle = "rgba(220, 170, 255, " + (0.9 * alpha) + ")";
+    ctx.lineWidth = Math.max(2, Math.min(4, (x1 - x0) * 0.006));
+    ctx.shadowColor = RING_COLOR;
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.moveTo(x0 - 4, sy);
+    ctx.lineTo(x1 + 4, sy);
+    ctx.stroke();
     ctx.restore();
   }
 
@@ -657,6 +713,7 @@ window.GprDeploy = (function () {
         var rover = s.rovers && s.rovers.length ? projectFrom(anchor, s.rovers[0]) : null;
         drawGroundGlow(ctx, area, c, rover, s.alpha, s.ground);
         drawRadarRings(ctx, c, rover, s.alpha, s.pulse, s.ringPhase);
+        drawGroundSweep(ctx, c, s.alpha, s.sweep);
         drawAreaOutline(ctx, area, [], OUTLINE_COLOR, 1, 6, 2.5);
       }
       for (var si = 0; si < s.rovers.length; si++) {

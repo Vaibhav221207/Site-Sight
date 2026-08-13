@@ -201,11 +201,21 @@ window.HqPanel = (function () {
       summaryEl.innerHTML =
         '<div class="hq-data-summary-row"><span>Aerial Survey (Drone)</span><strong>' + s.scannedTiles + ' / ' + s.totalTiles + ' (' + s.scannedPct + '%)</strong></div>' +
         '<div class="hq-data-summary-row"><span>Subsurface (GPR)</span><strong>' + s.subsurfaceTiles + ' / ' + s.totalTiles + ' (' + s.subsurfacePct + '%)</strong></div>' +
-        '<div class="hq-data-summary-row"><span>Avg Soil Quality</span><strong>' + s.avgQuality + '/100</strong></div>' +
-        '<div class="hq-data-summary-row"><span>Avg Stability</span><strong>' + s.avgStability + '/100</strong></div>' +
-        '<div class="hq-data-summary-row"><span>Avg Water Table</span><strong>' + s.avgWaterTable + 'm</strong></div>' +
+        '<div class="hq-data-summary-row"><span>Avg Soil Quality</span><strong data-count="' + s.avgQuality + '" data-suffix="/100">0/100</strong></div>' +
+        '<div class="hq-data-summary-row"><span>Avg Stability</span><strong data-count="' + s.avgStability + '" data-suffix="/100">0/100</strong></div>' +
+        '<div class="hq-data-summary-row"><span>Avg Water Table</span><strong data-count="' + s.avgWaterTable + '" data-suffix="m">0m</strong></div>' +
         '<div class="hq-data-summary-row"><span>Land / Hill / River / Trench / HQ</span><strong>' + tc.land + ' / ' + tc.hill + ' / ' + tc.river + ' / ' + tc.trench + ' / ' + tc.hq + '</strong></div>' +
         '<div class="hq-data-summary-row"><span>Minerals Found</span><strong>Iron: ' + s.mineralCounts.iron + '  Copper: ' + s.mineralCounts.copper + '  Gold: ' + s.mineralCounts.gold + '</strong></div>';
+      // anime.js count-up on the three clean numeric metrics
+      if (typeof anime !== "undefined" && anime && window.UI && window.UI.countUp) {
+        var strongs = summaryEl.querySelectorAll(".hq-data-summary-row strong[data-count]");
+        for (var i = 0; i < strongs.length; i++) {
+          var el = strongs[i];
+          var to = parseInt(el.getAttribute("data-count"), 10) || 0;
+          var suffix = el.getAttribute("data-suffix") || "";
+          window.UI.countUp(el, to, { from: 0, suffix: suffix, duration: 700, delay: i * 80 });
+        }
+      }
     }
 
     function animateLayerSwitch() {
@@ -508,9 +518,15 @@ window.HqPanel = (function () {
     if (!id) return;
     var started = !!(window.DroneDeploy && window.DroneDeploy.startDeployment());
     console.log("[HQ] Deploy: selected " + id + " -> " + (started ? "whole-map drone sweep started" : "deploy failed (no Drone Systems available)"));
-    // close the terminal so the map is interactive and the sweep is visible
     if (api.isOpen) api.close();
-    if (!started) {
+    if (started) {
+      if (window.UI && window.UI.toast) window.UI.toast("Drone sweep launched — aerial survey in progress", { color: "#00ACC1", icon: "🛰" });
+      if (window.DroneDeploy) {
+        window.DroneDeploy.onDeployDone = function () {
+          if (window.UI && window.UI.toast) window.UI.toast("Aerial survey complete — surface data unlocked", { color: "#00E5FF", icon: "✅" });
+        };
+      }
+    } else {
       api.showMsg("[DEPLOY] no Drone Systems available", false, api.inventoryDeployContainer);
     }
   };
@@ -524,7 +540,14 @@ window.HqPanel = (function () {
     var started = !!(window.GprDeploy && window.GprDeploy.startDeployment());
     console.log("[HQ] Deploy GPR: selected " + id + " -> " + (started ? "whole-map GPR sweep started" : "deploy failed (no GPR Systems available)"));
     if (api.isOpen) api.close();
-    if (!started) {
+    if (started) {
+      if (window.UI && window.UI.toast) window.UI.toast("GPR sweep launched — subsurface scanning", { color: "#B14CFF", icon: "📡" });
+      if (window.GprDeploy) {
+        window.GprDeploy.onDeployDone = function () {
+          if (window.UI && window.UI.toast) window.UI.toast("Subsurface data unlocked — minerals, water & stability revealed", { color: "#C77DFF", icon: "⚡" });
+        };
+      }
+    } else {
       api.showMsg("[DEPLOY] no GPR Systems available", false, api.inventoryDeployContainer);
     }
   };

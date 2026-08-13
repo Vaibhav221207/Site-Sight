@@ -139,6 +139,18 @@ window.TilePanel = (function () {
           '<span class="panel-data-value">' + r.value + '</span>' +
         '</div>';
       }).join("");
+      // anime.js: stagger the data rows + grade in for a lively UI/UX entrance
+      if (typeof anime !== "undefined" && anime) {
+        anime.set(bodyEl.querySelectorAll(".panel-data-row"), { opacity: 0, translateX: -10 });
+        anime({
+          targets: bodyEl.querySelectorAll(".panel-data-row"),
+          opacity: [0, 1],
+          translateX: [-10, 0],
+          delay: anime.stagger(45),
+          duration: 320,
+          easing: "easeOutCubic",
+        });
+      }
     }
   };
 
