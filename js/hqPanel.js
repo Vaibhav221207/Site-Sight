@@ -74,7 +74,7 @@ window.HqPanel = (function () {
         api.gprOwnedEl.className = "hq-fs-drone-owned";
         api.gprOwnedEl.style.fontSize = "13px";
         api.gprOwnedEl.style.fontWeight = "700";
-        api.gprOwnedEl.style.color = "#9A4CFF";
+        api.gprOwnedEl.style.color = "#E0962A";
         gprInfoEl.appendChild(api.gprOwnedEl);
       }
       api.gprOrderBtn.addEventListener("click", function () { api.buyGpr(); });
@@ -146,7 +146,7 @@ window.HqPanel = (function () {
       { id: "water", name: "Water Table", getColor: function (t) { return t.waterTable != null ? window.LandData.getWaterColor(t.waterTable) : UNKNOWN; } },
       { id: "mineral", name: "Minerals", getColor: function (t) { return t.mineral ? (window.LandData.MINERAL_COLORS[t.mineral] || UNKNOWN) : UNKNOWN; } },
       { id: "scanned", name: "Aerial Survey", getColor: function (t) { return t.scanned ? "#00cc66" : "#2a2038"; } },
-      { id: "subsurface", name: "GPR Survey", getColor: function (t) { return t.subsurfaceScanned ? "#B14CFF" : "#2a2038"; } }
+      { id: "subsurface", name: "GPR Survey", getColor: function (t) { return t.subsurfaceScanned ? "#FFB02E" : "#2a2038"; } }
     ];
 
     var currentLayer = 0;
@@ -270,7 +270,7 @@ window.HqPanel = (function () {
         html += '<div class="hq-data-legend-row"><span class="hq-data-legend-swatch" style="background:#00cc66"></span>Aerial surveyed (Drone)</div>';
         html += '<div class="hq-data-legend-row"><span class="hq-data-legend-swatch" style="background:#2a2038"></span>Not surveyed</div>';
       } else if (layer.id === "subsurface") {
-        html += '<div class="hq-data-legend-row"><span class="hq-data-legend-swatch" style="background:#B14CFF"></span>GPR surveyed (subsurface)</div>';
+        html += '<div class="hq-data-legend-row"><span class="hq-data-legend-swatch" style="background:#FFB02E"></span>GPR surveyed (subsurface)</div>';
         html += '<div class="hq-data-legend-row"><span class="hq-data-legend-swatch" style="background:#2a2038"></span>Not GPR-scanned</div>';
       } else {
         // gradient bar for continuous values
@@ -445,7 +445,7 @@ window.HqPanel = (function () {
         "padding:14px 18px;margin-bottom:8px;background:#F5F9FB;" +
         "border:2px solid transparent;border-radius:16px;cursor:pointer;" +
         "transition:border-color 0.15s ease,background 0.15s ease;";
-      var accent = type === "gpr" ? "#9A4CFF" : "#2D3561";
+      var accent = type === "gpr" ? "#E0962A" : "#2D3561";
       entry.innerHTML =
         '<span class="hq-fs-inventory-item-name" style="font-size:17px;font-weight:700;color:' + accent + '">' + name + '</span>';
       entry.addEventListener("click", function (ev) {
@@ -541,10 +541,10 @@ window.HqPanel = (function () {
     console.log("[HQ] Deploy GPR: selected " + id + " -> " + (started ? "whole-map GPR sweep started" : "deploy failed (no GPR Systems available)"));
     if (api.isOpen) api.close();
     if (started) {
-      if (window.UI && window.UI.toast) window.UI.toast("GPR sweep launched — subsurface scanning", { color: "#B14CFF", icon: "📡" });
+      if (window.UI && window.UI.toast) window.UI.toast("GPR sweep launched — subsurface scanning", { color: "#FFB02E", icon: "📡" });
       if (window.GprDeploy) {
         window.GprDeploy.onDeployDone = function () {
-          if (window.UI && window.UI.toast) window.UI.toast("Subsurface data unlocked — minerals, water & stability revealed", { color: "#C77DFF", icon: "⚡" });
+          if (window.UI && window.UI.toast) window.UI.toast("Subsurface data unlocked — minerals, water & stability revealed", { color: "#FFC04D", icon: "⚡" });
         };
       }
     } else {

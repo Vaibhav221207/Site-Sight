@@ -51,14 +51,17 @@ window.GprDeploy = (function () {
   var CHUNK_COLS = 4;
   var CHUNK_ROWS = 2;
 
-  // GPR palette — violet/magenta so it reads as "subsurface / penetrating",
-  // clearly distinct from the Drone System's cyan aerial cone.
-  var RING_COLOR = "#B14CFF";        // radar ring outline
-  var GROUND_FILL = "#7A1FB8";       // ground radar glow
-  var ROVER_BODY = "#5A3A78";        // rover chassis
-  var ROVER_ACCENT = "#B14CFF";      // rover nav light
+  // GPR palette — warm radar-AMBER. Subsurface/radar imagery is classically
+  // shown in amber/earth tones (radar-phosphor + Crameri "GrayC" radar ramp),
+  // which also harmonises with the game's existing gold HQ accent and the orange
+  // in the soil-quality heatmap — so GPR reads as part of the same world, not a
+  // random violet. Clearly distinct from the Drone's cyan aerial cone.
+  var RING_COLOR = "#FFB02E";        // radar ring outline (amber)
+  var GROUND_FILL = "#C8761A";       // ground radar glow (burnt amber)
+  var ROVER_BODY = "#5A4632";        // rover chassis (earthy)
+  var ROVER_ACCENT = "#FFB02E";      // rover nav light (amber)
   var ROVER_SHADOW = "rgba(0,0,0,0.22)";
-  var OUTLINE_COLOR = "#C77DFF";     // committed GPR survey area outline
+  var OUTLINE_COLOR = "#FFC04D";     // committed GPR survey area outline (amber)
 
   var BASE_H = 4;
 
@@ -591,9 +594,9 @@ window.GprDeploy = (function () {
     var maxY = Math.max.apply(null, ys), minY = Math.min.apply(null, ys);
     var rr = Math.max(maxX - minX, maxY - minY) * 0.6;
     var grad = ctx.createRadialGradient(rover.x, rover.y, 1, rover.x, rover.y, rr);
-    grad.addColorStop(0, "rgba(193, 124, 255, " + (0.45 * a) + ")");
-    grad.addColorStop(0.5, "rgba(150, 60, 200, " + (0.28 * a) + ")");
-    grad.addColorStop(1, "rgba(90, 30, 150, " + (0.04 * a) + ")");
+    grad.addColorStop(0, "rgba(255, 210, 122, " + (0.5 * a) + ")");
+    grad.addColorStop(0.5, "rgba(255, 176, 46, " + (0.3 * a) + ")");
+    grad.addColorStop(1, "rgba(120, 60, 10, " + (0.04 * a) + ")");
     ctx.save();
     ctx.fillStyle = grad;
     ctx.beginPath();
@@ -667,7 +670,7 @@ window.GprDeploy = (function () {
     ctx.lineTo(corners.BL.x, corners.BL.y);
     ctx.closePath();
     ctx.clip();
-    ctx.strokeStyle = "rgba(220, 170, 255, " + (0.9 * alpha) + ")";
+    ctx.strokeStyle = "rgba(255, 214, 140, " + (0.9 * alpha) + ")";
     ctx.lineWidth = Math.max(2, Math.min(4, (x1 - x0) * 0.006));
     ctx.shadowColor = RING_COLOR;
     ctx.shadowBlur = 10;
