@@ -498,44 +498,106 @@ window.GprDeploy = (function () {
 
   // -- rendering ----------------------------------------------------------
 
+  // isometric box helper: draws a 3D block (top + two front faces) centered at
+  // screen (cx, baseY) with half-width hw, half-depth hd and height H.
+  function isoBox(ctx, cx, baseY, hw, hd, H, colTop, colL, colR) {
+    var bk = { x: cx, y: baseY - hd }, rt = { x: cx + hw, y: baseY },
+        fr = { x: cx, y: baseY + hd }, lf = { x: cx - hw, y: baseY };
+    var bkT = { x: cx, y: baseY - hd - H }, rtT = { x: cx + hw, y: baseY - H },
+        frT = { x: cx, y: baseY + hd - H }, lfT = { x: cx - hw, y: baseY - H };
+    ctx.fillStyle = colL;
+    ctx.beginPath();
+    ctx.moveTo(lf.x, lf.y); ctx.lineTo(fr.x, fr.y); ctx.lineTo(frT.x, frT.y); ctx.lineTo(lfT.x, lfT.y);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = colR;
+    ctx.beginPath();
+    ctx.moveTo(fr.x, fr.y); ctx.lineTo(rt.x, rt.y); ctx.lineTo(rtT.x, rtT.y); ctx.lineTo(frT.x, frT.y);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = colTop;
+    ctx.beginPath();
+    ctx.moveTo(bkT.x, bkT.y); ctx.lineTo(rtT.x, rtT.y); ctx.lineTo(frT.x, frT.y); ctx.lineTo(lfT.x, lfT.y);
+    ctx.closePath(); ctx.fill();
+    return { bk: bk, rt: rt, fr: fr, lf: lf, bkT: bkT, rtT: rtT, frT: frT, lfT: lfT };
+  }
+
+  // a wheel / idler roller drawn as a small iso disc
+  function drawWheel(ctx, x, baseY, u) {
+    var ww = u * 0.15, wh = u * 0.2;
+    ctx.fillStyle = "#1F1810";
+    ctx.beginPath(); ctx.ellipse(x, baseY, ww, wh, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#3A2C20";
+    ctx.beginPath(); ctx.ellipse(x, baseY, ww * 0.48, wh * 0.48, 0, 0, Math.PI * 2); ctx.fill();
+  }
+
   function drawRoverAt(ctx, cx, topY, alpha) {
     var iso = window.IsoGrid ? window.IsoGrid.isoSize : 32;
-    var u = iso * 1.1;
-    var half = u / 2;
-    var ySquash = 0.82;
+    var u = iso * 1.18;
+    var hw = u * 0.40, hd = u * 0.27, H = u * 0.24;
+    var baseY = topY + u * 0.10;
 
     ctx.save();
-    if (alpha !== 1 && alpha !== undefined && alpha != null) ctx.globalAlpha = alpha;
+    if (alpha != null && alpha !== 1) ctx.globalAlpha = alpha;
 
-    // soft ground shadow
+    // ground shadow
     ctx.fillStyle = ROVER_SHADOW;
     ctx.beginPath();
-    ctx.ellipse(cx, topY + half * 0.7, u * 0.42, u * 0.18, 0, 0, Math.PI * 2);
+    ctx.ellipse(cx, baseY + hd * 0.55, u * 0.46, u * 0.2, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // chassis (rounded rect, isometric squash)
-    var bw = u * 0.7, bh = u * 0.34;
-    ctx.fillStyle = ROVER_BODY;
-    ctx.strokeStyle = "#3A2450";
-    ctx.lineWidth = 1.5;
+    // tracks / wheels on each side
+    drawWheel(ctx, cx - hw * 0.95, baseY + u * 0.02, u);
+    drawWheel(ctx, cx + hw * 0.95, baseY + u * 0.02, u);
+
+    // chassis (iso box)
+    var c = isoBox(ctx, cx, baseY, hw, hd, H, ROVER_BODY, "#3A2C20", "#4A3829");
+    ctx.strokeStyle = "rgba(255,200,120,0.45)";
+    ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.ellipse(cx, topY, bw / 2, bh / 2 * ySquash, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.moveTo(c.bkT.x, c.bkT.y); ctx.lineTo(c.rtT.x, c.rtT.y);
+    ctx.lineTo(c.frT.x, c.frT.y); ctx.lineTo(c.lfT.x, c.lfT.y); ctx.closePath();
     ctx.stroke();
 
-    // mast + radar dish (accent)
+    // GPR antenna panel on top of the chassis
+    var ay = baseY - H;
+    var ah = u * 0.12, aw = hw * 0.72, ad = hd * 0.6;
+    var a = isoBox(ctx, cx, ay, aw, ad, ah, "#26201A", "#1A150F", "#221B14");
     ctx.strokeStyle = ROVER_ACCENT;
-    ctx.lineWidth = Math.max(1.5, u * 0.05);
-    ctx.beginPath();
-    ctx.moveTo(cx, topY - bh / 2 * ySquash);
-    ctx.lineTo(cx, topY - bh / 2 * ySquash - u * 0.22);
-    ctx.stroke();
-    ctx.fillStyle = ROVER_ACCENT;
+    ctx.lineWidth = 1.4;
     ctx.shadowColor = ROVER_ACCENT;
     ctx.shadowBlur = 6;
     ctx.beginPath();
-    ctx.arc(cx, topY - bh / 2 * ySquash - u * 0.22, u * 0.08, 0, Math.PI * 2);
+    ctx.moveTo(a.bkT.x, a.bkT.y); ctx.lineTo(a.rtT.x, a.rtT.y);
+    ctx.lineTo(a.frT.x, a.frT.y); ctx.lineTo(a.lfT.x, a.lfT.y); ctx.closePath();
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    // antenna scan lines across the top face
+    ctx.strokeStyle = "rgba(255,176,46,0.7)";
+    ctx.lineWidth = 1;
+    for (var k = 1; k <= 2; k++) {
+      var f = k / 3;
+      var p1x = a.lfT.x + (a.bkT.x - a.lfT.x) * f, p1y = a.lfT.y + (a.bkT.y - a.lfT.y) * f;
+      var p2x = a.frT.x + (a.rtT.x - a.frT.x) * f, p2y = a.frT.y + (a.rtT.y - a.frT.y) * f;
+      ctx.beginPath(); ctx.moveTo(p1x, p1y); ctx.lineTo(p2x, p2y); ctx.stroke();
+    }
+
+    // push handle / pole at the back (north corner)
+    ctx.strokeStyle = "#6E5638";
+    ctx.lineWidth = Math.max(1.5, u * 0.04);
+    ctx.beginPath();
+    ctx.moveTo(c.bkT.x, c.bkT.y);
+    ctx.lineTo(c.bkT.x, c.bkT.y - u * 0.30);
+    ctx.stroke();
+    ctx.fillStyle = "#6E5638";
+    ctx.beginPath();
+    ctx.ellipse(c.bkT.x, c.bkT.y - u * 0.30, u * 0.06, u * 0.035, 0, 0, Math.PI * 2);
     ctx.fill();
+
+    // status LED on the front face (amber glow)
+    var ledx = c.fr.x, ledy = c.fr.y - H * 0.5;
+    ctx.fillStyle = ROVER_ACCENT;
+    ctx.shadowColor = ROVER_ACCENT;
+    ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.arc(ledx, ledy, u * 0.04, 0, Math.PI * 2); ctx.fill();
     ctx.shadowBlur = 0;
 
     ctx.restore();
