@@ -64,9 +64,26 @@ window.HqPanel = (function () {
       api.orderBtn.addEventListener("click", function () { api.buyDrone(); });
     }
 
+    // GPR (Ground Penetrating Radar) STORE row — mirrors the Drone System.
+    api.gprOrderBtn = document.getElementById("hq-order-gpr-fs");
+    if (api.gprOrderBtn) {
+      var gprInfoBlock = api.gprOrderBtn.closest(".hq-fs-drone-row");
+      var gprInfoEl = gprInfoBlock ? gprInfoBlock.querySelector(".hq-fs-drone-info") : null;
+      if (gprInfoEl) {
+        api.gprOwnedEl = document.createElement("span");
+        api.gprOwnedEl.className = "hq-fs-drone-owned";
+        api.gprOwnedEl.style.fontSize = "13px";
+        api.gprOwnedEl.style.fontWeight = "700";
+        api.gprOwnedEl.style.color = "#9A4CFF";
+        gprInfoEl.appendChild(api.gprOwnedEl);
+      }
+      api.gprOrderBtn.addEventListener("click", function () { api.buyGpr(); });
+    }
+
     // ONE-TIME PURCHASE: reflect the permanent purchase state on the button
     // (disabled once the Drone System has been bought, even after deployment).
     api.refreshDronePurchaseState();
+    api.refreshGprPurchaseState();
 
     SECTIONS.forEach(function (name) {
       if (api.navItems[name]) {
@@ -89,6 +106,7 @@ window.HqPanel = (function () {
     }
     if (name === "data") {
       api.initDataMap();
+      if (api.refreshDataMap) api.refreshDataMap();
     }
   };
 
@@ -120,13 +138,15 @@ window.HqPanel = (function () {
     canvas.style.width = cs + "px";
     canvas.style.height = cs + "px";
 
+    var UNKNOWN = "#2a2038"; // gray for "no data yet" tiles
     var layers = [
       { id: "terrain", name: "Terrain", getColor: function (t) { return window.LandData.TERRAIN_COLORS[t.terrain] || "#333"; } },
-      { id: "quality", name: "Soil Quality", getColor: function (t) { return window.LandData.getQualityColor(t.quality); } },
-      { id: "stability", name: "Stability", getColor: function (t) { return window.LandData.getStabilityColor(t.stability); } },
-      { id: "water", name: "Water Table", getColor: function (t) { return window.LandData.getWaterColor(t.waterTable); } },
-      { id: "mineral", name: "Minerals", getColor: function (t) { return window.LandData.MINERAL_COLORS[t.mineral] || "transparent"; } },
-      { id: "scanned", name: "Scanned", getColor: function (t) { return t.scanned ? "#00cc66" : "#2a2038"; } }
+      { id: "quality", name: "Soil Quality", getColor: function (t) { return t.quality != null ? window.LandData.getQualityColor(t.quality) : UNKNOWN; } },
+      { id: "stability", name: "Stability", getColor: function (t) { return t.stability != null ? window.LandData.getStabilityColor(t.stability) : UNKNOWN; } },
+      { id: "water", name: "Water Table", getColor: function (t) { return t.waterTable != null ? window.LandData.getWaterColor(t.waterTable) : UNKNOWN; } },
+      { id: "mineral", name: "Minerals", getColor: function (t) { return t.mineral ? (window.LandData.MINERAL_COLORS[t.mineral] || UNKNOWN) : UNKNOWN; } },
+      { id: "scanned", name: "Aerial Survey", getColor: function (t) { return t.scanned ? "#00cc66" : "#2a2038"; } },
+      { id: "subsurface", name: "GPR Survey", getColor: function (t) { return t.subsurfaceScanned ? "#B14CFF" : "#2a2038"; } }
     ];
 
     var currentLayer = 0;
@@ -179,7 +199,8 @@ window.HqPanel = (function () {
       var s = window.LandData.getSummary();
       var tc = s.terrainCounts;
       summaryEl.innerHTML =
-        '<div class="hq-data-summary-row"><span>Tiles Scanned</span><strong>' + s.scannedTiles + ' / ' + s.totalTiles + ' (' + s.scannedPct + '%)</strong></div>' +
+        '<div class="hq-data-summary-row"><span>Aerial Survey (Drone)</span><strong>' + s.scannedTiles + ' / ' + s.totalTiles + ' (' + s.scannedPct + '%)</strong></div>' +
+        '<div class="hq-data-summary-row"><span>Subsurface (GPR)</span><strong>' + s.subsurfaceTiles + ' / ' + s.totalTiles + ' (' + s.subsurfacePct + '%)</strong></div>' +
         '<div class="hq-data-summary-row"><span>Avg Soil Quality</span><strong>' + s.avgQuality + '/100</strong></div>' +
         '<div class="hq-data-summary-row"><span>Avg Stability</span><strong>' + s.avgStability + '/100</strong></div>' +
         '<div class="hq-data-summary-row"><span>Avg Water Table</span><strong>' + s.avgWaterTable + 'm</strong></div>' +
@@ -236,8 +257,11 @@ window.HqPanel = (function () {
         html += '<div class="hq-data-legend-row"><span class="hq-data-legend-swatch" style="background:#ffd700"></span>Gold</div>';
         html += '<div class="hq-data-legend-row"><span class="hq-data-legend-swatch" style="background:repeating-linear-gradient(45deg,transparent,transparent 5px,#333 5px,#333 10px)"></span>None</div>';
       } else if (layer.id === "scanned") {
-        html += '<div class="hq-data-legend-row"><span class="hq-data-legend-swatch" style="background:#00cc66"></span>Scanned</div>';
-        html += '<div class="hq-data-legend-row"><span class="hq-data-legend-swatch" style="background:#2a2038"></span>Unscanned</div>';
+        html += '<div class="hq-data-legend-row"><span class="hq-data-legend-swatch" style="background:#00cc66"></span>Aerial surveyed (Drone)</div>';
+        html += '<div class="hq-data-legend-row"><span class="hq-data-legend-swatch" style="background:#2a2038"></span>Not surveyed</div>';
+      } else if (layer.id === "subsurface") {
+        html += '<div class="hq-data-legend-row"><span class="hq-data-legend-swatch" style="background:#B14CFF"></span>GPR surveyed (subsurface)</div>';
+        html += '<div class="hq-data-legend-row"><span class="hq-data-legend-swatch" style="background:#2a2038"></span>Not GPR-scanned</div>';
       } else {
         // gradient bar for continuous values
         var stops = 5;
@@ -260,6 +284,14 @@ window.HqPanel = (function () {
     drawMap();
     renderSummary();
     updateLegend();
+
+    // expose a lightweight redraw so re-opening the DATA tab (after a Drone or
+    // GPR sweep has marked more tiles) refreshes the map + summary live.
+    api.refreshDataMap = function () {
+      drawMap();
+      renderSummary();
+      if (legendEl) updateLegend();
+    };
 
     // layer select
     if (select) {
@@ -310,6 +342,10 @@ window.HqPanel = (function () {
       var n = window.GameState.inventory.droneCount;
       api.ownedEl.textContent = "(Owned: " + n + ")";
     }
+    if (api.gprOwnedEl) {
+      var g = window.GameState.inventory.gprCount;
+      api.gprOwnedEl.textContent = "(Owned: " + g + ")";
+    }
   };
 
   // ONE-TIME PURCHASE state: the STORE Order Drone button is permanently
@@ -322,6 +358,13 @@ window.HqPanel = (function () {
     api.orderBtn.disabled = purchased;
   };
 
+  // ONE-TIME PURCHASE state for the GPR System — mirrors the Drone System.
+  api.refreshGprPurchaseState = function () {
+    if (!api.gprOrderBtn) return;
+    var purchased = !!(window.GameState && window.GameState.gprSystemPurchased);
+    api.gprOrderBtn.disabled = purchased;
+  };
+
   // (Re)builds the INVENTORY tab contents from GameState.inventory:
   // - owned drones listed individually (selectable)
   // - empty state when none are owned
@@ -332,52 +375,21 @@ window.HqPanel = (function () {
     api.inventoryListEl = null;
     api.inventoryDeployContainer = null;
 
-    var header = document.createElement("div");
-    header.className = "hq-fs-section-header";
-    header.textContent = "DRONE FLEET";
-    api.inventorySection.appendChild(header);
+    var gs = window.GameState;
+    var droneN = gs.inventory.droneCount;
+    var gprN = gs.inventory.gprCount;
 
-    var list = document.createElement("div");
-    list.className = "hq-fs-inventory-list";
-    api.inventorySection.appendChild(list);
-    api.inventoryListEl = list;
-
-    var n = window.GameState.inventory.droneCount;
-    if (!n || n <= 0) {
+    if ((!droneN || droneN <= 0) && (!gprN || gprN <= 0)) {
       var empty = document.createElement("div");
       empty.className = "hq-fs-placeholder";
-      empty.textContent = "No Drone Systems in inventory. Order one from the STORE tab.";
+      empty.textContent = "No survey equipment in inventory. Order a Drone or GPR System from the STORE tab.";
       api.inventorySection.appendChild(empty);
-      return;
+    } else {
+      if (droneN > 0) api._buildFleet("drone", "DRONE FLEET", "Drone System", droneN);
+      if (gprN > 0) api._buildFleet("gpr", "GPR FLEET", "GPR System", gprN);
     }
 
-    // Each owned drone is its own selectable entry. The Drone System is a
-    // ONE-TIME purchase, so the fleet can only ever hold a single unit — the
-    // row is labeled plainly (no #1 numbering).
-    for (var i = 1; i <= n; i++) {
-      var id = "drone-" + i;
-      var entry = document.createElement("div");
-      entry.className = "hq-fs-inventory-item";
-      entry.dataset.droneId = id;
-      entry.style.cssText =
-        "display:flex;align-items:center;justify-content:space-between;" +
-        "padding:14px 18px;margin-bottom:8px;background:#F5F9FB;" +
-        "border:2px solid transparent;border-radius:16px;cursor:pointer;" +
-        "transition:border-color 0.15s ease,background 0.15s ease;";
-      entry.innerHTML =
-        '<span class="hq-fs-inventory-item-name" style="font-size:17px;font-weight:700;color:#2D3561">Drone System</span>';
-      entry.addEventListener("click", function (ev) {
-        ev.stopPropagation();
-        api.selectDrone(this);
-      });
-      // keep selection in GameState in sync with the visual state
-      if (window.GameState.inventory.selectedDroneId === id) {
-        api.markSelected(entry, true);
-      }
-      list.appendChild(entry);
-    }
-
-    // Deploy button (placeholder acknowledgement for now)
+    // Deploy button — deploys whichever unit type is currently selected.
     var deployBox = document.createElement("div");
     deployBox.className = "hq-fs-inventory-deploy";
     deployBox.style.marginTop = "16px";
@@ -390,7 +402,7 @@ window.HqPanel = (function () {
     deployBtn.textContent = "Deploy";
     deployBtn.addEventListener("click", function (ev) {
       ev.stopPropagation();
-      api.deployDrone();
+      api.deploySelected();
     });
     deployBox.appendChild(deployBtn);
     api.inventorySection.appendChild(deployBox);
@@ -399,43 +411,91 @@ window.HqPanel = (function () {
     api.refreshDeployVisibility();
   };
 
+  // Build a selectable fleet block for one equipment type ("drone" | "gpr").
+  api._buildFleet = function (type, headerText, name, count) {
+    var gs = window.GameState;
+    var header = document.createElement("div");
+    header.className = "hq-fs-section-header";
+    header.textContent = headerText;
+    api.inventorySection.appendChild(header);
+
+    var list = document.createElement("div");
+    list.className = "hq-fs-inventory-list";
+    api.inventorySection.appendChild(list);
+
+    var selectedId = type === "drone" ? gs.inventory.selectedDroneId : gs.inventory.selectedGprId;
+    for (var i = 1; i <= count; i++) {
+      var id = type + "-" + i;
+      var entry = document.createElement("div");
+      entry.className = "hq-fs-inventory-item";
+      entry.dataset.itemType = type;
+      entry.dataset.itemId = id;
+      entry.style.cssText =
+        "display:flex;align-items:center;justify-content:space-between;" +
+        "padding:14px 18px;margin-bottom:8px;background:#F5F9FB;" +
+        "border:2px solid transparent;border-radius:16px;cursor:pointer;" +
+        "transition:border-color 0.15s ease,background 0.15s ease;";
+      var accent = type === "gpr" ? "#9A4CFF" : "#2D3561";
+      entry.innerHTML =
+        '<span class="hq-fs-inventory-item-name" style="font-size:17px;font-weight:700;color:' + accent + '">' + name + '</span>';
+      entry.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        api.selectItem(this);
+      });
+      if (selectedId === id) api.markSelected(entry, true);
+      list.appendChild(entry);
+    }
+  };
+
   // Toggle the selected state of an inventory entry element.
   api.markSelected = function (entry, selected) {
     entry.style.borderColor = selected ? "#00ACC1" : "transparent";
     entry.style.background = selected ? "#E0F7FA" : "#F5F9FB";
   };
 
-  // Select (or deselect) a drone entry. Single-select: picking a new one
-  // deselects the previous; clicking the active one deselects it.
-  api.selectDrone = function (entry) {
-    var id = entry.dataset.droneId;
+  // Select (or deselect) a survey-unit entry. Single-select across BOTH fleets:
+  // picking a unit of one type clears any selection of the other type; clicking
+  // the active one deselects it.
+  api.selectItem = function (entry) {
+    var type = entry.dataset.itemType;
+    var id = entry.dataset.itemId;
     var gs = window.GameState;
     if (!gs) return;
-    var wasSelected = gs.inventory.selectedDroneId === id;
+    var wasSelected = (type === "drone" ? gs.inventory.selectedDroneId : gs.inventory.selectedGprId) === id;
 
-    // clear any active entry visually
-    if (api.inventoryListEl) {
-      var items = api.inventoryListEl.querySelectorAll(".hq-fs-inventory-item");
+    // clear any active entry visually (across both fleets)
+    if (api.inventorySection) {
+      var items = api.inventorySection.querySelectorAll(".hq-fs-inventory-item");
       for (var i = 0; i < items.length; i++) {
         api.markSelected(items[i], false);
       }
     }
 
-    if (wasSelected) {
-      gs.inventory.selectedDroneId = null;
-    } else {
-      gs.inventory.selectedDroneId = id;
+    // clear both selection ids, then set the chosen one (or none if toggling off)
+    gs.inventory.selectedDroneId = null;
+    gs.inventory.selectedGprId = null;
+    if (!wasSelected) {
+      if (type === "drone") gs.inventory.selectedDroneId = id;
+      else gs.inventory.selectedGprId = id;
       api.markSelected(entry, true);
     }
     api.refreshDeployVisibility();
   };
 
-  // Show the Deploy button only while a drone is selected.
+  // Show the Deploy button only while a drone OR a GPR unit is selected.
   api.refreshDeployVisibility = function () {
-    var hasSelection = !!window.GameState.inventory.selectedDroneId;
+    var gs = window.GameState.inventory;
+    var hasSelection = !!(gs.selectedDroneId || gs.selectedGprId);
     if (api.inventoryDeployContainer) {
       api.inventoryDeployContainer.style.display = hasSelection ? "" : "none";
     }
+  };
+
+  // Deploy whichever unit type is currently selected (drone or GPR).
+  api.deploySelected = function () {
+    var gs = window.GameState.inventory;
+    if (gs.selectedGprId) api.deployGpr();
+    else if (gs.selectedDroneId) api.deployDrone();
   };
 
   // Wire the Deploy button to whole-map, no-click drone deployment. Closes the
@@ -452,6 +512,20 @@ window.HqPanel = (function () {
     if (api.isOpen) api.close();
     if (!started) {
       api.showMsg("[DEPLOY] no Drone Systems available", false, api.inventoryDeployContainer);
+    }
+  };
+
+  // Wire the Deploy button to whole-map, no-click GPR deployment. Mirrors the
+  // Drone deploy: consumes one GPR unit, marks tiles subsurface-scanned, runs a
+  // ground radar sweep on the map.
+  api.deployGpr = function () {
+    var id = window.GameState.inventory.selectedGprId;
+    if (!id) return;
+    var started = !!(window.GprDeploy && window.GprDeploy.startDeployment());
+    console.log("[HQ] Deploy GPR: selected " + id + " -> " + (started ? "whole-map GPR sweep started" : "deploy failed (no GPR Systems available)"));
+    if (api.isOpen) api.close();
+    if (!started) {
+      api.showMsg("[DEPLOY] no GPR Systems available", false, api.inventoryDeployContainer);
     }
   };
 
@@ -518,6 +592,32 @@ window.HqPanel = (function () {
     }
   };
 
+  // Buy a GPR System — mirrors buyDrone exactly (one-time unlock + one unit).
+  api.buyGpr = function () {
+    var gs = window.GameState;
+    if (!gs) return;
+    if (gs.gprSystemPurchased) return;
+    if (gs.cash >= gs.gprCost) {
+      gs.cash -= gs.gprCost;
+      gs.inventory.gprCount += 1;
+      gs.gprSystemPurchased = true;
+      if (window.Main && window.Main.updateHUD) window.Main.updateHUD();
+      api.updateOwned();
+      api.refreshGprPurchaseState();
+      if (api.gprOrderBtn) {
+        api.gprOrderBtn.textContent = "Ordered!";
+        api.gprOrderBtn.classList.add("hq-order-btn--flash");
+        setTimeout(function () {
+          if (!api.gprOrderBtn) return;
+          api.gprOrderBtn.textContent = "Order GPR";
+          api.gprOrderBtn.classList.remove("hq-order-btn--flash");
+        }, 900);
+      }
+    } else {
+      api.showMsg("Insufficient funds", false);
+    }
+  };
+
    api.open = function () {
     if (api.isOpen) return;
     api.isOpen = true;
@@ -527,6 +627,7 @@ window.HqPanel = (function () {
     api.updateOwned();
     api.renderInventory();
     api.refreshDronePurchaseState();
+    api.refreshGprPurchaseState();
 
     if (typeof anime !== "undefined" && anime) {
       anime({

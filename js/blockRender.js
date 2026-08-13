@@ -827,6 +827,7 @@ window.BlockRender = (function () {
     // placement preview + deployed drone marker (drawn on top, per-frame so
     // the drop-in animation and the cursor-following preview stay smooth)
     if (window.DroneDeploy) window.DroneDeploy.renderMain(ctx, api.grid);
+    if (window.GprDeploy) window.GprDeploy.renderMain(ctx, api.grid);
     if (gc) ctx.globalCompositeOperation = gc;
   };
 

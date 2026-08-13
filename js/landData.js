@@ -53,6 +53,10 @@ window.LandData = (function () {
     return window.GameState && window.GameState.isScanned ? window.GameState.isScanned(c, r) : false;
   }
 
+  function isSubsurfaceScanned(c, r) {
+    return window.GameState && window.GameState.isSubsurfaceScanned ? window.GameState.isSubsurfaceScanned(c, r) : false;
+  }
+
   // ---- data generators per tile -------------------------------------------
   function genSoil(c, r) {
     var t = getTerrain(c, r);
@@ -120,29 +124,44 @@ window.LandData = (function () {
   }
 
   function getScanGrade(c, r) {
-    if (isScanned(c, r)) return "PRECISE";
+    // THREE survey tiers:
+    //   HQ CORE     — the HQ tile itself (always fully known)
+    //   PRECISE     — subsurface surveyed by a GPR deployment (full data)
+    //   AERIAL SURVEY — only aerial Drone scanned (surface data, no subsurface)
+    //   NO DATA     — not yet surveyed at all
     if (isHQ(c, r)) return "HQ CORE";
-    return "ESTIMATED";
+    if (isSubsurfaceScanned(c, r)) return "PRECISE";
+    if (isScanned(c, r)) return "AERIAL SURVEY";
+    return "NO DATA";
   }
 
   // ---- public API ----------------------------------------------------------
   function getTileData(c, r) {
     if (c < 0 || c >= GRID_SIZE || r < 0 || r >= GRID_SIZE) return null;
     var t = getTerrain(c, r);
-    var mineral = genMineral(c, r);
+    var hq = isHQ(c, r);
+    var scanned = isScanned(c, r);
+    var sub = isSubsurfaceScanned(c, r);
+    // Surface data is revealed by the aerial Drone scan (or the HQ tile).
+    // Subsurface data (water table, stability, minerals) requires a GPR pass.
+    var hasSurface = hq || scanned;
+    var hasSubsurface = hq || sub;
     return {
       col: c,
       row: r,
       terrain: t,
       elevation: getElevation(c, r),
-      soil: genSoil(c, r),
-      quality: genQuality(c, r),
-      waterTable: genWaterTable(c, r),
-      stability: genStability(c, r),
-      mineral: mineral,
-      vegetation: genVegetation(c, r),
-      scanned: isScanned(c, r),
-      isHQ: isHQ(c, r),
+      // surface fields (null until an aerial survey exists)
+      soil: hasSurface ? genSoil(c, r) : null,
+      quality: hasSurface ? genQuality(c, r) : null,
+      vegetation: hasSurface ? genVegetation(c, r) : null,
+      // subsurface fields (null until a GPR pass exists)
+      waterTable: hasSubsurface ? genWaterTable(c, r) : null,
+      stability: hasSubsurface ? genStability(c, r) : null,
+      mineral: hasSubsurface ? genMineral(c, r) : null,
+      scanned: scanned,
+      subsurfaceScanned: sub,
+      isHQ: hq,
       grade: getScanGrade(c, r)
     };
   }
@@ -161,28 +180,35 @@ window.LandData = (function () {
     var tiles = getAllTiles();
     var counts = { land: 0, hill: 0, river: 0, trench: 0, hq: 0 };
     var scanned = 0;
+    var subsurface = 0;
     var mineralCounts = { iron: 0, copper: 0, gold: 0 };
     var avgQuality = 0, avgStability = 0, avgWater = 0;
+    var qN = 0, sN = 0, wN = 0;
     for (var i = 0; i < tiles.length; i++) {
       var t = tiles[i];
       if (t.terrain === "hq") counts.hq++;
       else counts[t.terrain]++;
       if (t.scanned) scanned++;
-      avgQuality += t.quality;
-      avgStability += t.stability;
-      avgWater += t.waterTable;
-      if (t.mineral !== "none") mineralCounts[t.mineral]++;
+      if (t.subsurfaceScanned) subsurface++;
+      // quality is a surface metric (aerial survey)
+      if (t.quality != null) { avgQuality += t.quality; qN++; }
+      // stability/water/minerals are subsurface metrics (GPR survey)
+      if (t.stability != null) { avgStability += t.stability; sN++; }
+      if (t.waterTable != null) { avgWater += t.waterTable; wN++; }
+      if (t.mineral && t.mineral !== "none") mineralCounts[t.mineral]++;
     }
     var n = tiles.length;
     return {
       totalTiles: n,
       scannedTiles: scanned,
       scannedPct: Math.round((scanned / n) * 100),
+      subsurfaceTiles: subsurface,
+      subsurfacePct: Math.round((subsurface / n) * 100),
       terrainCounts: counts,
       mineralCounts: mineralCounts,
-      avgQuality: Math.round(avgQuality / n),
-      avgStability: Math.round(avgStability / n),
-      avgWaterTable: Math.round(avgWater / n)
+      avgQuality: qN ? Math.round(avgQuality / qN) : 0,
+      avgStability: sN ? Math.round(avgStability / sN) : 0,
+      avgWaterTable: wN ? Math.round(avgWater / wN) : 0
     };
   }
 
@@ -265,7 +291,8 @@ window.LandData = (function () {
   };
 
   var GRADE_LABELS = {
-    ESTIMATED: "ESTIMATED",
+    "NO DATA": "NO DATA",
+    "AERIAL SURVEY": "AERIAL SURVEY",
     PRECISE: "PRECISE",
     "HQ CORE": "HQ CORE"
   };

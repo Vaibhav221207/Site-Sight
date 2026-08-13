@@ -109,21 +109,24 @@ window.TilePanel = (function () {
       return;
     }
 
-    // build rich data rows
+    // build rich data rows. Surface fields require an aerial Drone survey;
+    // subsurface fields (stability / water / minerals) require a GPR pass.
     var L = window.LandData;
     var gradeLabel = L.GRADE_LABELS[data.grade] || data.grade;
-    var soilLabel = L.SOIL_LABELS[data.soil] || data.soil;
-    var vegLabel = L.VEGETATION_LABELS[data.vegetation] || data.vegetation;
-    var mineralLabel = data.mineral === "none" ? "None detected" : data.mineral.toUpperCase() + " deposit";
+    var soilLabel = data.soil != null ? (L.SOIL_LABELS[data.soil] || data.soil) : "—";
+    var vegLabel = data.vegetation != null ? (L.VEGETATION_LABELS[data.vegetation] || data.vegetation) : "—";
+    var mineralLabel = data.mineral == null ? "— (run GPR)"
+      : (data.mineral === "none" ? "None detected" : data.mineral.toUpperCase() + " deposit");
 
+    var ND = "—"; // not yet surveyed
     var rows = [
       { label: "GRADE", value: gradeLabel, class: "panel-data-grade" },
       { label: "TERRAIN", value: data.terrain.toUpperCase() },
       { label: "ELEVATION", value: data.elevation + "m" },
       { label: "SOIL TYPE", value: soilLabel },
-      { label: "SOIL QUALITY", value: data.quality + "/100" },
-      { label: "STABILITY", value: data.stability + "/100" },
-      { label: "WATER TABLE", value: data.waterTable + "m depth" },
+      { label: "SOIL QUALITY", value: data.quality != null ? data.quality + "/100" : ND },
+      { label: "STABILITY", value: data.stability != null ? data.stability + "/100" : "— (run GPR)" },
+      { label: "WATER TABLE", value: data.waterTable != null ? data.waterTable + "m depth" : "— (run GPR)" },
       { label: "VEGETATION", value: vegLabel },
       { label: "MINERALS", value: mineralLabel }
     ];
