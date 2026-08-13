@@ -45,10 +45,10 @@ window.GprDeploy = (function () {
   var GROUND_PULSE_HI = 0.5;   // ground glow pulse ceiling
   var GROUND_LOOP_DUR = 2000;  // one-way scan-line pass (ms) — slow, calm sweep
 
-  var AREA_W = 5;
+  var AREA_W = 20;          // full grid width per GPR section (wide sweep band)
   var AREA_H = 10;
   var MAX_ZONES = 2;
-  var CHUNK_COLS = 4;
+  var CHUNK_COLS = 1;        // 1 column x 2 rows = two horizontal GPR sections
   var CHUNK_ROWS = 2;
 
   // GPR palette — warm radar-AMBER. Subsurface/radar imagery is classically
