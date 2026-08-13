@@ -33,7 +33,7 @@ window.GprDeploy = (function () {
   var DROP_DUR = 420;          // rover drives in
   var SCAN_MOVE_DUR = 600;     // rover settles to its survey position
   var SCAN_FADE_IN_DUR = 450;  // radar rings + ground pulse fade in
-  var SCAN_HOLD_DUR = 6500;    // hold at full visibility (calm, a couple of sweep passes)
+  var SCAN_HOLD_DUR = 4000;    // hold ~ one full down+up sweep, then release (fewer laps)
   var SCAN_FADE_OUT_DUR = 450; // radar rings + ground pulse fade out
   var EXIT_DUR = 550;          // rover drives away + fades
   var EXIT_RISE = 60;          // px the departing rover slides (it drives off)
@@ -396,7 +396,6 @@ window.GprDeploy = (function () {
       s.pulse = RING_PULSE_LO;
       s.ground = GROUND_PULSE_LO;
       s.ringPhase = 0;
-      s.sweep = 0;
       var t3 = anime({
         targets: s,
         alpha: 0,
@@ -406,7 +405,11 @@ window.GprDeploy = (function () {
         complete: function (anim) {
           if (anim.completed === false || !zone.scan) return;
           var s2 = zone.scan;
-          var exitRovers = s2.rovers.map(function (d) { return { x: d.x, y: d.y, alpha: d.alpha }; });
+          // exit from the rover's REAL last scan position (where the line ended),
+          // not the chunk-center drop-in spot — otherwise it teleports to center
+          // and vanishes. sweep is frozen (tween paused) so it stays put here.
+          var col = area.cMin + s2.sweep * (area.cMax - area.cMin);
+          var exitRovers = [{ x: tileScreen(col, area.row).x, y: groundTopY(col, area.row), alpha: 1 }];
           zone.scan = null;
           api._startExit(zone, area, exitRovers);
         },
