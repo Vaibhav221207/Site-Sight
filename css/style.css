@@ -28,12 +28,13 @@ body {
 }
 
 /* Night sky stars — flat white dots, no blur/glow, chunky minimal style.
-   The layer sits BEHIND the transparent game canvas (z-index -1) so stars
-   show through the page's black backdrop without ever covering the tiles. */
+   The layer sits BEHIND the transparent game canvas so stars show through the
+   page's black backdrop without ever covering the tiles. Fixed z-index:0 with
+   the canvas at z-index:1 keeps stars above the viewport background. */
 #sky-deco {
   position: fixed;
   inset: 0;
-  z-index: -1;
+  z-index: 0;
   pointer-events: none;
   overflow: hidden;
 }
@@ -63,6 +64,8 @@ body {
   height: 100vh;
   cursor: grab;
   touch-action: none; /* block default browser touch gestures (scroll/pinch) */
+  position: relative;
+  z-index: 1;
 }
 
 button {
