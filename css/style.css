@@ -466,6 +466,7 @@ body {
 }
 
 .hq-fs-header {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -507,7 +508,7 @@ body {
 
 .hq-fs-body {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   /* flex-fill the panel below the header — the content area scrolls
      (no brittle pixel height math to keep in sync across viewports) */
   flex: 1 1 auto;
@@ -515,26 +516,51 @@ body {
   overflow: hidden;
 }
 
-/* fixed footer action bar — desktop hidden; only the mobile modal pattern
-   (within the small-viewport media query below) makes it visible */
+/* fixed footer action bar — visible at ALL breakpoints (unified layout):
+   STORE order buttons + INVENTORY Deploy are pinned here, always reachable
+   without scrolling. Hidden when empty or carrying only a hidden Deploy. */
 .hq-fs-footer {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid #F0E8D8;
+  background: #FFFDF7;
+}
+.hq-fs-footer:empty {
   display: none;
+}
+.hq-fs-footer--hidden {
+  display: none;
+}
+.hq-fs-footer .hq-order-btn {
   flex-shrink: 0;
 }
 
-/* tab nav */
+/* left sidebar nav (shared layout, all breakpoints): fixed vertical rail of
+   rounded pills; the active tab keeps the teal accent. Never scrolls. */
 .hq-fs-nav {
+  flex: 0 0 112px;
   display: flex;
-  gap: 4px;
-  padding: 16px 28px 12px;
-  border-bottom: 1px solid #F0E8D8;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding: 20px 14px;
+  border-right: 1px solid #F0E8D8;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .hq-fs-nav-item {
-  padding: 8px 20px;
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
+  padding: 12px 8px;
   background: transparent;
   border: none;
-  border-radius: 999px;
+  border-radius: 12px;
   background: none;
   color: #8A8A80;
   font-size: 13px;
@@ -542,6 +568,8 @@ body {
   font-family: "Baloo 2", sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-align: center;
   cursor: pointer;
   transition: color 0.15s ease, background 0.15s ease;
 }
@@ -554,6 +582,10 @@ body {
   color: #FFFFFF;
   font-weight: 700;
   background: #00ACC1;
+}
+
+body.touch-ui .hq-fs-nav-item {
+  min-height: 44px;
 }
 
 /* content area */
@@ -647,16 +679,32 @@ body {
   color: #00838F;
 }
 
-/* ---- HQ DATA tab: flat top-down mini-map + category summary ------------- */
+/* ---- HQ DATA tab: flat top-down mini-map + category summary -------------
+   Shared side-by-side split (all breakpoints): mini-map column + a right
+   column holding tile details ABOVE the category summary. The right column
+   scrolls independently (min-height: 0 + overflow-y: auto flexbox fix). */
+#hq-section-data {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+#hq-section-data.hq-fs-section {
+  margin-top: 0;
+}
+
 .hq-data-layout {
   display: flex;
+  flex-direction: row;
+  flex: 1 1 auto;
   gap: 12px;
-  align-items: flex-start;
+  align-items: stretch;
   min-height: 0;
 }
 
 .hq-data-minimap-col {
-  flex: 0 0 320px;
+  flex: 1 1 62%;
+  min-width: 0;
+  max-width: 500px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -689,9 +737,12 @@ body {
 
 .hq-data-minimap-wrap {
   position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
   background: #1a1a2e;
   border-radius: 12px;
-  overflow: hidden;
+  overflow: auto;
   box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.4);
   padding: 8px;
 }
@@ -699,7 +750,9 @@ body {
 #data-minimap {
   display: block;
   width: 100%;
+  height: auto;
   aspect-ratio: 1 / 1;
+  margin: auto; /* centers the square map in the frame; collapses to safe top-align when zoomed/overflowing */
   border-radius: 8px;
   cursor: pointer;
   touch-action: none; /* mini-map handles pan/pinch itself (mobile) */
@@ -738,8 +791,10 @@ body {
 }
 
 .hq-data-side-col {
-  flex: 1 1 0;
+  flex: 1 1 38%;
   min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -884,31 +939,13 @@ body {
   letter-spacing: 0.04em;
 }
 
-/* Mobile responsive for DATA tab — SIDE-BY-SIDE SPLIT: the mini-map column
-   (map + compact legend) sits next to a right column holding tile details
-   ABOVE the category summary. The right column scrolls independently
-   (min-height:0 + overflow-y:auto flexbox fix); the map never scrolls to be
-   seen. Desktop keeps the stacked header layout above. */
+/* Mobile responsive for DATA tab — SIDE-BY-SIDE SPLIT (same structure as
+   desktop, compact sizes): the mini-map column (map + compact legend) sits
+   next to a right column holding tile details ABOVE the category summary.
+   The right column scrolls independently (min-height:0 + overflow-y:auto
+   flexbox fix, inherited from the shared base); the map never scrolls to be
+   seen. */
 @media (max-height: 500px), (max-width: 640px) {
-  /* DATA section fills the whole content area so the split columns can use
-     the full height (no page-level scroll for the DATA tab) */
-  #hq-section-data {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-  #hq-section-data.hq-fs-section {
-    margin-top: 0;
-  }
-
-  .hq-data-layout {
-    flex: 1 1 auto;
-    flex-direction: row;
-    align-items: stretch;
-    gap: 10px;
-    min-height: 0;
-  }
-
   .hq-data-map-hint {
     display: none;
   }
@@ -929,11 +966,8 @@ body {
   }
 
   .hq-data-minimap-wrap {
-    flex: 1 1 auto;
-    min-height: 0;
     border-radius: 8px;
     padding: 6px;
-    overflow: auto;              /* only needed when pinch-zoomed past the column */
     -webkit-overflow-scrolling: touch;
   }
 
@@ -953,13 +987,14 @@ body {
   }
 
   /* right column: tile details ABOVE category summary; scrolls on its own
-     (flexbox scrolling fix: min-height:0 + overflow-y:auto) */
+     (inherits min-height:0 + overflow-y:auto from the shared base) */
   .hq-data-side-col {
     flex: 1 1 44%;
     min-width: 0;
-    min-height: 0;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+  }
+
+  .hq-data-layout {
+    gap: 10px;
   }
 
   .hq-data-details {
@@ -1045,11 +1080,6 @@ body {
     height: 100dvh;
     max-height: none;
   }
-  .hq-fs-header,
-  .hq-fs-nav,
-  .hq-fs-footer {
-    flex-shrink: 0;
-  }
   .hq-fs-content {
     flex: 1 1 0;
     min-height: 0;
@@ -1057,53 +1087,25 @@ body {
     -webkit-overflow-scrolling: touch;
   }
   .hq-fs-footer {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 10px;
     padding: 10px 16px;
-    border-top: 1px solid #F0E8D8;
-    background: #FFFDF7;
-  }
-  .hq-fs-footer:empty {
-    display: none;
-  }
-  .hq-fs-footer--hidden {
-    display: none;
-  }
-  .hq-fs-footer .hq-order-btn {
-    flex-shrink: 0;
   }
   .hq-fs-header { padding: 10px 14px; }
   .hq-fs-title { font-size: 15px; }
   .hq-fs-close { width: 32px; height: 32px; font-size: 18px; }
   body.touch-ui .hq-fs-close { width: 40px; height: 40px; }
-  .hq-fs-body { flex-direction: row; }
-  /* tabs become a fixed LEFT SIDEBAR (never scrolls): nav items stacked
-     vertically as rounded pills; the active tab keeps the teal accent */
+  /* compact sidebar: narrower rail + small pills on small screens (the
+     sidebar structure itself is shared base CSS at all breakpoints) */
   .hq-fs-nav {
     flex: 0 0 64px;
-    flex-direction: column;
-    align-items: stretch;
     gap: 8px;
     padding: 10px 8px;
-    border-bottom: none;
-    border-right: 1px solid #F0E8D8;
-    overflow: hidden;
   }
   .hq-fs-nav-item {
-    flex: 0 0 auto;
-    width: 100%;
-    min-width: 0;
     padding: 10px 4px;
     font-size: 9px;
     letter-spacing: 0.03em;
-    line-height: 1.2;
-    text-align: center;
     border-radius: 10px;
-    white-space: normal;
   }
-  body.touch-ui .hq-fs-nav-item { min-height: 42px; }
   .hq-fs-content { padding: 14px 16px; }
   .hq-fs-status { padding-bottom: 12px; }
   .hq-fs-status-text { font-size: 15px; }
