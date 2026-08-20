@@ -96,51 +96,44 @@ window.TilePanel = (function () {
     api.hqContent.style.display = "none";
     api.placeholderEl.style.display = "none";
 
-    // realistic tile data from LandData
-    var data = window.LandData && window.LandData.getTileData(col, row);
-    var isMobile = window.MobileUI && window.MobileUI.enabled;
-
-    if (!data) {
-      api.placeholderEl.textContent = isMobile
-        ? "NO DATA — BUILD HQ"
-        : "NO DATA AVAILABLE — CONTECH HQ NOT YET CONSTRUCTED";
-      api.placeholderEl.style.display = "";
-      if (bodyEl) bodyEl.style.display = "none";
-      return;
+    // real survey data from GameState.tileData (same model the HQ DATA tab
+    // reads). Surface fields require an aerial Drone survey; subsurface
+    // fields require a GPR pass — unscanned fields fall back to a prompt.
+    var d = (window.GameState && window.GameState.getTileData)
+      ? window.GameState.getTileData(col, row)
+      : null;
+    var ND = "Not yet scanned";
+    var catLabel = "Unscanned";
+    var catColor = "#E0E0DA";
+    if (d) {
+      var catMap = {
+        "Partial Data": ["Partial Data", "#FFE082"],
+        "Unsuitable": ["Unsuitable", "#EF5350"],
+        "Commercial": ["Commercial", "#42A5F5"],
+        "Residential": ["Residential", "#66BB6A"],
+        "Industrial": ["Industrial", "#8D6E63"],
+        "Mining": ["Mining", "#FFB300"]
+      };
+      var mapped = catMap[d.bestUse] || null;
+      if (mapped) { catLabel = mapped[0]; catColor = mapped[1]; }
     }
 
-    // build rich data rows. Surface fields require an aerial Drone survey;
-    // subsurface fields (stability / water / minerals) require a GPR pass.
-    var L = window.LandData;
-    var gradeLabel = L.GRADE_LABELS[data.grade] || data.grade;
-    var soilLabel = data.soil != null ? (L.SOIL_LABELS[data.soil] || data.soil) : "—";
-    var vegLabel = data.vegetation != null ? (L.VEGETATION_LABELS[data.vegetation] || data.vegetation) : "—";
-    var mineralLabel = data.mineral == null ? "— (run GPR)"
-      : (data.mineral === "none" ? "None detected" : data.mineral.toUpperCase() + " deposit");
-
-    var ND = "—"; // not yet surveyed
     var rows = [
-      { label: "GRADE", value: gradeLabel, class: "panel-data-grade" },
-      { label: "TERRAIN", value: data.terrain.toUpperCase() },
-      { label: "ELEVATION", value: data.elevation + "m" },
-      { label: "SOIL TYPE", value: soilLabel },
-      { label: "SOIL QUALITY", value: data.quality != null ? data.quality + "/100" : ND },
-      { label: "STABILITY", value: data.stability != null ? data.stability + "/100" : "— (run GPR)" },
-      { label: "WATER TABLE", value: data.waterTable != null ? data.waterTable + "m depth" : "— (run GPR)" },
-      { label: "VEGETATION", value: vegLabel },
-      { label: "MINERALS", value: mineralLabel }
+      { label: "SURFACE STABILITY", value: (d && d.droneScanned) ? d.surfaceStability : ND },
+      { label: "SOIL TYPE", value: (d && d.gprScanned) ? d.soilType : ND },
+      { label: "MINERAL DEPOSITS", value: (d && d.gprScanned) ? d.mineralDeposits : ND },
+      { label: "BEDROCK DEPTH", value: (d && d.gprScanned) ? d.bedrockDepth : ND },
+      { label: "BEST USE", value: catLabel, badge: catColor }
     ];
-
-    // show only basic info — the full 9-field breakdown lives in HQ
-    var BASIC = ["GRADE", "TERRAIN", "ELEVATION", "SOIL TYPE"];
-    rows = rows.filter(function (r) { return BASIC.indexOf(r.label) >= 0; });
 
     if (bodyEl) {
       bodyEl.style.display = "";
       bodyEl.innerHTML = rows.map(function (r) {
-        return '<div class="panel-data-row' + (r.class ? " " + r.class : "") + '">' +
-          '<span class="panel-data-label">' + r.label + '</span>' +
-          '<span class="panel-data-value">' + r.value + '</span>' +
+        var valueHtml = r.badge
+          ? '<span class="panel-data-value panel-data-badge" style="background:' + r.badge + '">' + r.value + '</span>'
+          : '<span class="panel-data-value">' + r.value + '</span>';
+        return '<div class="panel-data-row">' +
+          '<span class="panel-data-label">' + r.label + '</span>' + valueHtml +
         '</div>';
       }).join("");
       // anime.js: stagger the data rows + grade in for a lively UI/UX entrance

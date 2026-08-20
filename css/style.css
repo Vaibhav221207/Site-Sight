@@ -687,27 +687,6 @@ body {
   letter-spacing: 0.04em;
 }
 
-/* legend toggle — desktop hidden (legend is permanently visible there);
-   mobile-only affordance added in the small-viewport media query */
-.hq-data-map-toggle {
-  display: none;
-  padding: 5px 12px;
-  background: rgba(45, 53, 97, 0.08);
-  border: 1px solid rgba(0, 131, 143, 0.25);
-  border-radius: 999px;
-  color: #00838F;
-  font-family: "Baloo 2", sans-serif;
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-}
-
-.hq-data-map-toggle:active {
-  transform: scale(0.96);
-}
-
 .hq-data-minimap-wrap {
   position: relative;
   background: #1a1a2e;
@@ -785,24 +764,6 @@ body {
   border-radius: 10px;
   border: 1px solid rgba(0, 131, 143, 0.1);
   position: relative;
-}
-
-.hq-data-details-close {
-  display: none;
-  position: absolute;
-  top: 6px;
-  right: 8px;
-  z-index: 2;
-  width: 26px;
-  height: 26px;
-  border: none;
-  border-radius: 50%;
-  background: rgba(45, 53, 97, 0.1);
-  color: #2D3561;
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 1;
-  cursor: pointer;
 }
 
 .hq-data-details-empty {
@@ -913,71 +874,50 @@ body {
   word-break: break-word;
 }
 
-.panel-data-grade {
-  background: linear-gradient(90deg, rgba(0, 204, 102, 0.1), transparent);
-  border-radius: 6px;
-  padding-left: 8px;
-  padding-right: 8px;
-  margin: 2px -8px;
+/* Best Use badge inside the tile popup (category color chip) */
+.panel-data-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 9px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-.panel-data-grade .panel-data-value {
-  color: #00838F;
-}
-
-/* Mobile responsive for DATA tab */
+/* Mobile responsive for DATA tab — SIDE-BY-SIDE SPLIT: the mini-map column
+   (map + compact legend) sits next to a right column holding tile details
+   ABOVE the category summary. The right column scrolls independently
+   (min-height:0 + overflow-y:auto flexbox fix); the map never scrolls to be
+   seen. Desktop keeps the stacked header layout above. */
 @media (max-height: 500px), (max-width: 640px) {
-  .hq-data-layout {
+  /* DATA section fills the whole content area so the split columns can use
+     the full height (no page-level scroll for the DATA tab) */
+  #hq-section-data {
+    height: 100%;
+    display: flex;
     flex-direction: column;
-    gap: 8px;
+  }
+  #hq-section-data.hq-fs-section {
+    margin-top: 0;
   }
 
-  /* DATA modal pattern: map fills the primary content area; the legend is a
-     toggleable overlay strip (not permanent scroll space) and tile details
-     become a bottom-sheet overlay anchored to the mini-map column */
-  .hq-data-minimap-col {
-    position: relative;
+  .hq-data-layout {
+    flex: 1 1 auto;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 10px;
+    min-height: 0;
   }
 
   .hq-data-map-hint {
     display: none;
   }
 
-  .hq-data-map-toggle {
-    display: inline-flex;
-  }
-
-  #data-minimap-legend {
-    display: none;
-  }
-  #data-minimap-legend.open {
-    display: flex;
-  }
-
-  #data-details {
-    position: absolute;
-    left: 8px;
-    right: 8px;
-    bottom: 8px;
-    z-index: 6;
-    display: none;
-    max-height: 46%;
-    overflow-y: auto;
-    background: rgba(255, 253, 247, 0.97);
-    box-shadow: 0 6px 20px rgba(45, 53, 97, 0.25);
-    border: 1px solid rgba(0, 131, 143, 0.15);
-  }
-  #data-details.hq-data-details--open {
-    display: flex;
-  }
-
-  .hq-data-details-close {
-    display: flex;
-  }
-
+  /* left column: map fills available height; legend stays pinned below it */
   .hq-data-minimap-col {
-    flex: 1 1 auto;
-    width: 100%;
+    flex: 0 0 56%;
+    min-width: 0;
+    position: static;
   }
 
   .hq-data-map-header {
@@ -988,25 +928,38 @@ body {
     font-size: 11px;
   }
 
-  .hq-data-map-hint {
-    font-size: 9px;
-  }
-
   .hq-data-minimap-wrap {
+    flex: 1 1 auto;
+    min-height: 0;
     border-radius: 8px;
     padding: 6px;
-    overflow: auto;              /* mini-map scrolls (and pinch-zooms) instead of shrinking */
+    overflow: auto;              /* only needed when pinch-zoomed past the column */
     -webkit-overflow-scrolling: touch;
   }
 
   #data-minimap {
-    min-width: 360px;            /* 18px tiles — never shrinks below legible size */
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;         /* square map, width-bound — tiles stay square */
+    min-width: 0;
   }
 
-  .hq-data-minimap-legend {
+  /* compact legend: always-visible strip under the map, no toggle */
+  #data-minimap-legend {
+    display: flex;
     gap: 4px 8px;
     padding: 5px 8px;
     font-size: 8px;
+  }
+
+  /* right column: tile details ABOVE category summary; scrolls on its own
+     (flexbox scrolling fix: min-height:0 + overflow-y:auto) */
+  .hq-data-side-col {
+    flex: 1 1 44%;
+    min-width: 0;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .hq-data-details {
@@ -1125,17 +1078,32 @@ body {
   .hq-fs-title { font-size: 15px; }
   .hq-fs-close { width: 32px; height: 32px; font-size: 18px; }
   body.touch-ui .hq-fs-close { width: 40px; height: 40px; }
-  /* tabs become full-width segmented controls on small screens */
-  .hq-fs-nav { padding: 8px 14px; }
-  .hq-fs-nav-item {
-    flex: 1 1 0;
-    min-width: 0;
-    padding: 8px 4px;
-    font-size: 12px;
-    text-align: center;
-    white-space: nowrap;
+  .hq-fs-body { flex-direction: row; }
+  /* tabs become a fixed LEFT SIDEBAR (never scrolls): nav items stacked
+     vertically as rounded pills; the active tab keeps the teal accent */
+  .hq-fs-nav {
+    flex: 0 0 64px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 10px 8px;
+    border-bottom: none;
+    border-right: 1px solid #F0E8D8;
+    overflow: hidden;
   }
-  body.touch-ui .hq-fs-nav-item { min-height: 40px; }
+  .hq-fs-nav-item {
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
+    padding: 10px 4px;
+    font-size: 9px;
+    letter-spacing: 0.03em;
+    line-height: 1.2;
+    text-align: center;
+    border-radius: 10px;
+    white-space: normal;
+  }
+  body.touch-ui .hq-fs-nav-item { min-height: 42px; }
   .hq-fs-content { padding: 14px 16px; }
   .hq-fs-status { padding-bottom: 12px; }
   .hq-fs-status-text { font-size: 15px; }
@@ -1197,7 +1165,7 @@ body {
   }
   .panel-data-label { font-size: 8px; }
   .panel-data-value { font-size: 10px; max-width: 100%; }
-  .panel-data-grade { grid-column: 1 / -1; margin: 0; }
+  .panel-data-badge { font-size: 8px; padding: 1px 6px; }
 
   /* INVENTORY rows are authored with inline styles in hqPanel.js — compact
      them at this breakpoint only (desktop keeps the authored sizes). */
