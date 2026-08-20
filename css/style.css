@@ -42,6 +42,12 @@ body {
   position: absolute;
   background: #FFFFFF;
   border-radius: 50%;
+  opacity: 0.75;
+}
+#sky-deco .star--bright,
+.rotate-sky-deco .star--bright {
+  opacity: 1;
+  /* flat crisp sparkle — still hard-edged, no blur/glow */
 }
 .rotate-sky-deco {
   position: absolute;
