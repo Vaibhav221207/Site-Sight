@@ -983,9 +983,9 @@ body {
      the map; fades in (panel.js drives opacity, not transform). */
   #tile-popup {
     width: auto;
-    max-width: 170px;
-    max-height: 120px;
-    overflow: hidden;
+    max-width: 190px;
+    max-height: 176px;
+    overflow-y: auto;
     top: auto;
     bottom: 60px;
     left: 12px;
@@ -1000,18 +1000,37 @@ body {
     left: 12px;
     right: auto;
   }
-  .panel-header { padding: 6px 8px; border-bottom: none; background: transparent; background-image: none; }
+.panel-header { padding: 6px 8px; border-bottom: none; background: transparent; background-image: none; }
   .panel-title { font-size: 10px; }
   .panel-close { width: 20px; height: 20px; font-size: 12px; }
-  .panel-body { padding: 4px 8px 6px; }
+  .panel-body {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px 8px;
+    padding: 4px 8px 6px;
+  }
   .tile-coords { font-size: 11px; font-weight: 700; margin-bottom: 2px; }
   .placeholder { font-size: 10px; line-height: 1.3; }
-  .panel-header { padding: 10px 14px; }
-  .panel-title { font-size: 12px; }
-  .panel-close { width: 28px; height: 28px; font-size: 15px; }
-  .panel-body { padding: 12px 14px; }
-  .tile-coords { font-size: 12px; margin-bottom: 8px; }
-  .placeholder { font-size: 12px; }
+
+  /* keep non-data children (coords line, HQ content, placeholder) full-width
+     so the 2-col grid only applies to the survey data rows */
+  #tile-coords,
+  #hq-content,
+  #tile-placeholder { grid-column: 1 / -1; }
+
+  /* compact data rows: label stacked over value in a 2-col grid so all 9
+     survey fields fit in the tiny mobile chip without clipping */
+  .panel-data-row {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0;
+    padding: 2px 0;
+    border-bottom: none;
+  }
+  .panel-data-label { font-size: 8px; }
+  .panel-data-value { font-size: 10px; max-width: 100%; }
+  .panel-data-grade { grid-column: 1 / -1; margin: 0; }
 
   /* INVENTORY rows are authored with inline styles in hqPanel.js — compact
      them at this breakpoint only (desktop keeps the authored sizes). */
