@@ -131,11 +131,9 @@ window.TilePanel = (function () {
       { label: "MINERALS", value: mineralLabel }
     ];
 
-    // mobile: show only basic info — the full 9-field breakdown lives in HQ
-    if (isMobile) {
-      var BASIC = ["GRADE", "TERRAIN", "ELEVATION", "SOIL TYPE"];
-      rows = rows.filter(function (r) { return BASIC.indexOf(r.label) >= 0; });
-    }
+    // show only basic info — the full 9-field breakdown lives in HQ
+    var BASIC = ["GRADE", "TERRAIN", "ELEVATION", "SOIL TYPE"];
+    rows = rows.filter(function (r) { return BASIC.indexOf(r.label) >= 0; });
 
     if (bodyEl) {
       bodyEl.style.display = "";
