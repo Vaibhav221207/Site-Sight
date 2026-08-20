@@ -61,7 +61,7 @@ window.HqPanel = (function () {
         api.ownedEl.className = "hq-fs-drone-owned";
         api.ownedEl.style.fontSize = "13px";
         api.ownedEl.style.fontWeight = "700";
-        api.ownedEl.style.color = "#0E9AA6";
+        api.ownedEl.style.color = "#E8604A";
         infoEl.appendChild(api.ownedEl);
       }
       api.orderBtn.addEventListener("click", function () { api.buyDrone(); });
@@ -259,7 +259,7 @@ window.HqPanel = (function () {
         "border:3px solid #2B2320;border-radius:16px;cursor:pointer;" +
         "box-shadow:6px 6px 0 rgba(43,35,32,0.25);" +
         "transition:border-color 0.15s ease,background 0.15s ease;";
-      var accent = type === "gpr" ? "#E0962A" : "#0E9AA6";
+      var accent = type === "gpr" ? "#E0962A" : "#E8604A";
       entry.innerHTML =
         '<span class="hq-fs-inventory-item-name" style="font-size:17px;font-weight:700;color:' + accent + '">' + name + '</span>';
       entry.addEventListener("click", function (ev) {
@@ -273,7 +273,7 @@ window.HqPanel = (function () {
 
   // Toggle the selected state of an inventory entry element.
   api.markSelected = function (entry, selected) {
-    entry.style.borderColor = selected ? "#0E9AA6" : "#2B2320";
+    entry.style.borderColor = selected ? "#E8604A" : "#2B2320";
     entry.style.background = selected ? "#E4F5F6" : "#FFFBF0";
   };
 
@@ -381,7 +381,7 @@ window.HqPanel = (function () {
     }
     api.msgEl.textContent = text;
     // amber is reserved for warning moments; teal for positive confirmations
-    api.msgEl.style.color = success ? "#0E9AA6" : "#FFA000";
+    api.msgEl.style.color = success ? "#E8604A" : "#FFA000";
     api.msgEl.style.opacity = "1";
     clearTimeout(api._msgTimer);
     api._msgTimer = setTimeout(function () {

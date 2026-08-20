@@ -33,7 +33,7 @@ window.UI = (function () {
     opts = opts || {};
     var s = stack();
     var t = document.createElement("div");
-    var color = opts.color || "#0E9AA6";
+    var color = opts.color || "#E8604A";
     t.style.cssText =
       "pointer-events:none;max-width:80vw;padding:10px 18px;border-radius:16px;" +
       "background:#2B2320;color:#fff;font-family:'Baloo 2',sans-serif;" +

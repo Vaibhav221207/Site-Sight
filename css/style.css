@@ -1,6 +1,6 @@
 /* Site Sight — chunky tactile mobile-game UI theme.
    Chrome colors: warm cream #FFFBF0 panels, thick 3px "cartoon ink" outlines
-   #2B2320 (near-black warm brown), saturated teal #0E9AA6 primary actions,
+   #2B2320 (near-black warm brown), saturated coral #E8604A primary actions,
    warm brown-gray #6B5B4F section labels, ink #2B2320 body text. Panels get
    hard offset shadows (ZERO blur), buttons are pressable 3D keys with a
    darker bottom "keycap" edge that collapses on press. Major titles use a
@@ -71,11 +71,11 @@ button {
 
 /* primary teal keycap button */
 .btn-teal {
-  background: #0E9AA6;
-  box-shadow: 0 5px 0 0 #087B84; /* darker teal bottom edge, zero blur */
+  background: #E8604A;
+  box-shadow: 0 5px 0 0 #B8432F; /* darker teal bottom edge, zero blur */
 }
 .btn-teal:hover {
-  background: #0C8A93;
+  background: #D05240;
 }
 
 /* ---- tile inspection popup (chunky sticker card) ------------------------ */
@@ -112,7 +112,7 @@ button {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #0E9AA6;
+  color: #E8604A;
   /* comic game-logo outline on major titles only */
   -webkit-text-stroke: 2px #2B2320;
   paint-order: stroke fill;
@@ -121,8 +121,8 @@ button {
 .panel-close {
   width: 28px;
   height: 28px;
-  background: #0E9AA6;
-  box-shadow: 0 5px 0 0 #087B84;
+  background: #E8604A;
+  box-shadow: 0 5px 0 0 #B8432F;
   border: 3px solid #2B2320;
   border-radius: 14px;
   color: #FFFFFF;
@@ -134,7 +134,7 @@ button {
     background 0.15s ease;
 }
 .panel-close:hover {
-  background: #0C8A93;
+  background: #D05240;
 }
 .panel-close:active {
   transform: translateY(5px);
@@ -205,8 +205,8 @@ button {
 
 .hud-btn {
   padding: 8px 26px;
-  background: #0E9AA6;
-  box-shadow: 0 5px 0 0 #087B84;
+  background: #E8604A;
+  box-shadow: 0 5px 0 0 #B8432F;
   border: 3px solid #2B2320;
   border-radius: 14px;
   color: #FFFFFF;
@@ -220,7 +220,7 @@ button {
 }
 
 .hud-btn:hover {
-  background: #0C8A93;
+  background: #D05240;
 }
 
 .hud-btn:active {
@@ -300,9 +300,9 @@ button {
 }
 
 .build-item.selected {
-  background: #0E9AA6;
+  background: #E8604A;
   color: #FFFFFF;
-  box-shadow: 0 5px 0 0 #087B84; /* selected = raised keycap look */
+  box-shadow: 0 5px 0 0 #B8432F; /* selected = raised keycap look */
 }
 
 .build-item.selected .build-item-name,
@@ -452,8 +452,8 @@ button {
 
 .hq-order-btn {
   padding: 8px 22px;
-  background: #0E9AA6;
-  box-shadow: 0 5px 0 0 #087B84;
+  background: #E8604A;
+  box-shadow: 0 5px 0 0 #B8432F;
   border: 3px solid #2B2320;
   border-radius: 14px;
   color: #FFFFFF;
@@ -468,7 +468,7 @@ button {
 }
 
 .hq-order-btn:hover {
-  background: #0C8A93;
+  background: #D05240;
 }
 
 .hq-order-btn:active {
@@ -477,8 +477,8 @@ button {
 }
 
 .hq-order-btn.hq-order-btn--flash {
-  background: #2FAEB8; /* brief "Ordered!" confirmation flash */
-  box-shadow: 0 5px 0 0 #1E8A92;
+  background: #F07060; /* brief "Ordered!" confirmation flash */
+  box-shadow: 0 5px 0 0 #C04030;
 }
 
 /* ONE-TIME purchase state: permanently grayed out once the Drone System has
@@ -587,7 +587,7 @@ button {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #0E9AA6;
+  color: #E8604A;
   /* comic game-logo outline on major titles only */
   -webkit-text-stroke: 2px #2B2320;
   paint-order: stroke fill;
@@ -596,8 +596,8 @@ button {
 .hq-fs-close {
   width: 38px;
   height: 38px;
-  background: #0E9AA6;
-  box-shadow: 0 5px 0 0 #087B84;
+  background: #E8604A;
+  box-shadow: 0 5px 0 0 #B8432F;
   border: 3px solid #2B2320;
   border-radius: 14px;
   color: #FFFFFF;
@@ -610,7 +610,7 @@ button {
 }
 
 .hq-fs-close:hover {
-  background: #0C8A93;
+  background: #D05240;
 }
 
 .hq-fs-close:active {
@@ -701,8 +701,8 @@ button {
 /* active tab = filled teal key (currently selected, looks pressed in) */
 .hq-fs-nav-item--active {
   color: #FFFFFF;
-  background: #0E9AA6;
-  box-shadow: 0 5px 0 0 #087B84;
+  background: #E8604A;
+  box-shadow: 0 5px 0 0 #B8432F;
 }
 
 body.touch-ui .hq-fs-nav-item {
@@ -1417,8 +1417,8 @@ body.touch-ui .hud { display: none; }
 
 .mu-btn {
   padding: 12px 6px;
-  background: #0E9AA6;
-  box-shadow: 0 5px 0 0 #087B84;
+  background: #E8604A;
+  box-shadow: 0 5px 0 0 #B8432F;
   border: 3px solid #2B2320;
   border-radius: 14px;
   color: #FFFFFF;
@@ -1432,7 +1432,7 @@ body.touch-ui .hud { display: none; }
 }
 
 .mu-btn:hover {
-  background: #0C8A93;
+  background: #D05240;
 }
 
 .mu-btn:active {
@@ -1453,8 +1453,8 @@ body.touch-ui .hud { display: none; }
   align-items: center;
   justify-content: center;
   padding: 12px 22px;
-  background: #0E9AA6;
-  box-shadow: 0 5px 0 0 #087B84;
+  background: #E8604A;
+  box-shadow: 0 5px 0 0 #B8432F;
   border: 3px solid #2B2320;
   border-radius: 14px;
   color: #FFFFFF;
@@ -1468,7 +1468,7 @@ body.touch-ui .hud { display: none; }
 }
 
 .rotate-enter:hover {
-  background: #0C8A93;
+  background: #D05240;
 }
 
 .rotate-enter:active {
@@ -1490,8 +1490,8 @@ body.touch-ui .rotate-enter { display: inline-flex; }
   align-items: center;
   justify-content: center;
   padding: 0;
-  background: #0E9AA6;
-  box-shadow: 0 5px 0 0 #087B84;
+  background: #E8604A;
+  box-shadow: 0 5px 0 0 #B8432F;
   border: 3px solid #2B2320;
   border-radius: 14px;
   cursor: pointer;
@@ -1501,7 +1501,7 @@ body.touch-ui .rotate-enter { display: inline-flex; }
 }
 
 .fs-btn:hover {
-  background: #0C8A93;
+  background: #D05240;
 }
 
 .fs-btn:active {
