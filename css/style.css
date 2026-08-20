@@ -695,6 +695,39 @@ body {
   aspect-ratio: 1 / 1;
   border-radius: 8px;
   cursor: pointer;
+  touch-action: none; /* mini-map handles pan/pinch itself (mobile) */
+}
+
+/* compact quick-reference legend strip directly under the mini-map */
+.hq-data-minimap-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 6px 10px;
+  background: rgba(45, 53, 97, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 131, 143, 0.12);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #8A8A80;
+}
+
+.hq-data-minimap-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.hq-data-minimap-legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
 }
 
 .hq-data-side-col {
@@ -872,6 +905,18 @@ body {
   .hq-data-minimap-wrap {
     border-radius: 8px;
     padding: 6px;
+    overflow: auto;              /* mini-map scrolls (and pinch-zooms) instead of shrinking */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #data-minimap {
+    min-width: 360px;            /* 18px tiles — never shrinks below legible size */
+  }
+
+  .hq-data-minimap-legend {
+    gap: 4px 8px;
+    padding: 5px 8px;
+    font-size: 8px;
   }
 
   .hq-data-details {

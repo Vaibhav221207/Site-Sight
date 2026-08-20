@@ -8,22 +8,26 @@ window.DataMap = (function () {
   // Category palette — used consistently in both the mini-map and the summary
   // list. `bestUse: null` (no scan data at all) maps to "Unscanned".
   var CATEGORIES = [
-    { id: "unscanned",   label: "Unscanned",     color: "#E0E0DA" },
-    { id: "partial",     label: "Partial Data",  color: "#FFE082" },
-    { id: "unsuitable",  label: "Unsuitable",    color: "#EF5350" },
-    { id: "commercial",  label: "Commercial",    color: "#42A5F5" },
-    { id: "residential", label: "Residential",   color: "#66BB6A" },
-    { id: "industrial",  label: "Industrial",    color: "#8D6E63" },
-    { id: "mining",      label: "Mining",        color: "#FFB300" },
+    { id: "unscanned",   label: "Unscanned",     short: "Unscanned",    color: "#E0E0DA" },
+    { id: "partial",     label: "Partial Data",  short: "Partial",      color: "#FFE082" },
+    { id: "unsuitable",  label: "Unsuitable",    short: "Unsuitable",   color: "#EF5350" },
+    { id: "commercial",  label: "Commercial",    short: "Commercial",   color: "#42A5F5" },
+    { id: "residential", label: "Residential",   short: "Residential",  color: "#66BB6A" },
+    { id: "industrial",  label: "Industrial",    short: "Industrial",   color: "#8D6E63" },
+    { id: "mining",      label: "Mining",        short: "Mining",       color: "#FFB300" },
   ];
 
   var api = {
     _init: false,
     canvas: null,
     ctx: null,
+    wrap: null,       // mini-map container (used for mobile pan/scroll)
     detailsEl: null,
     categoriesEl: null,
-    selected: null, // { col, row } | null
+    legendEl: null,
+    selected: null,   // { col, row } | null
+    // mobile touch state (pan + pinch-zoom; Pointer Events like the main map)
+    _touch: { pointers: {}, pinch: null, panStart: null, zoom: 1, baseWidth: 0 },
   };
 
   function gridSize() {
@@ -84,27 +88,39 @@ window.DataMap = (function () {
 
   // faint terrain-context overlays on top of the category grid: river, trench,
   // rock clusters and the HQ building. Reads the SAME terrain state as the main
-  // isometric map (window.Terrain) — nothing is recalculated here. All overlays
-  // are subtle strokes/small icons so the discrete category fill stays readable.
+  // isometric map (window.Terrain) — nothing is recalculated here. Every marker
+  // is drawn with a dark under-stroke + bright core so it stays visible on ANY
+  // category fill (e.g. river blue vs Commercial blue, gray rocks vs Industrial
+  // brown, dark trench vs Unsuitable red).
   function drawTerrainOverlays(ctx, cell) {
     var t = window.Terrain;
     if (!t) return;
     var g = gridSize();
     var inset = Math.max(1, cell * 0.05);
 
-    // river: thin light-blue outline around river tiles
-    ctx.strokeStyle = "rgba(64, 196, 255, 0.45)";
-    ctx.lineWidth = Math.max(1, cell * 0.06);
+    // river: bright white-cyan DASHED line with a thin dark shadow stroke
+    // behind it — clear contrast against every fill, incl. Commercial blue
+    ctx.setLineDash([Math.max(3, cell * 0.32), Math.max(2, cell * 0.22)]);
     for (var r = 0; r < g; r++) {
       for (var c = 0; c < g; c++) {
         if (!t.isRiver(c, r)) continue;
-        ctx.strokeRect(c * cell + inset, r * cell + inset, cell - inset * 2, cell - inset * 2);
+        var rx = c * cell + inset;
+        var ry = r * cell + inset;
+        var rw = cell - inset * 2;
+        var rh = cell - inset * 2;
+        ctx.strokeStyle = "rgba(15, 25, 45, 0.65)"; // dark shadow behind
+        ctx.lineWidth = Math.max(2.5, cell * 0.15);
+        ctx.strokeRect(rx, ry, rw, rh);
+        ctx.strokeStyle = "rgba(225, 248, 255, 0.95)"; // bright core
+        ctx.lineWidth = Math.max(1, cell * 0.07);
+        ctx.strokeRect(rx, ry, rw, rh);
       }
     }
+    ctx.setLineDash([]);
 
-    // trench: thin dark outline around trench tiles
-    ctx.strokeStyle = "rgba(30, 20, 10, 0.38)";
-    ctx.lineWidth = Math.max(1, cell * 0.06);
+    // trench: thin dark outline around trench tiles (dark on red/light both read)
+    ctx.strokeStyle = "rgba(15, 15, 20, 0.55)";
+    ctx.lineWidth = Math.max(1.5, cell * 0.09);
     for (var r = 0; r < g; r++) {
       for (var c = 0; c < g; c++) {
         if (t.typeAt(c, r) !== "trench") continue;
@@ -112,8 +128,8 @@ window.DataMap = (function () {
       }
     }
 
-    // rock clusters: small gray dots at the same boulder positions the main map
-    // uses (cluster center + per-rock dc/dr offsets)
+    // rock clusters: light gray dots with a strong dark outline — readable on
+    // Industrial brown as well as on light fills
     var clusters = t.hillClusters || [];
     for (var ci = 0; ci < clusters.length; ci++) {
       var rocks = (clusters[ci].rocks || []).slice();
@@ -124,10 +140,10 @@ window.DataMap = (function () {
         var rad = Math.max(1.5, cell * 0.13 * (rock.size || 1));
         ctx.beginPath();
         ctx.arc(px, py, rad, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(125, 125, 130, 0.6)";
+        ctx.fillStyle = "rgba(205, 205, 212, 0.85)";
         ctx.fill();
-        ctx.strokeStyle = "rgba(0, 0, 0, 0.25)";
-        ctx.lineWidth = Math.max(0.75, cell * 0.04);
+        ctx.strokeStyle = "rgba(20, 20, 25, 0.6)";
+        ctx.lineWidth = Math.max(1, cell * 0.05);
         ctx.stroke();
       }
     }
@@ -263,6 +279,102 @@ window.DataMap = (function () {
     renderDetails(col, row);
   }
 
+  // ---- compact inline legend (always-visible quick reference under the map) --
+
+  function renderLegend() {
+    if (!api.legendEl) return;
+    var html = "";
+    for (var i = 0; i < CATEGORIES.length; i++) {
+      var cat = CATEGORIES[i];
+      html += '<span class="hq-data-minimap-legend-item">' +
+        '<span class="hq-data-minimap-legend-swatch" style="background:' + cat.color + '"></span>' +
+        cat.short +
+      '</span>';
+    }
+    api.legendEl.innerHTML = html;
+  }
+
+  // ---- mobile pan + pinch-zoom (Pointer Events, like the main game map) -----
+  // One-finger drag pans (wrap scroll), two-finger pinch scales the canvas up
+  // to PINCH_MAX so tiles never have to shrink into illegibility on small
+  // screens. touch-action:none on the canvas keeps the browser out of the way.
+
+  var PINCH_MIN = 1;
+  var PINCH_MAX = 2.5;
+
+  function touchPointers() {
+    var pts = [];
+    for (var k in api._touch.pointers) pts.push(api._touch.pointers[k]);
+    return pts;
+  }
+
+  function touchDist(a, b) {
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  }
+
+  function applyZoom(z) {
+    api._touch.zoom = Math.min(PINCH_MAX, Math.max(PINCH_MIN, z));
+    if (!api._touch.baseWidth) {
+      api._touch.baseWidth = api.wrap ? api.wrap.clientWidth : (api.canvas ? api.canvas.clientWidth : 320);
+    }
+    api.canvas.style.width = Math.round(api._touch.baseWidth * api._touch.zoom) + "px";
+  }
+
+  function isTouchPointer(e) {
+    return e && e.pointerType === "touch";
+  }
+
+  function onTouchPointerDown(e) {
+    if (!isTouchPointer(e)) return; // mouse keeps native click-to-select
+    api._touch.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+    try { api.canvas.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    var pts = touchPointers();
+    if (pts.length >= 2) {
+      // switch to pinch: remember start distance + zoom level
+      api._touch.pinch = { dist: touchDist(pts[0], pts[1]), zoom: api._touch.zoom };
+      api._touch.panStart = null;
+    } else {
+      api._touch.pinch = null;
+      api._touch.panStart = {
+        x: e.clientX, y: e.clientY,
+        sx: api.wrap ? api.wrap.scrollLeft : 0,
+        sy: api.wrap ? api.wrap.scrollTop : 0,
+      };
+    }
+  }
+
+  function onTouchPointerMove(e) {
+    if (!isTouchPointer(e) || !api._touch.pointers[e.pointerId]) return;
+    api._touch.pointers[e.pointerId].x = e.clientX;
+    api._touch.pointers[e.pointerId].y = e.clientY;
+    if (api._touch.pinch) {
+      var pts = touchPointers();
+      if (pts.length >= 2 && api._touch.pinch.dist > 0) {
+        applyZoom(api._touch.pinch.zoom * touchDist(pts[0], pts[1]) / api._touch.pinch.dist);
+      }
+    } else if (api._touch.panStart && api.wrap) {
+      api.wrap.scrollLeft = api._touch.panStart.sx - (e.clientX - api._touch.panStart.x);
+      api.wrap.scrollTop = api._touch.panStart.sy - (e.clientY - api._touch.panStart.y);
+    }
+  }
+
+  function onTouchPointerEnd(e) {
+    if (!isTouchPointer(e)) return;
+    delete api._touch.pointers[e.pointerId];
+    if (api._touch.pinch) {
+      api._touch.pinch = null;
+      var pts = touchPointers();
+      if (pts.length === 1) {
+        api._touch.panStart = {
+          x: pts[0].x, y: pts[0].y,
+          sx: api.wrap ? api.wrap.scrollLeft : 0,
+          sy: api.wrap ? api.wrap.scrollTop : 0,
+        };
+      }
+    }
+    if (touchPointers().length === 0) api._touch.panStart = null;
+  }
+
   // ---- lifecycle ----------------------------------------------------------
 
   api.init = function () {
@@ -270,7 +382,9 @@ window.DataMap = (function () {
     api.canvas = document.getElementById("data-minimap");
     api.detailsEl = document.getElementById("data-details");
     api.categoriesEl = document.getElementById("data-categories");
+    api.legendEl = document.getElementById("data-minimap-legend");
     if (!api.canvas) return;
+    api.wrap = api.canvas.parentElement;
 
     var dpr = window.devicePixelRatio || 1;
     var g = gridSize();
@@ -280,6 +394,12 @@ window.DataMap = (function () {
     api.ctx = api.canvas.getContext("2d");
 
     api.canvas.addEventListener("click", onCanvasClick);
+    api.canvas.addEventListener("pointerdown", onTouchPointerDown);
+    api.canvas.addEventListener("pointermove", onTouchPointerMove);
+    api.canvas.addEventListener("pointerup", onTouchPointerEnd);
+    api.canvas.addEventListener("pointercancel", onTouchPointerEnd);
+
+    renderLegend();
 
     api.refresh();
 
