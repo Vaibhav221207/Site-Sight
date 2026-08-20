@@ -50,6 +50,12 @@ window.GameState = (function () {
     // A GPR sweep marks every tile in its footprint as subsurface-surveyed;
     // scan-once applies per tier independently.
     subsurfaceScanned: {},
+    // TILE DATA MODEL — per-tile survey records, keyed "col,row". Populated by
+    // the Drone (aerial) and GPR (subsurface) scan systems when their chunk
+    // scans complete (see markDroneScanned / markGprScanned). The Drone writes
+    // surface data; the GPR writes subsurface data; bestUse is recomputed after
+    // every update (see computeBestUse).
+    tileData: {},
   };
 
   // has this tile already been scanned (aerial) by a completed deployment?
@@ -75,6 +81,134 @@ window.GameState = (function () {
     if (!tiles) return;
     for (var i = 0; i < tiles.length; i++) {
       api.subsurfaceScanned[tiles[i].col + "," + tiles[i].row] = true;
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // TILE DATA MODEL
+  // ---------------------------------------------------------------------------
+
+  // pick a value from a list of { value, w } using weighted randomness.
+  function weightedPick(options) {
+    var total = 0, i;
+    for (i = 0; i < options.length; i++) total += options[i].w;
+    var r = Math.random() * total;
+    for (i = 0; i < options.length; i++) {
+      r -= options[i].w;
+      if (r <= 0) return options[i].value;
+    }
+    return options[options.length - 1].value;
+  }
+
+  // the trench is the game's "problem site" — surface stability is always Poor.
+  function isTrenchTile(col, row) {
+    return !!(window.Terrain && window.Terrain.typeAt &&
+      window.Terrain.typeAt(col, row) === "trench");
+  }
+
+  // get (and lazily create) the data record for a tile. Record shape:
+  //   droneScanned, gprScanned, surfaceStability, soilType, mineralDeposits,
+  //   bedrockDepth, bestUse
+  api.getTileData = function (col, row) {
+    var k = col + "," + row;
+    if (!api.tileData[k]) {
+      api.tileData[k] = {
+        droneScanned: false,
+        gprScanned: false,
+        surfaceStability: null,   // "Poor" | "Fair" | "Good" | "Excellent"
+        soilType: null,           // "Sandy" | "Clay" | "Rocky" | "Loam"
+        mineralDeposits: null,    // "None" | "Trace" | "Rich"
+        bedrockDepth: null,       // "Shallow" | "Moderate" | "Deep"
+        bestUse: null,            // computed, see computeBestUse
+      };
+    }
+    return api.tileData[k];
+  };
+
+  // Simple rule-based best-use recommendation. Pure logic — easy to test and to
+  // extend later with a real scoring formula. Order of checks matters:
+  //   - no scans               -> null
+  //   - only one scan type     -> "Partial Data" (needs the other tier too)
+  //   - both scanned           -> one of the real categories below.
+  api.computeBestUse = function (d) {
+    if (!d) return null;
+    var drone = !!d.droneScanned, gpr = !!d.gprScanned;
+    if (!drone && !gpr) return null;
+    if (!drone || !gpr) return "Partial Data";
+    if (d.mineralDeposits === "Rich") return "Mining";
+    var goodStab = (d.surfaceStability === "Good" || d.surfaceStability === "Excellent");
+    if (d.bedrockDepth === "Shallow" && goodStab) return "Industrial";
+    if (goodStab && (d.bedrockDepth === "Moderate" || d.bedrockDepth === "Deep")) return "Residential";
+    if (d.surfaceStability === "Fair") return "Commercial";
+    if (d.surfaceStability === "Poor") return "Unsuitable";
+    return null; // both scanned but fields missing — should not normally happen
+  };
+
+  // recompute a record's bestUse in place after any data change.
+  api._recalcBestUse = function (d) {
+    if (!d) return;
+    d.bestUse = api.computeBestUse(d);
+  };
+
+  // Drone (aerial) scan completed for this tile: mark it scanned and generate
+  // surface stability (weighted — mostly Fair/Good, Poor/Excellent rarer; the
+  // trench is ALWAYS "Poor", matching its problem-site identity).
+  api.markDroneScanned = function (col, row) {
+    var d = api.getTileData(col, row);
+    d.droneScanned = true;
+    d.surfaceStability = isTrenchTile(col, row)
+      ? "Poor"
+      : weightedPick([
+          { value: "Poor", w: 15 },
+          { value: "Fair", w: 35 },
+          { value: "Good", w: 35 },
+          { value: "Excellent", w: 15 }
+        ]);
+    api._recalcBestUse(d);
+    return d;
+  };
+
+  // GPR (subsurface) scan completed for this tile: mark it scanned and generate
+  // soil type, mineral deposits ("Rich" is rare/notable) and bedrock depth. The
+  // trench never yields "Rich" deposits so it consistently reads as "Unsuitable".
+  api.markGprScanned = function (col, row) {
+    var d = api.getTileData(col, row);
+    d.gprScanned = true;
+    var trench = isTrenchTile(col, row);
+    d.soilType = weightedPick([
+      { value: "Sandy", w: 25 },
+      { value: "Clay", w: 30 },
+      { value: "Rocky", w: 20 },
+      { value: "Loam", w: 25 }
+    ]);
+    d.mineralDeposits = trench
+      ? weightedPick([{ value: "None", w: 70 }, { value: "Trace", w: 30 }])
+      : weightedPick([
+          { value: "None", w: 60 },
+          { value: "Trace", w: 30 },
+          { value: "Rich", w: 10 }
+        ]);
+    d.bedrockDepth = weightedPick([
+      { value: "Shallow", w: 35 },
+      { value: "Moderate", w: 40 },
+      { value: "Deep", w: 25 }
+    ]);
+    api._recalcBestUse(d);
+    return d;
+  };
+
+  // convenience bulk hooks called by the scan systems on chunk completion.
+  api.markAreaDroneData = function (tiles) {
+    if (!tiles) return;
+    for (var i = 0; i < tiles.length; i++) {
+      api.markDroneScanned(tiles[i].col, tiles[i].row);
+    }
+  };
+
+  api.markAreaGprData = function (tiles) {
+    if (!tiles) return;
+    for (var i = 0; i < tiles.length; i++) {
+      api.markGprScanned(tiles[i].col, tiles[i].row);
     }
   };
 

@@ -443,6 +443,12 @@ window.GprDeploy = (function () {
     if (window.GameState && window.GameState.markAreaSubsurfaceScanned) {
       window.GameState.markAreaSubsurfaceScanned(area.tiles);
     }
+    // DATA GENERATION: the completed GPR survey writes subsurface per-tile data
+    // (soil type, mineral deposits, bedrock depth) into the tile data model.
+    // Runs on both the anime and no-anime completion paths.
+    if (window.GameState && window.GameState.markAreaGprData) {
+      window.GameState.markAreaGprData(area.tiles);
+    }
 
     if (typeof anime === "undefined" || !anime) { api._zoneDone(zone); return; }
 

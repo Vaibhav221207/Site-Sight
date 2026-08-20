@@ -602,6 +602,12 @@ window.DroneDeploy = (function () {
     if (window.GameState && window.GameState.markAreaScanned) {
       window.GameState.markAreaScanned(area.tiles);
     }
+    // DATA GENERATION: the completed aerial scan also writes per-tile survey
+    // data (surface stability) into the tile data model. Runs on both the
+    // anime and no-anime completion paths (same as markAreaScanned above).
+    if (window.GameState && window.GameState.markAreaDroneData) {
+      window.GameState.markAreaDroneData(area.tiles);
+    }
 
     if (typeof anime === "undefined" || !anime) { api._zoneDone(zone); return; }
 
