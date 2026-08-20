@@ -27,7 +27,7 @@ window.Terrain = (function () {
   var PALETTE = {
     land: "#6dd400",   // vivid lime green — bright saturated grass
     hill: "#4a9a3c",   // hill base underneath rocks
-    trench: "#6B3414", // dark warm brown excavation
+    trench: "#8C2E14", // dark brick (coral button hue, darker)
     river: "#29b6f6",  // bright vivid sky blue
     hq: "#44ddbb",     // base tone under HQ building
   };

@@ -170,8 +170,8 @@ window.BlockRender = (function () {
   var TRENCH_DEPTH = 6;          // px the pit drops below the land surface
   var WALL_SHADE = 0.64;         // lit west-facing wall (matches LEFT_SHADE)
   var WALL_SHADOW = 0.40;        // shadowed east-facing wall (matches RIGHT_SHADE)
-  var FLOOR_TONE = "#3E2010";    // warm dark brown — the pit floor
-  var WALL_TONE = "#6B3414";    // warm brown wall base before west/east shading
+  var FLOOR_TONE = "#4A1A0E";    // deep brick — the pit floor (darker than button #E8604A)
+  var WALL_TONE = "#8C2E14";    // dark brick wall (coral button hue, darker)
 
   // deterministic per-rock jitter so every boulder is a different chunk
   function rockJit(cx, cy, size, k) {
