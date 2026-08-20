@@ -61,7 +61,7 @@ window.HqPanel = (function () {
         api.ownedEl.className = "hq-fs-drone-owned";
         api.ownedEl.style.fontSize = "13px";
         api.ownedEl.style.fontWeight = "700";
-        api.ownedEl.style.color = "#00838F";
+        api.ownedEl.style.color = "#0E7C86";
         infoEl.appendChild(api.ownedEl);
       }
       api.orderBtn.addEventListener("click", function () { api.buyDrone(); });
@@ -255,10 +255,10 @@ window.HqPanel = (function () {
       entry.dataset.itemId = id;
       entry.style.cssText =
         "display:flex;align-items:center;justify-content:space-between;" +
-        "padding:14px 18px;margin-bottom:8px;background:#F5F9FB;" +
-        "border:2px solid transparent;border-radius:16px;cursor:pointer;" +
+        "padding:14px 18px;margin-bottom:8px;background:#ECEAE2;" +
+        "border:2px solid transparent;border-radius:3px;cursor:pointer;" +
         "transition:border-color 0.15s ease,background 0.15s ease;";
-      var accent = type === "gpr" ? "#E0962A" : "#2D3561";
+      var accent = type === "gpr" ? "#E0962A" : "#0E7C86";
       entry.innerHTML =
         '<span class="hq-fs-inventory-item-name" style="font-size:17px;font-weight:700;color:' + accent + '">' + name + '</span>';
       entry.addEventListener("click", function (ev) {
@@ -272,8 +272,8 @@ window.HqPanel = (function () {
 
   // Toggle the selected state of an inventory entry element.
   api.markSelected = function (entry, selected) {
-    entry.style.borderColor = selected ? "#00ACC1" : "transparent";
-    entry.style.background = selected ? "#E0F7FA" : "#F5F9FB";
+    entry.style.borderColor = selected ? "#0E7C86" : "transparent";
+    entry.style.background = selected ? "#CBE6E4" : "#ECEAE2";
   };
 
   // Select (or deselect) a survey-unit entry. Single-select across BOTH fleets:
@@ -380,7 +380,7 @@ window.HqPanel = (function () {
     }
     api.msgEl.textContent = text;
     // amber is reserved for warning moments; teal for positive confirmations
-    api.msgEl.style.color = success ? "#00ACC1" : "#FFA000";
+    api.msgEl.style.color = success ? "#0E7C86" : "#FFA000";
     api.msgEl.style.opacity = "1";
     clearTimeout(api._msgTimer);
     api._msgTimer = setTimeout(function () {

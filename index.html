@@ -10,6 +10,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700&display=swap" rel="stylesheet" />
+  <!-- JetBrains Mono — technical blueprint data readouts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <!-- Anime.js (CDN, required for popup micro-interactions) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 </head>
@@ -28,6 +32,10 @@
 
     <!-- HUD: always visible at the top, includes cash balance and build button -->
     <div id="hud" class="hud">
+      <span class="corner-bracket cb-tl"></span>
+      <span class="corner-bracket cb-tr"></span>
+      <span class="corner-bracket cb-bl"></span>
+      <span class="corner-bracket cb-br"></span>
       <div class="hud-left">
         <span class="label">CASH</span>
         <span id="hud-cash" class="value">$0</span>
@@ -38,6 +46,10 @@
     <!-- Full-screen HQ management overlay (terminal layout, separate from small tile popup) -->
     <div id="hq-overlay">
       <div id="hq-panel">
+        <span class="corner-bracket cb-tl"></span>
+        <span class="corner-bracket cb-tr"></span>
+        <span class="corner-bracket cb-bl"></span>
+        <span class="corner-bracket cb-br"></span>
         <div class="hq-fs-header">
           <span class="hq-fs-title">CONTECH HQ</span>
           <button id="hq-close-btn" class="hq-fs-close" aria-label="Close panel">×</button>
@@ -108,6 +120,10 @@
 
     <!-- Glassmorphism tile inspection popup (animation shell only) -->
     <div id="tile-popup">
+      <span class="corner-bracket cb-tl"></span>
+      <span class="corner-bracket cb-tr"></span>
+      <span class="corner-bracket cb-bl"></span>
+      <span class="corner-bracket cb-br"></span>
       <div class="panel-header">
         <span class="panel-title">SITE INSPECTION</span>
         <button class="panel-close" aria-label="Close popup">×</button>
@@ -144,9 +160,9 @@
       <div class="rotate-card">
         <svg class="rotate-icon" viewBox="0 0 72 72" fill="none" aria-hidden="true">
           <!-- phone in portrait with a curved rotation arrow -->
-          <rect x="22" y="12" width="28" height="48" rx="6" fill="#FFFDF7" stroke="#00838F" stroke-width="3" />
-          <rect x="27" y="18" width="18" height="34" rx="2" fill="#E0F7FA" />
-          <circle cx="36" cy="56" r="2" fill="#00838F" />
+          <rect x="22" y="12" width="28" height="48" rx="3" fill="#F4F3EE" stroke="#2B3440" stroke-width="3" />
+          <rect x="27" y="18" width="18" height="34" rx="1" fill="#0E7C86" />
+          <circle cx="36" cy="56" r="2" fill="#2B3440" />
           <path d="M58 32 A 22 22 0 0 1 53 9" stroke="#FFB300" stroke-width="4" fill="none" stroke-linecap="round" />
           <path d="M53 9 L58 10 M53 9 L55 14" stroke="#FFB300" stroke-width="4" fill="none" stroke-linecap="round" />
         </svg>
