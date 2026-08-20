@@ -14,12 +14,38 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 </head>
 <body>
-    <!-- Flat banded-sky decorations (behind the opaque game canvas):
-         sun + two clouds, chunky flat style with thick ink outlines -->
+    <!-- Night sky stars (behind the transparent canvas backdrop) -->
     <div id="sky-deco" aria-hidden="true">
-      <span class="sun"></span>
-      <span class="cloud cloud--1"></span>
-      <span class="cloud cloud--2"></span>
+      <span class="star" style="top:6%;left:8%;width:3px;height:3px"></span>
+      <span class="star" style="top:12%;left:22%;width:2px;height:2px"></span>
+      <span class="star" style="top:9%;left:41%;width:3px;height:3px"></span>
+      <span class="star" style="top:18%;left:14%;width:2px;height:2px"></span>
+      <span class="star" style="top:14%;left:58%;width:2px;height:2px"></span>
+      <span class="star" style="top:7%;left:72%;width:3px;height:3px"></span>
+      <span class="star" style="top:22%;left:68%;width:2px;height:2px"></span>
+      <span class="star" style="top:5%;left:88%;width:2px;height:2px"></span>
+      <span class="star" style="top:28%;left:6%;width:2px;height:2px"></span>
+      <span class="star" style="top:32%;left:33%;width:3px;height:3px"></span>
+      <span class="star" style="top:26%;left:49%;width:2px;height:2px"></span>
+      <span class="star" style="top:34%;left:77%;width:3px;height:3px"></span>
+      <span class="star" style="top:38%;left:18%;width:2px;height:2px"></span>
+      <span class="star" style="top:42%;left:44%;width:2px;height:2px"></span>
+      <span class="star" style="top:36%;left:62%;width:3px;height:3px"></span>
+      <span class="star" style="top:45%;left:82%;width:2px;height:2px"></span>
+      <span class="star" style="top:12%;left:91%;width:3px;height:3px"></span>
+      <span class="star" style="top:48%;left:11%;width:3px;height:3px"></span>
+      <span class="star" style="top:52%;left:29%;width:2px;height:2px"></span>
+      <span class="star" style="top:55%;left:54%;width:2px;height:2px"></span>
+      <span class="star" style="top:58%;left:71%;width:3px;height:3px"></span>
+      <span class="star" style="top:62%;left:8%;width:2px;height:2px"></span>
+      <span class="star" style="top:66%;left:38%;width:2px;height:2px"></span>
+      <span class="star" style="top:68%;left:86%;width:2px;height:2px"></span>
+      <span class="star" style="top:74%;left:16%;width:3px;height:3px"></span>
+      <span class="star" style="top:78%;left:52%;width:2px;height:2px"></span>
+      <span class="star" style="top:82%;left:67%;width:2px;height:2px"></span>
+      <span class="star" style="top:86%;left:28%;width:3px;height:3px"></span>
+      <span class="star" style="top:88%;left:74%;width:2px;height:2px"></span>
+      <span class="star" style="top:92%;left:42%;width:2px;height:2px"></span>
     </div>
 
     <!-- Game canvas: extruded 3D isometric blocks, fills the browser window -->
@@ -150,9 +176,18 @@
          by js/orientation.js (display flex/none). -->
     <div id="rotate-overlay" class="rotate-overlay" style="display:none">
       <div class="rotate-sky-deco" aria-hidden="true">
-        <span class="sun"></span>
-        <span class="cloud cloud--1"></span>
-        <span class="cloud cloud--2"></span>
+        <span class="star" style="top:10%;left:14%;width:3px;height:3px"></span>
+        <span class="star" style="top:18%;left:38%;width:2px;height:2px"></span>
+        <span class="star" style="top:12%;left:68%;width:3px;height:3px"></span>
+        <span class="star" style="top:26%;left:22%;width:2px;height:2px"></span>
+        <span class="star" style="top:34%;left:58%;width:3px;height:3px"></span>
+        <span class="star" style="top:42%;left:12%;width:2px;height:2px"></span>
+        <span class="star" style="top:48%;left:76%;width:2px;height:2px"></span>
+        <span class="star" style="top:62%;left:32%;width:3px;height:3px"></span>
+        <span class="star" style="top:68%;left:62%;width:2px;height:2px"></span>
+        <span class="star" style="top:78%;left:18%;width:2px;height:2px"></span>
+        <span class="star" style="top:84%;left:52%;width:3px;height:3px"></span>
+        <span class="star" style="top:88%;left:72%;width:2px;height:2px"></span>
       </div>
       <div class="rotate-card">
         <svg class="rotate-icon" viewBox="0 0 72 72" fill="none" aria-hidden="true">
