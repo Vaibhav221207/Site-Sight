@@ -19,9 +19,9 @@ body {
   overflow: hidden;
   overscroll-behavior: none; /* no pull-to-refresh / bounce-scroll on mobile */
   /* BANDED sky backdrop (chunky/flat theme): hard color stops create sharp
-     band transitions, NOT a smooth blend. Warm golden-peach top -> soft sand
-     -> pale cream, easing toward the ground plane. */
-  background: linear-gradient(180deg, #F5C88A 0% 33%, #F2D4A0 33% 66%, #EFE0BC 66% 100%);
+     band transitions, NOT a smooth blend. Cool sky-blue -> soft mint -> pale
+     sage, stepping toward the vivid lime land (#6dd400) and river (#29b6f6). */
+  background: linear-gradient(180deg, #7AC6E8 0% 33%, #A3D99C 33% 66%, #D6E8B8 66% 100%);
   font-family: "Baloo 2", sans-serif;
   color: #2B2320;
   overflow-x: hidden;
@@ -592,7 +592,7 @@ button {
   align-items: center;
   justify-content: center;
   /* same banded sky as the page backdrop: hard color stops, no blending */
-  background: linear-gradient(180deg, #F5C88A 0% 33%, #F2D4A0 33% 66%, #EFE0BC 66% 100%);
+  background: linear-gradient(180deg, #7AC6E8 0% 33%, #A3D99C 33% 66%, #D6E8B8 66% 100%);
   user-select: none;
   -webkit-user-select: none;
   touch-action: none;
