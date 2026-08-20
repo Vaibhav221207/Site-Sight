@@ -684,7 +684,7 @@ window.GprDeploy = (function () {
   // (sweep), so a glow travels with the sensor both down and back up. Tiles not
   // yet reached show only a faint outline. Everything is drawn at real tile
   // positions, so the effect is strictly confined to the land.
-  function drawGprTileRead(ctx, area, anchor, alpha, litSweep, sweep) {
+  function drawGprTileRead(ctx, area, alpha, litSweep, sweep) {
     if (!area || !area.tiles || !area.tiles.length || alpha <= 0.01) return;
     var g = window.IsoGrid;
     if (!g) return;
@@ -694,7 +694,10 @@ window.GprDeploy = (function () {
     for (var i = 0; i < area.tiles.length; i++) {
       var t = area.tiles[i];
       var colFrac = (t.col - area.cMin) / cspan;
-      var p = projectFrom(anchor, { x: tileScreen(t.col, t.row).x, y: groundTopY(t.col, t.row) });
+      // tileScreen/groundTopY already use the CURRENT camera, so the diamonds
+      // stay glued to their land tiles even while the view pans (do NOT pass
+      // through projectFrom — that would double-translate once the camera moves).
+      var p = { x: tileScreen(t.col, t.row).x, y: groundTopY(t.col, t.row) };
       var cx = p.x, cy = p.y;
       if (colFrac <= litSweep + 0.015) {
         // distance from the current scan-line -> glow follows the sensor
@@ -848,17 +851,19 @@ window.GprDeploy = (function () {
         var c = projectCorners(anchor, s.corners);
         // footprint-confined ground scan (no expanding rings off the land)
         drawGroundGlow(ctx, area, c, s.alpha, s.ground);
-        drawGprTileRead(ctx, area, anchor, s.alpha, s.maxSweep, s.sweep);
+        drawGprTileRead(ctx, area, s.alpha, s.maxSweep, s.sweep);
         drawGprScanline(ctx, c, s.alpha, s.sweep);
         drawGprDepthTicks(ctx, c, s.alpha, s.sweep);
         drawAreaOutline(ctx, area, [], OUTLINE_COLOR, 1, 6, 2.5);
       }
-      // the rover drives the scan-line, moving west->east along a fixed row
+      // the rover drives the scan-line, moving west->east along a fixed row.
+      // tileScreen/groundTopY already use the CURRENT camera, so the rover stays
+      // glued to its land tile while the view pans (no projectFrom wrapper).
       var roverScreen = area
-        ? projectFrom(anchor, {
+        ? {
             x: tileScreen(area.cMin + s.sweep * (area.cMax - area.cMin), area.row).x,
             y: groundTopY(area.cMin + s.sweep * (area.cMax - area.cMin), area.row)
-          })
+          }
         : (s.rovers && s.rovers.length ? projectFrom(anchor, s.rovers[0]) : null);
       if (roverScreen) drawRoverAt(ctx, roverScreen.x, roverScreen.y, 1);
       return;
