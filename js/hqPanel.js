@@ -519,16 +519,7 @@ window.HqPanel = (function () {
     var started = !!(window.DroneDeploy && window.DroneDeploy.startDeployment());
     console.log("[HQ] Deploy: selected " + id + " -> " + (started ? "whole-map drone sweep started" : "deploy failed (no Drone Systems available)"));
     if (api.isOpen) api.close();
-    if (started) {
-      if (window.UI && window.UI.toast) window.UI.toast("Drone sweep launched — aerial survey in progress", { color: "#00ACC1", icon: "🛰" });
-      if (window.DroneDeploy) {
-        window.DroneDeploy.onDeployDone = function () {
-          if (window.UI && window.UI.toast) window.UI.toast("Aerial survey complete — surface data unlocked", { color: "#00E5FF", icon: "✅" });
-        };
-      }
-    } else {
-      api.showMsg("[DEPLOY] no Drone Systems available", false, api.inventoryDeployContainer);
-    }
+    if (!started) api.showMsg("[DEPLOY] no Drone Systems available", false, api.inventoryDeployContainer);
   };
 
   // Wire the Deploy button to whole-map, no-click GPR deployment. Mirrors the
@@ -540,16 +531,7 @@ window.HqPanel = (function () {
     var started = !!(window.GprDeploy && window.GprDeploy.startDeployment());
     console.log("[HQ] Deploy GPR: selected " + id + " -> " + (started ? "whole-map GPR sweep started" : "deploy failed (no GPR Systems available)"));
     if (api.isOpen) api.close();
-    if (started) {
-      if (window.UI && window.UI.toast) window.UI.toast("GPR sweep launched — subsurface scanning", { color: "#FFB02E", icon: "📡" });
-      if (window.GprDeploy) {
-        window.GprDeploy.onDeployDone = function () {
-          if (window.UI && window.UI.toast) window.UI.toast("Subsurface data unlocked — minerals, water & stability revealed", { color: "#FFC04D", icon: "⚡" });
-        };
-      }
-    } else {
-      api.showMsg("[DEPLOY] no GPR Systems available", false, api.inventoryDeployContainer);
-    }
+    if (!started) api.showMsg("[DEPLOY] no GPR Systems available", false, api.inventoryDeployContainer);
   };
 
   api.showMsg = function (text, success, container) {
