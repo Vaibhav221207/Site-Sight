@@ -21,6 +21,7 @@ body {
   background: linear-gradient(180deg, #6EC6FF 0%, #A8E6A3 100%);
   font-family: "Baloo 2", sans-serif;
   color: #2B2320;
+  overflow-x: hidden;
 }
 
 #game-canvas {
@@ -103,6 +104,7 @@ button {
   padding: 12px 14px;
   border-bottom: 3px solid #2B2320;
   background-color: #F6EEDC;
+  overflow: hidden;
 }
 
 .panel-title {
@@ -141,6 +143,7 @@ button {
 
 .panel-body {
   padding: 12px 14px;
+  overflow: hidden;
 }
 
 .tile-coords {
@@ -148,6 +151,7 @@ button {
   font-weight: 700;
   color: #2B2320;
   margin-bottom: 8px;
+  word-break: break-word;
 }
 
 .placeholder {
@@ -155,6 +159,7 @@ button {
   font-weight: 500;
   line-height: 1.6;
   color: #6B5B4F;
+  word-break: break-word;
 }
 
 /* ---- HUD (chunky sticker bar) ---- */
@@ -188,12 +193,14 @@ button {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: #6B5B4F;
+  overflow: hidden;
 }
 
 .hud-left .value {
   font-size: 24px;
   font-weight: 700;
   color: #2B2320;
+  overflow: hidden;
 }
 
 .hud-btn {
@@ -248,6 +255,7 @@ button {
   border-radius: 16px;
   box-shadow: 6px 6px 0 rgba(43, 35, 32, 0.25);
   z-index: 1001;
+  overflow: hidden;
 }
 
 .build-bar.hidden {
@@ -260,6 +268,7 @@ button {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: #6B5B4F;
+  overflow: hidden;
 }
 
 .build-items {
@@ -281,6 +290,7 @@ button {
   font-family: "Baloo 2", sans-serif;
   text-align: left;
   cursor: pointer;
+  overflow: hidden;
   transition: border-color 0.15s ease, background 0.15s ease,
     box-shadow 0.09s ease, transform 0.09s ease;
 }
@@ -340,12 +350,16 @@ button {
   font-size: 14px;
   font-weight: 700;
   color: #2B2320;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .build-item-cost {
   font-size: 13px;
   font-weight: 700;
   color: #2B2320;
+  overflow: hidden;
 }
 
 /* ---- HQ panel sections (small popup) ---- */
@@ -353,6 +367,7 @@ button {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  overflow: hidden;
 }
 
 .hq-status {
@@ -361,6 +376,7 @@ button {
   gap: 4px;
   padding-bottom: 14px;
   border-bottom: 3px solid #2B2320;
+  overflow: hidden;
 }
 
 .hq-status-label {
@@ -369,18 +385,22 @@ button {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: #6B5B4F;
+  overflow: hidden;
 }
 
 .hq-status-text {
   font-size: 14px;
   font-weight: 500;
   color: #2B2320;
+  overflow: hidden;
+  word-break: break-word;
 }
 
 .hq-section {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  overflow: hidden;
 }
 
 .hq-section-header {
@@ -391,6 +411,7 @@ button {
   color: #6B5B4F;
   padding-bottom: 6px;
   border-bottom: 2px solid rgba(43, 35, 32, 0.35);
+  overflow: hidden;
 }
 
 .hq-drone-row {
@@ -403,24 +424,30 @@ button {
   border: 3px solid #2B2320;
   border-radius: 14px;
   box-shadow: 4px 4px 0 rgba(43, 35, 32, 0.2);
+  overflow: hidden;
 }
 
 .hq-drone-info {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  overflow: hidden;
 }
 
 .hq-drone-name {
   font-size: 15px;
   font-weight: 700;
   color: #2B2320;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .hq-drone-cost {
   font-size: 14px;
   font-weight: 700;
   color: #2B2320;
+  overflow: hidden;
 }
 
 .hq-order-btn {
@@ -496,6 +523,7 @@ button {
   border-radius: 16px;
   box-shadow: 6px 6px 0 rgba(43, 35, 32, 0.25);
   text-align: center;
+  overflow: hidden;
 }
 
 .rotate-icon {
@@ -509,6 +537,8 @@ button {
   font-weight: 700;
   color: #2B2320;
   line-height: 1.4;
+  overflow: hidden;
+  word-break: break-word;
 }
 
 /* ---- Full-screen HQ management overlay ---- */
@@ -546,9 +576,10 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 22px 28px;
+  padding: 18px 24px;
   border-bottom: 3px solid #2B2320;
   background-color: #F6EEDC;
+  overflow: hidden;
 }
 
 .hq-fs-title {
@@ -644,12 +675,15 @@ button {
   border: 3px solid #2B2320;
   border-radius: 14px;
   color: #2B2320;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   line-height: 1.2;
   text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   cursor: pointer;
   transition: transform 0.09s ease, box-shadow 0.09s ease,
     background 0.15s ease, color 0.15s ease;
@@ -698,6 +732,8 @@ body.touch-ui .hq-fs-nav-item {
   color: #6B5B4F;
   padding: 36px 0;
   text-align: center;
+  overflow: hidden;
+  word-break: break-word;
 }
 
 .hq-fs-status {
@@ -706,6 +742,7 @@ body.touch-ui .hq-fs-nav-item {
   gap: 6px;
   padding-bottom: 22px;
   border-bottom: 3px solid #2B2320;
+  overflow: hidden;
 }
 
 .hq-fs-status-label {
@@ -714,12 +751,15 @@ body.touch-ui .hq-fs-nav-item {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: #6B5B4F;
+  overflow: hidden;
 }
 
 .hq-fs-status-text {
   font-size: 17px;
   font-weight: 500;
   color: #2B2320;
+  overflow: hidden;
+  word-break: break-word;
 }
 
 .hq-fs-section {
@@ -735,6 +775,7 @@ body.touch-ui .hq-fs-nav-item {
   padding-bottom: 10px;
   border-bottom: 2px solid rgba(43, 35, 32, 0.35);
   margin-bottom: 14px;
+  overflow: hidden;
 }
 
 .hq-fs-drone-row {
@@ -747,24 +788,30 @@ body.touch-ui .hq-fs-nav-item {
   border: 3px solid #2B2320;
   border-radius: 16px;
   box-shadow: 6px 6px 0 rgba(43, 35, 32, 0.25);
+  overflow: hidden;
 }
 
 .hq-fs-drone-info {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  overflow: hidden;
 }
 
 .hq-fs-drone-name {
   font-size: 17px;
   font-weight: 700;
   color: #2B2320;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .hq-fs-drone-cost {
   font-size: 15px;
   font-weight: 700;
   color: #2B2320;
+  overflow: hidden;
 }
 
 /* ---- HQ DATA tab: flat top-down mini-map + category summary -------------
@@ -807,6 +854,7 @@ body.touch-ui .hq-fs-nav-item {
   border: 3px solid #2B2320;
   border-radius: 14px;
   box-shadow: 4px 4px 0 rgba(43, 35, 32, 0.2);
+  overflow: hidden;
 }
 
 .hq-data-map-title {
@@ -815,6 +863,7 @@ body.touch-ui .hq-fs-nav-item {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: #6B5B4F;
+  overflow: hidden;
 }
 
 .hq-data-map-hint {
@@ -822,6 +871,7 @@ body.touch-ui .hq-fs-nav-item {
   color: #6B5B4F;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  overflow: hidden;
 }
 
 .hq-data-minimap-wrap {
@@ -864,6 +914,7 @@ body.touch-ui .hq-fs-nav-item {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: #6B5B4F;
+  overflow: hidden;
 }
 
 .hq-data-minimap-legend-item {
@@ -886,6 +937,7 @@ body.touch-ui .hq-fs-nav-item {
   min-width: 0;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -899,6 +951,7 @@ body.touch-ui .hq-fs-nav-item {
   color: #6B5B4F;
   padding-bottom: 6px;
   border-bottom: 2px solid rgba(43, 35, 32, 0.35);
+  overflow: hidden;
 }
 
 .hq-data-details {
@@ -911,12 +964,14 @@ body.touch-ui .hq-fs-nav-item {
   border-radius: 16px;
   box-shadow: 6px 6px 0 rgba(43, 35, 32, 0.25);
   position: relative;
+  overflow: hidden;
 }
 
 .hq-data-details-empty {
   font-size: 12px;
   color: #6B5B4F;
   padding: 6px 0;
+  word-break: break-word;
 }
 
 .hq-data-details-row {
@@ -925,6 +980,7 @@ body.touch-ui .hq-fs-nav-item {
   align-items: center;
   gap: 8px;
   font-size: 11px;
+  overflow: hidden;
 }
 
 .hq-data-details-row span {
@@ -933,12 +989,16 @@ body.touch-ui .hq-fs-nav-item {
   letter-spacing: 0.04em;
   font-size: 10px;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .hq-data-details-row strong {
   color: #2B2320;
   font-weight: 700;
   text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .hq-data-badge {
@@ -950,6 +1010,8 @@ body.touch-ui .hq-fs-nav-item {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .hq-data-categories {
@@ -968,6 +1030,7 @@ body.touch-ui .hq-fs-nav-item {
   border-radius: 14px;
   box-shadow: 4px 4px 0 rgba(43, 35, 32, 0.2);
   font-size: 11px;
+  overflow: hidden;
 }
 
 .hq-data-cat-swatch {
@@ -985,11 +1048,16 @@ body.touch-ui .hq-fs-nav-item {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .hq-data-cat-count {
   color: #6B5B4F;
   font-size: 11px;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 /* panel data rows (tile popup) */
@@ -1000,6 +1068,7 @@ body.touch-ui .hq-fs-nav-item {
   padding: 6px 0;
   border-bottom: 1px solid rgba(43, 35, 32, 0.15);
   font-size: 11px;
+  overflow: hidden;
 }
 
 .panel-data-row:last-child {
@@ -1012,6 +1081,7 @@ body.touch-ui .hq-fs-nav-item {
   letter-spacing: 0.04em;
   font-size: 10px;
   font-weight: 500;
+  overflow: hidden;
 }
 
 .panel-data-value {
@@ -1020,6 +1090,7 @@ body.touch-ui .hq-fs-nav-item {
   text-align: right;
   max-width: 65%;
   word-break: break-word;
+  overflow: hidden;
 }
 
 /* Best Use badge inside the tile popup (category color chip) */
@@ -1031,6 +1102,8 @@ body.touch-ui .hq-fs-nav-item {
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 /* Mobile responsive for DATA tab — SIDE-BY-SIDE SPLIT (same structure as
@@ -1323,6 +1396,7 @@ body.touch-ui .hud { display: none; }
   border: 3px solid #2B2320;
   border-radius: 16px;
   box-shadow: 6px 6px 0 rgba(43, 35, 32, 0.25);
+  overflow: hidden;
 }
 
 .mu-label {
@@ -1331,12 +1405,14 @@ body.touch-ui .hud { display: none; }
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: #6B5B4F;
+  overflow: hidden;
 }
 
 .mu-value {
   font-size: 16px;
   font-weight: 700;
   color: #2B2320;
+  overflow: hidden;
 }
 
 .mu-btn {
