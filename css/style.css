@@ -69,12 +69,12 @@ button {
   background: #E3DCCB;
 }
 
-/* primary teal keycap button */
-.btn-teal {
+/* primary coral keycap button */
+.btn-coral {
   background: #E8604A;
-  box-shadow: 0 5px 0 0 #B8432F; /* darker teal bottom edge, zero blur */
+  box-shadow: 0 5px 0 0 #B8432F; /* darker coral bottom edge, zero blur */
 }
-.btn-teal:hover {
+.btn-coral:hover {
   background: #D05240;
 }
 
@@ -698,7 +698,7 @@ button {
   box-shadow: 0 0 0 0 transparent;
 }
 
-/* active tab = filled teal key (currently selected, looks pressed in) */
+/* active tab = filled coral key (currently selected, looks pressed in) */
 .hq-fs-nav-item--active {
   color: #FFFFFF;
   background: #E8604A;

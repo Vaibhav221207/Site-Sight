@@ -380,7 +380,7 @@ window.HqPanel = (function () {
       holder.appendChild(api.msgEl);
     }
     api.msgEl.textContent = text;
-    // amber is reserved for warning moments; teal for positive confirmations
+    // amber is reserved for warning moments; coral for positive confirmations
     api.msgEl.style.color = success ? "#E8604A" : "#FFA000";
     api.msgEl.style.opacity = "1";
     clearTimeout(api._msgTimer);
