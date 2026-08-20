@@ -48,14 +48,15 @@
             <button id="hq-nav-inventory" class="hq-fs-nav-item">INVENTORY</button>
             <button id="hq-nav-store" class="hq-fs-nav-item hq-fs-nav-item--active">STORE</button>
           </nav>
-          <div class="hq-fs-content">
-            <div id="hq-section-data" class="hq-fs-section" style="display:none">
-              <div class="hq-data-layout">
-                <div class="hq-data-minimap-col">
-                  <div class="hq-data-map-header">
-                    <span class="hq-data-map-title">SITE SURVEY MAP</span>
-                    <span class="hq-data-map-hint">tap a tile for details</span>
-                  </div>
+<div class="hq-fs-content">
+              <div id="hq-section-data" class="hq-fs-section" style="display:none">
+                <div class="hq-data-layout">
+                  <div class="hq-data-minimap-col">
+                    <div class="hq-data-map-header">
+                      <span class="hq-data-map-title">SITE SURVEY MAP</span>
+                      <span class="hq-data-map-hint">tap a tile for details</span>
+                      <button id="data-legend-toggle" class="hq-data-map-toggle" type="button">Legend</button>
+                    </div>
                   <div class="hq-data-minimap-wrap">
                     <canvas id="data-minimap" width="400" height="400"></canvas>
                   </div>
@@ -100,6 +101,7 @@
                 </div>
               </div>
             </div>
+            <div class="hq-fs-footer" id="hq-fs-footer"></div>
           </div>
         </div>
       </div>

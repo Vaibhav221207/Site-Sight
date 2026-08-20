@@ -234,7 +234,7 @@ window.DataMap = (function () {
     var textColor = (cat.id === "unsuitable" || cat.id === "commercial" || cat.id === "industrial") ? "#FFFFFF" : "#2D3561";
 
     var html = "";
-    html += '<div class="hq-data-details-row"><span>Tile</span><strong>' + col + ", " + row + '</strong></div>';
+    html += '<button class="hq-data-details-close" type="button" aria-label="Close details">×</button>';
     html += '<div class="hq-data-details-row"><span>Surface Stability</span><strong>' +
       (d.droneScanned ? d.surfaceStability : "Not yet scanned") + '</strong></div>';
     html += '<div class="hq-data-details-row"><span>Soil Type</span><strong>' +
@@ -246,6 +246,37 @@ window.DataMap = (function () {
     html += '<div class="hq-data-details-row"><span>Best Use</span>' +
       '<span class="hq-data-badge" style="background:' + cat.color + ';color:' + textColor + '">' + cat.label + '</span></div>';
     api.detailsEl.innerHTML = html;
+    api.detailsEl.classList.add("hq-data-details--open");
+
+    // close button — clears the selection and hides the mobile bottom sheet
+    var closeBtn = api.detailsEl.querySelector(".hq-data-details-close");
+    if (closeBtn) {
+      closeBtn.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        api.selected = null;
+        render();
+        api.detailsEl.classList.remove("hq-data-details--open");
+      });
+    }
+  }
+
+  // ---- mobile modal pattern: details become a bottom-sheet on the map ------
+  // On the small-viewport breakpoint the tile-details panel is reparented from
+  // the side column into the mini-map column (where CSS turns it into an
+  // absolute bottom-sheet overlay). Desktop keeps it in the side column —
+  // this only moves the DOM node while the breakpoint is active.
+
+  function isMobileLayout() {
+    return !!(window.matchMedia && window.matchMedia("(max-width: 640px), (max-height: 500px)").matches);
+  }
+
+  function syncDetailsHost() {
+    if (!api.detailsEl || !api.sideCol || !api.minimapCol) return;
+    if (isMobileLayout()) {
+      if (api.detailsEl.parentNode !== api.minimapCol) api.minimapCol.appendChild(api.detailsEl);
+    } else {
+      if (api.detailsEl.parentNode !== api.sideCol) api.sideCol.appendChild(api.detailsEl);
+    }
   }
 
   // ---- category summary list ----------------------------------------------
@@ -385,6 +416,8 @@ window.DataMap = (function () {
     api.legendEl = document.getElementById("data-minimap-legend");
     if (!api.canvas) return;
     api.wrap = api.canvas.parentElement;
+    api.minimapCol = api.canvas.closest ? api.canvas.closest(".hq-data-minimap-col") : null;
+    api.sideCol = api.detailsEl ? api.detailsEl.parentElement : null;
 
     var dpr = window.devicePixelRatio || 1;
     var g = gridSize();
@@ -398,6 +431,21 @@ window.DataMap = (function () {
     api.canvas.addEventListener("pointermove", onTouchPointerMove);
     api.canvas.addEventListener("pointerup", onTouchPointerEnd);
     api.canvas.addEventListener("pointercancel", onTouchPointerEnd);
+
+    // mobile legend toggle (Legend button in the map header)
+    api.legendToggle = document.getElementById("data-legend-toggle");
+    if (api.legendToggle && api.legendEl) {
+      api.legendToggle.addEventListener("click", function () {
+        api.legendEl.classList.toggle("open");
+      });
+    }
+
+    // mobile breakpoint: reparent the details panel into the map column
+    syncDetailsHost();
+    if (window.matchMedia) {
+      var mql = window.matchMedia("(max-width: 640px), (max-height: 500px)");
+      if (mql && mql.addEventListener) mql.addEventListener("change", syncDetailsHost);
+    }
 
     renderLegend();
 
@@ -433,6 +481,7 @@ window.DataMap = (function () {
       renderDetails(api.selected.col, api.selected.row);
     } else {
       api.detailsEl.innerHTML = '<div class="hq-data-details-empty">Select a tile on the mini-map to see its survey data</div>';
+      api.detailsEl.classList.remove("hq-data-details--open");
     }
   };
 

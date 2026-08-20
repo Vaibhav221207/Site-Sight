@@ -515,6 +515,13 @@ body {
   overflow: hidden;
 }
 
+/* fixed footer action bar — desktop hidden; only the mobile modal pattern
+   (within the small-viewport media query below) makes it visible */
+.hq-fs-footer {
+  display: none;
+  flex-shrink: 0;
+}
+
 /* tab nav */
 .hq-fs-nav {
   display: flex;
@@ -680,6 +687,27 @@ body {
   letter-spacing: 0.04em;
 }
 
+/* legend toggle — desktop hidden (legend is permanently visible there);
+   mobile-only affordance added in the small-viewport media query */
+.hq-data-map-toggle {
+  display: none;
+  padding: 5px 12px;
+  background: rgba(45, 53, 97, 0.08);
+  border: 1px solid rgba(0, 131, 143, 0.25);
+  border-radius: 999px;
+  color: #00838F;
+  font-family: "Baloo 2", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.hq-data-map-toggle:active {
+  transform: scale(0.96);
+}
+
 .hq-data-minimap-wrap {
   position: relative;
   background: #1a1a2e;
@@ -756,6 +784,25 @@ body {
   background: rgba(45, 53, 97, 0.04);
   border-radius: 10px;
   border: 1px solid rgba(0, 131, 143, 0.1);
+  position: relative;
+}
+
+.hq-data-details-close {
+  display: none;
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  z-index: 2;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(45, 53, 97, 0.1);
+  color: #2D3561;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
 }
 
 .hq-data-details-empty {
@@ -885,6 +932,49 @@ body {
     gap: 8px;
   }
 
+  /* DATA modal pattern: map fills the primary content area; the legend is a
+     toggleable overlay strip (not permanent scroll space) and tile details
+     become a bottom-sheet overlay anchored to the mini-map column */
+  .hq-data-minimap-col {
+    position: relative;
+  }
+
+  .hq-data-map-hint {
+    display: none;
+  }
+
+  .hq-data-map-toggle {
+    display: inline-flex;
+  }
+
+  #data-minimap-legend {
+    display: none;
+  }
+  #data-minimap-legend.open {
+    display: flex;
+  }
+
+  #data-details {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    z-index: 6;
+    display: none;
+    max-height: 46%;
+    overflow-y: auto;
+    background: rgba(255, 253, 247, 0.97);
+    box-shadow: 0 6px 20px rgba(45, 53, 97, 0.25);
+    border: 1px solid rgba(0, 131, 143, 0.15);
+  }
+  #data-details.hq-data-details--open {
+    display: flex;
+  }
+
+  .hq-data-details-close {
+    display: flex;
+  }
+
   .hq-data-minimap-col {
     flex: 1 1 auto;
     width: 100%;
@@ -975,20 +1065,61 @@ body {
   .hud-left .value { font-size: 18px; }
   .hud-btn { padding: 8px 16px; font-size: 12px; }
 
-  /* HQ terminal: width leaves room for the right-edge rail (76px) on
-     touch-ui; dvh tracks the real visible viewport (mobile URL-bar
-     collapse) and safe-area insets keep it clear of the notch/home
-     indicator; the body flex-fills so no height math is needed. */
+  /* HQ terminal: standard mobile-game MODAL pattern — fills the full safe
+     viewport (no floating card margins). Header + tab bar + footer are
+     pinned (flex-shrink:0); ONLY the content region between them scrolls.
+     dvh tracks the real visible viewport (mobile URL-bar collapse) and
+     env() safe-area insets keep it clear of the notch/home indicator. */
+  #hq-overlay {
+    align-items: stretch;
+    justify-content: stretch;
+  }
   #hq-panel {
-    width: 94vw;
+    width: 100vw;
     max-width: none;
-    max-height: calc(100vh - 104px);
-    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 104px);
+    height: 100vh;
+    height: 100dvh;
+    max-height: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   body.touch-ui #hq-panel {
-    width: calc(94vw - 76px);
-    max-height: calc(100vh - 72px);
-    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 72px);
+    width: 100vw;
+    max-width: none;
+    height: 100vh;
+    height: 100dvh;
+    max-height: none;
+  }
+  .hq-fs-header,
+  .hq-fs-nav,
+  .hq-fs-footer {
+    flex-shrink: 0;
+  }
+  .hq-fs-content {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .hq-fs-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 10px 16px;
+    border-top: 1px solid #F0E8D8;
+    background: #FFFDF7;
+  }
+  .hq-fs-footer:empty {
+    display: none;
+  }
+  .hq-fs-footer--hidden {
+    display: none;
+  }
+  .hq-fs-footer .hq-order-btn {
+    flex-shrink: 0;
   }
   .hq-fs-header { padding: 10px 14px; }
   .hq-fs-title { font-size: 15px; }

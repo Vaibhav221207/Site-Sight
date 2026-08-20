@@ -18,6 +18,10 @@ window.HqPanel = (function () {
     sections: null,
     currentSection: "store",
     isOpen: false,
+    footerEl: null,     // mobile fixed footer action bar (.hq-fs-footer)
+    storeRow1: null,    // STORE Drone row (order button's desktop home)
+    storeRow2: null,    // STORE GPR row (order button's desktop home)
+    mobileMedia: null,  // matchMedia for the small-viewport breakpoint
   };
 
    var SECTIONS = ["data", "inventory", "store"];
@@ -92,6 +96,54 @@ window.HqPanel = (function () {
         });
       }
     });
+
+    // mobile modal pattern: footer action bar + store-button relocation
+    api.footerEl = document.getElementById("hq-fs-footer");
+    api.storeRow1 = api.orderBtn ? api.orderBtn.closest(".hq-fs-drone-row") : null;
+    api.storeRow2 = api.gprOrderBtn ? api.gprOrderBtn.closest(".hq-fs-drone-row") : null;
+    api.mobileMedia = window.matchMedia("(max-width: 640px), (max-height: 500px)");
+    if (api.mobileMedia && api.mobileMedia.addEventListener) {
+      api.mobileMedia.addEventListener("change", function () { api.syncMobileLayout(); });
+    }
+    api.syncMobileLayout();
+  };
+
+  // ---- mobile fixed-footer layout -----------------------------------------
+  // Mobile breakpoint only: the STORE order buttons and the INVENTORY Deploy
+  // button live in a fixed footer below the scrollable content (desktop keeps
+  // them inside their content rows — this code only ever moves DOM nodes when
+  // the small-viewport media query matches).
+
+  api.isMobile = function () {
+    return !!(api.mobileMedia && api.mobileMedia.matches);
+  };
+
+  // Rebuild the footer for the ACTIVE tab: STORE order buttons on STORE,
+  // nothing on DATA; the INVENTORY Deploy button is appended by
+  // renderInventory() right after this runs.
+  api.refreshFooter = function () {
+    if (!api.footerEl) return;
+    if (!api.isMobile()) {
+      // desktop: footer hidden; make sure order buttons sit back in their rows
+      if (api.orderBtn && api.storeRow1 && api.orderBtn.parentNode !== api.storeRow1) api.storeRow1.appendChild(api.orderBtn);
+      if (api.gprOrderBtn && api.storeRow2 && api.gprOrderBtn.parentNode !== api.storeRow2) api.storeRow2.appendChild(api.gprOrderBtn);
+      return;
+    }
+    api.footerEl.innerHTML = "";
+    api.inventoryDeployContainer = null;
+    if (api.currentSection === "store") {
+      if (api.orderBtn && api.orderBtn.parentNode !== api.footerEl) api.footerEl.appendChild(api.orderBtn);
+      if (api.gprOrderBtn && api.gprOrderBtn.parentNode !== api.footerEl) api.footerEl.appendChild(api.gprOrderBtn);
+    } else {
+      if (api.orderBtn && api.storeRow1 && api.orderBtn.parentNode !== api.storeRow1) api.storeRow1.appendChild(api.orderBtn);
+      if (api.gprOrderBtn && api.storeRow2 && api.gprOrderBtn.parentNode !== api.storeRow2) api.storeRow2.appendChild(api.gprOrderBtn);
+    }
+  };
+
+  // Breakpoint crossing (resize/orientation): re-sync footer + relayout.
+  api.syncMobileLayout = function () {
+    api.refreshFooter();
+    if (api.isMobile() && api.currentSection === "inventory") api.renderInventory();
   };
 
   api.switchSection = function (name) {
@@ -101,6 +153,7 @@ window.HqPanel = (function () {
       if (api.sections[s]) api.sections[s].style.display = s === name ? "" : "none";
     });
     api.currentSection = name;
+    api.refreshFooter();
     if (name === "inventory") {
       api.renderInventory();
     }
@@ -191,7 +244,13 @@ window.HqPanel = (function () {
       api.deploySelected();
     });
     deployBox.appendChild(deployBtn);
-    api.inventorySection.appendChild(deployBox);
+    // mobile modal pattern: Deploy pins to the fixed footer (always visible
+    // without scrolling); desktop keeps it at the end of the section content.
+    if (api.isMobile() && api.footerEl) {
+      api.footerEl.appendChild(deployBox);
+    } else {
+      api.inventorySection.appendChild(deployBox);
+    }
     api.inventoryDeployContainer = deployBox;
 
     api.refreshDeployVisibility();
@@ -274,6 +333,11 @@ window.HqPanel = (function () {
     var hasSelection = !!(gs.selectedDroneId || gs.selectedGprId);
     if (api.inventoryDeployContainer) {
       api.inventoryDeployContainer.style.display = hasSelection ? "" : "none";
+    }
+    // mobile: hide the whole footer strip while it holds only a hidden Deploy
+    if (api.footerEl) {
+      var mobileInventory = api.isMobile() && api.currentSection === "inventory";
+      api.footerEl.classList.toggle("hq-fs-footer--hidden", mobileInventory && !hasSelection);
     }
   };
 
@@ -404,6 +468,7 @@ window.HqPanel = (function () {
     api.isOpen = true;
     api.overlayEl.style.visibility = "visible";
     api.overlayEl.style.pointerEvents = "auto";
+    api.syncMobileLayout();
     api.switchSection("store");
     api.updateOwned();
     api.renderInventory();
