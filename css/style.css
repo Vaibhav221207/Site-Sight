@@ -1,56 +1,16 @@
-/* Site Sight — technical blueprint / drafting-instrument UI theme.
-   Chrome colors: cool off-white #F4F3EE panels, 1px #2B3440 borders, deep
-   technical teal #0E7C86 accents, muted slate #5B6B75 labels, near-black
-   navy #1A2229 data values in JetBrains Mono. Sharp 3px corners, flat fills,
-   no gradients/shadows. The outdoor game world is untouched by this theme. */
+/* Site Sight — chunky tactile mobile-game UI theme.
+   Chrome colors: warm cream #FFFBF0 panels, thick 3px "cartoon ink" outlines
+   #2B2320 (near-black warm brown), saturated teal #0E9AA6 primary actions,
+   warm brown-gray #6B5B4F section labels, ink #2B2320 body text. Panels get
+   hard offset shadows (ZERO blur), buttons are pressable 3D keys with a
+   darker bottom "keycap" edge that collapses on press. Major titles use a
+   comic stroke outline. The outdoor game world is untouched by this theme. */
 
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
-
-/* data readouts — JetBrains Mono (instrument-panel values only) */
-.tile-coords,
-.hud-left .value,
-.mu-value,
-.hq-drone-cost,
-.hq-fs-drone-cost,
-.hq-data-details-row strong,
-.hq-data-cat-count,
-.panel-data-value,
-.build-item-cost {
-  font-family: "JetBrains Mono", monospace;
-  font-weight: 600;
-}
-
-/* corner registration brackets — L-shaped draft marks just inside the panel
-   edge, drawn with ::before/::after so no JS is involved (pure decoration) */
-.corner-bracket {
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  pointer-events: none;
-  z-index: 5;
-}
-.corner-bracket::before,
-.corner-bracket::after {
-  content: "";
-  position: absolute;
-  background: #0E7C86;
-}
-.cb-tl { top: 4px; left: 4px; }
-.cb-tl::before { top: 0; left: 0; width: 10px; height: 2px; }
-.cb-tl::after { top: 0; left: 0; width: 2px; height: 10px; }
-.cb-tr { top: 4px; right: 4px; }
-.cb-tr::before { top: 0; right: 0; width: 10px; height: 2px; }
-.cb-tr::after { top: 0; right: 0; width: 2px; height: 10px; }
-.cb-bl { bottom: 4px; left: 4px; }
-.cb-bl::before { bottom: 0; left: 0; width: 10px; height: 2px; }
-.cb-bl::after { bottom: 0; left: 0; width: 2px; height: 10px; }
-.cb-br { bottom: 4px; right: 4px; }
-.cb-br::before { bottom: 0; right: 0; width: 10px; height: 2px; }
-.cb-br::after { bottom: 0; right: 0; width: 2px; height: 10px; }
 
 html,
 body {
@@ -60,7 +20,7 @@ body {
   overscroll-behavior: none; /* no pull-to-refresh / bounce-scroll on mobile */
   background: linear-gradient(180deg, #6EC6FF 0%, #A8E6A3 100%);
   font-family: "Baloo 2", sans-serif;
-  color: #1A2229;
+  color: #2B2320;
 }
 
 #game-canvas {
@@ -71,15 +31,62 @@ body {
   touch-action: none; /* block default browser touch gestures (scroll/pinch) */
 }
 
-/* ---- tile inspection popup (blueprint card) --------------------------- */
+button {
+  font-family: "Baloo 2", sans-serif;
+  touch-action: manipulation; /* no double-tap zoom delay on UI taps */
+}
+
+/* ---- pressable 3D button recipe (shared by every UI button) --------------
+   Rest: solid fill + 3px ink outline + a bottom "keycap" edge in a darker
+   shade of the button's own fill (0 blur, offset only). Press: the button
+   visually pushes down 5px and its bottom edge disappears. Snappy ~90ms. */
+.btn-3d {
+  border: 3px solid #2B2320;
+  border-radius: 14px;
+  color: #FFFFFF;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: transform 0.09s ease, box-shadow 0.09s ease,
+    background 0.15s ease, color 0.15s ease;
+}
+.btn-3d:active {
+  transform: translateY(5px);
+  box-shadow: 0 0 0 0 transparent !important;
+}
+.btn-3d:disabled,
+.btn-3d[disabled] {
+  cursor: not-allowed;
+  background: #E3DCCB;
+  color: #A69B88;
+  box-shadow: none !important;
+  transform: none;
+}
+.btn-3d:disabled:hover,
+.btn-3d[disabled]:hover {
+  background: #E3DCCB;
+}
+
+/* primary teal keycap button */
+.btn-teal {
+  background: #0E9AA6;
+  box-shadow: 0 5px 0 0 #087B84; /* darker teal bottom edge, zero blur */
+}
+.btn-teal:hover {
+  background: #0C8A93;
+}
+
+/* ---- tile inspection popup (chunky sticker card) ------------------------ */
 #tile-popup {
   position: fixed;
   top: 24px;
   right: 24px;
   width: 288px;
-  background: #F4F3EE;
-  border: 1px solid #2B3440;
-  border-radius: 3px;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 16px;
+  box-shadow: 6px 6px 0 rgba(43, 35, 32, 0.25); /* hard offset, zero blur */
   z-index: 900;
   overflow: hidden;
   visibility: hidden;
@@ -94,12 +101,8 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 12px 14px;
-  border-bottom: 1px solid #2B3440;
-  background-color: #F4F3EE;
-  background-image:
-    linear-gradient(rgba(43, 52, 64, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(43, 52, 64, 0.06) 1px, transparent 1px);
-  background-size: 14px 14px;
+  border-bottom: 3px solid #2B2320;
+  background-color: #F6EEDC;
 }
 
 .panel-title {
@@ -107,25 +110,33 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #1A2229;
+  color: #0E9AA6;
+  /* comic game-logo outline on major titles only */
+  -webkit-text-stroke: 2px #2B2320;
+  paint-order: stroke fill;
 }
 
 .panel-close {
   width: 28px;
   height: 28px;
-  border: 1px solid #2B3440;
-  border-radius: 3px;
-  background: transparent;
-  color: #5B6B75;
+  background: #0E9AA6;
+  box-shadow: 0 5px 0 0 #087B84;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
+  color: #FFFFFF;
   font-size: 15px;
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: transform 0.09s ease, box-shadow 0.09s ease,
+    background 0.15s ease;
 }
-
 .panel-close:hover {
-  background: #E7E5DC;
+  background: #0C8A93;
+}
+.panel-close:active {
+  transform: translateY(5px);
+  box-shadow: 0 0 0 0 transparent;
 }
 
 .panel-body {
@@ -134,8 +145,8 @@ body {
 
 .tile-coords {
   font-size: 12px;
-  font-weight: 500;
-  color: #1A2229;
+  font-weight: 700;
+  color: #2B2320;
   margin-bottom: 8px;
 }
 
@@ -143,10 +154,10 @@ body {
   font-size: 12px;
   font-weight: 500;
   line-height: 1.6;
-  color: #5B6B75;
+  color: #6B5B4F;
 }
 
-/* ---- HUD (blueprint instrument bar) ---- */
+/* ---- HUD (chunky sticker bar) ---- */
 .hud {
   position: fixed;
   bottom: 20px;
@@ -158,9 +169,10 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
-  background: #F4F3EE;
-  border: 1px solid #2B3440;
-  border-radius: 3px;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 16px;
+  box-shadow: 6px 6px 0 rgba(43, 35, 32, 0.25);
   z-index: 1000;
 }
 
@@ -175,48 +187,49 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #5B6B75;
+  color: #6B5B4F;
 }
 
 .hud-left .value {
   font-size: 24px;
   font-weight: 700;
-  color: #1A2229;
+  color: #2B2320;
 }
 
 .hud-btn {
-  padding: 10px 26px;
-  background: #0E7C86;
-  border: 1px solid #0E7C86;
-  border-radius: 3px;
+  padding: 8px 26px;
+  background: #0E9AA6;
+  box-shadow: 0 5px 0 0 #087B84;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
   color: #FFFFFF;
   font-size: 14px;
   font-weight: 700;
-  font-family: "Baloo 2", sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: transform 0.09s ease, box-shadow 0.09s ease,
+    background 0.15s ease;
 }
 
 .hud-btn:hover {
-  background: #0A6870;
+  background: #0C8A93;
 }
 
 .hud-btn:active {
-  background: #095B62;
+  transform: translateY(5px);
+  box-shadow: 0 0 0 0 transparent;
 }
 
 .hud-btn:disabled, .hud-btn[disabled] {
   cursor: not-allowed;
-  background: #D3D1C7;
-  border-color: #D3D1C7;
-  color: #888780;
+  background: #E3DCCB;
+  color: #A69B88;
+  box-shadow: none;
 }
 
 .hud-btn:focus {
   outline: none;
-  border-color: #5B6B75;
 }
 
 /* ---- Build palette ---- */
@@ -230,9 +243,10 @@ body {
   align-items: center;
   gap: 10px;
   padding: 14px 18px;
-  background: #F4F3EE;
-  border: 1px solid #2B3440;
-  border-radius: 3px;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 16px;
+  box-shadow: 6px 6px 0 rgba(43, 35, 32, 0.25);
   z-index: 1001;
 }
 
@@ -245,7 +259,7 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #5B6B75;
+  color: #6B5B4F;
 }
 
 .build-items {
@@ -259,24 +273,26 @@ body {
   gap: 10px;
   padding: 10px 14px;
   min-width: 170px;
-  background: #ECEAE2;
-  border: 1px solid #2B3440;
-  border-radius: 3px;
-  color: #1A2229;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
+  box-shadow: 4px 4px 0 rgba(43, 35, 32, 0.2);
+  color: #2B2320;
   font-family: "Baloo 2", sans-serif;
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition: border-color 0.15s ease, background 0.15s ease,
+    box-shadow 0.09s ease, transform 0.09s ease;
 }
 
 .build-item:hover {
-  border-color: #0E7C86;
+  background: #F6EEDC;
 }
 
 .build-item.selected {
-  border-color: #0E7C86;
-  background: #0E7C86;
+  background: #0E9AA6;
   color: #FFFFFF;
+  box-shadow: 0 5px 0 0 #087B84; /* selected = raised keycap look */
 }
 
 .build-item.selected .build-item-name,
@@ -287,18 +303,18 @@ body {
 .build-item:disabled,
 .build-item[disabled] {
   cursor: not-allowed;
-  background: #D3D1C7;
-  border-color: #D3D1C7;
-  color: #888780;
+  background: #E3DCCB;
+  color: #A69B88;
+  box-shadow: none;
 }
 
 .build-item:disabled .build-item-name,
 .build-item:disabled .build-item-cost {
-  color: #888780;
+  color: #A69B88;
 }
 
 .build-item:disabled:hover {
-  border-color: #D3D1C7;
+  background: #E3DCCB;
 }
 
 .build-item-icon {
@@ -323,13 +339,13 @@ body {
 .build-item-name {
   font-size: 14px;
   font-weight: 700;
-  color: #1A2229;
+  color: #2B2320;
 }
 
 .build-item-cost {
   font-size: 13px;
   font-weight: 700;
-  color: #1A2229;
+  color: #2B2320;
 }
 
 /* ---- HQ panel sections (small popup) ---- */
@@ -344,7 +360,7 @@ body {
   flex-direction: column;
   gap: 4px;
   padding-bottom: 14px;
-  border-bottom: 1px solid #2B3440;
+  border-bottom: 3px solid #2B2320;
 }
 
 .hq-status-label {
@@ -352,13 +368,13 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #5B6B75;
+  color: #6B5B4F;
 }
 
 .hq-status-text {
   font-size: 14px;
   font-weight: 500;
-  color: #1A2229;
+  color: #2B2320;
 }
 
 .hq-section {
@@ -372,9 +388,9 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #5B6B75;
+  color: #6B5B4F;
   padding-bottom: 6px;
-  border-bottom: 1px solid #2B3440;
+  border-bottom: 2px solid rgba(43, 35, 32, 0.35);
 }
 
 .hq-drone-row {
@@ -382,6 +398,11 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  padding: 8px 12px;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
+  box-shadow: 4px 4px 0 rgba(43, 35, 32, 0.2);
 }
 
 .hq-drone-info {
@@ -393,42 +414,44 @@ body {
 .hq-drone-name {
   font-size: 15px;
   font-weight: 700;
-  color: #1A2229;
+  color: #2B2320;
 }
 
 .hq-drone-cost {
   font-size: 14px;
   font-weight: 700;
-  color: #1A2229;
+  color: #2B2320;
 }
 
 .hq-order-btn {
   padding: 8px 22px;
-  background: #0E7C86;
-  border: 1px solid #0E7C86;
-  border-radius: 3px;
+  background: #0E9AA6;
+  box-shadow: 0 5px 0 0 #087B84;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
   color: #FFFFFF;
   font-size: 13px;
   font-weight: 700;
-  font-family: "Baloo 2", sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.15s ease;
+  transition: transform 0.09s ease, box-shadow 0.09s ease,
+    background 0.15s ease;
 }
 
 .hq-order-btn:hover {
-  background: #0A6870;
+  background: #0C8A93;
 }
 
 .hq-order-btn:active {
-  background: #095B62;
+  transform: translateY(5px);
+  box-shadow: 0 0 0 0 transparent;
 }
 
 .hq-order-btn.hq-order-btn--flash {
-  background: #2B9AA3;
-  border-color: #2B9AA3;
+  background: #2FAEB8; /* brief "Ordered!" confirmation flash */
+  box-shadow: 0 5px 0 0 #1E8A92;
 }
 
 /* ONE-TIME purchase state: permanently grayed out once the Drone System has
@@ -436,13 +459,14 @@ body {
 .hq-order-btn:disabled,
 .hq-order-btn[disabled] {
   cursor: not-allowed;
-  background: #D3D1C7;
-  border-color: #D3D1C7;
-  color: #888780;
+  background: #E3DCCB;
+  color: #A69B88;
+  box-shadow: none;
+  transform: none;
 }
 
 .hq-order-btn:disabled:hover {
-  background: #D3D1C7;
+  background: #E3DCCB;
 }
 
 /* ---- Mobile shell: portrait rotate overlay (touch devices only) ---- */
@@ -467,9 +491,10 @@ body {
   gap: 16px;
   max-width: 84vw;
   padding: 28px 34px;
-  background: #F4F3EE;
-  border: 1px solid #2B3440;
-  border-radius: 3px;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 16px;
+  box-shadow: 6px 6px 0 rgba(43, 35, 32, 0.25);
   text-align: center;
 }
 
@@ -482,7 +507,7 @@ body {
 .rotate-text {
   font-size: 17px;
   font-weight: 700;
-  color: #1A2229;
+  color: #2B2320;
   line-height: 1.4;
 }
 
@@ -493,7 +518,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(23, 29, 38, 0.55);
+  background: rgba(43, 35, 32, 0.55);
   z-index: 1100;
   visibility: hidden;
   pointer-events: none;
@@ -506,9 +531,10 @@ body {
   max-height: 85dvh;
   display: flex;
   flex-direction: column;
-  background: #F4F3EE;
-  border: 1px solid #2B3440;
-  border-radius: 3px;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 16px;
+  box-shadow: 6px 6px 0 rgba(43, 35, 32, 0.25);
   position: relative;
   overflow: hidden;
   opacity: 0;
@@ -521,12 +547,8 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 22px 28px;
-  border-bottom: 1px solid #2B3440;
-  background-color: #F4F3EE;
-  background-image:
-    linear-gradient(rgba(43, 52, 64, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(43, 52, 64, 0.06) 1px, transparent 1px);
-  background-size: 14px 14px;
+  border-bottom: 3px solid #2B2320;
+  background-color: #F6EEDC;
 }
 
 .hq-fs-title {
@@ -534,25 +556,35 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #1A2229;
+  color: #0E9AA6;
+  /* comic game-logo outline on major titles only */
+  -webkit-text-stroke: 2px #2B2320;
+  paint-order: stroke fill;
 }
 
 .hq-fs-close {
   width: 38px;
   height: 38px;
-  border: 1px solid #2B3440;
-  border-radius: 3px;
-  background: transparent;
-  color: #5B6B75;
+  background: #0E9AA6;
+  box-shadow: 0 5px 0 0 #087B84;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
+  color: #FFFFFF;
   font-size: 22px;
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: transform 0.09s ease, box-shadow 0.09s ease,
+    background 0.15s ease;
 }
 
 .hq-fs-close:hover {
-  background: #E7E5DC;
+  background: #0C8A93;
+}
+
+.hq-fs-close:active {
+  transform: translateY(5px);
+  box-shadow: 0 0 0 0 transparent;
 }
 
 .hq-fs-body {
@@ -575,8 +607,8 @@ body {
   justify-content: flex-end;
   gap: 10px;
   padding: 14px 20px;
-  border-top: 1px solid #2B3440;
-  background: #F4F3EE;
+  border-top: 3px solid #2B2320;
+  background: #F6EEDC;
 }
 .hq-fs-footer:empty {
   display: none;
@@ -589,15 +621,16 @@ body {
 }
 
 /* left sidebar nav (shared layout, all breakpoints): fixed vertical rail of
-   connected square segments (instrument-panel switch style). Never scrolls. */
+   chunky rounded segments. Never scrolls. */
 .hq-fs-nav {
   flex: 0 0 112px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 0;
+  gap: 8px;
   padding: 20px 14px;
-  border-right: 1px solid #2B3440;
+  border-right: 3px solid #2B2320;
+  background: #F6EEDC;
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -607,34 +640,35 @@ body {
   width: 100%;
   min-width: 0;
   padding: 12px 8px;
-  background: transparent;
-  border: 1px solid #2B3440;
-  border-radius: 0;
-  margin-top: -1px; /* flush connected segments — shared borders collapse */
-  color: #5B6B75;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
+  color: #2B2320;
   font-size: 13px;
-  font-weight: 500;
-  font-family: "Baloo 2", sans-serif;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   line-height: 1.2;
   text-align: center;
   cursor: pointer;
-  transition: color 0.15s ease, background 0.15s ease;
-}
-
-.hq-fs-nav-item:first-child {
-  margin-top: 0;
+  transition: transform 0.09s ease, box-shadow 0.09s ease,
+    background 0.15s ease, color 0.15s ease;
 }
 
 .hq-fs-nav-item:hover {
-  color: #1A2229;
+  background: #F6EEDC;
 }
 
+.hq-fs-nav-item:active {
+  transform: translateY(5px);
+  box-shadow: 0 0 0 0 transparent;
+}
+
+/* active tab = filled teal key (currently selected, looks pressed in) */
 .hq-fs-nav-item--active {
   color: #FFFFFF;
-  font-weight: 700;
-  background: #0E7C86;
+  background: #0E9AA6;
+  box-shadow: 0 5px 0 0 #087B84;
 }
 
 body.touch-ui .hq-fs-nav-item {
@@ -661,7 +695,7 @@ body.touch-ui .hq-fs-nav-item {
 .hq-fs-placeholder {
   font-size: 16px;
   font-weight: 500;
-  color: #5B6B75;
+  color: #6B5B4F;
   padding: 36px 0;
   text-align: center;
 }
@@ -671,7 +705,7 @@ body.touch-ui .hq-fs-nav-item {
   flex-direction: column;
   gap: 6px;
   padding-bottom: 22px;
-  border-bottom: 1px solid #2B3440;
+  border-bottom: 3px solid #2B2320;
 }
 
 .hq-fs-status-label {
@@ -679,13 +713,13 @@ body.touch-ui .hq-fs-nav-item {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #5B6B75;
+  color: #6B5B4F;
 }
 
 .hq-fs-status-text {
   font-size: 17px;
   font-weight: 500;
-  color: #1A2229;
+  color: #2B2320;
 }
 
 .hq-fs-section {
@@ -697,9 +731,9 @@ body.touch-ui .hq-fs-nav-item {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #5B6B75;
+  color: #6B5B4F;
   padding-bottom: 10px;
-  border-bottom: 1px solid rgba(43, 52, 64, 0.3);
+  border-bottom: 2px solid rgba(43, 35, 32, 0.35);
   margin-bottom: 14px;
 }
 
@@ -709,9 +743,10 @@ body.touch-ui .hq-fs-nav-item {
   justify-content: space-between;
   gap: 16px;
   padding: 14px 18px;
-  background: #ECEAE2;
-  border: 1px solid #2B3440;
-  border-radius: 3px;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 16px;
+  box-shadow: 6px 6px 0 rgba(43, 35, 32, 0.25);
 }
 
 .hq-fs-drone-info {
@@ -723,13 +758,13 @@ body.touch-ui .hq-fs-nav-item {
 .hq-fs-drone-name {
   font-size: 17px;
   font-weight: 700;
-  color: #1A2229;
+  color: #2B2320;
 }
 
 .hq-fs-drone-cost {
   font-size: 15px;
   font-weight: 700;
-  color: #1A2229;
+  color: #2B2320;
 }
 
 /* ---- HQ DATA tab: flat top-down mini-map + category summary -------------
@@ -768,9 +803,10 @@ body.touch-ui .hq-fs-nav-item {
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  background: rgba(43, 52, 64, 0.05);
-  border-radius: 3px;
-  border: 1px solid rgba(43, 52, 64, 0.35);
+  background: #F6EEDC;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
+  box-shadow: 4px 4px 0 rgba(43, 35, 32, 0.2);
 }
 
 .hq-data-map-title {
@@ -778,12 +814,12 @@ body.touch-ui .hq-fs-nav-item {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #5B6B75;
+  color: #6B5B4F;
 }
 
 .hq-data-map-hint {
   font-size: 10px;
-  color: #5B6B75;
+  color: #6B5B4F;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -793,9 +829,10 @@ body.touch-ui .hq-fs-nav-item {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
-  background: #1a1a2e;
-  border: 1px solid #2B3440;
-  border-radius: 3px;
+  background: #1a1a2e; /* dark survey void behind the world map */
+  border: 3px solid #2B2320;
+  border-radius: 16px;
+  box-shadow: 6px 6px 0 rgba(43, 35, 32, 0.25);
   overflow: auto;
   padding: 8px;
 }
@@ -818,14 +855,15 @@ body.touch-ui .hq-fs-nav-item {
   align-items: center;
   gap: 4px 12px;
   padding: 6px 10px;
-  background: rgba(43, 52, 64, 0.05);
-  border-radius: 3px;
-  border: 1px solid rgba(43, 52, 64, 0.35);
+  background: #F6EEDC;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
+  box-shadow: 4px 4px 0 rgba(43, 35, 32, 0.2);
   font-size: 9px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #5B6B75;
+  color: #6B5B4F;
 }
 
 .hq-data-minimap-legend-item {
@@ -838,8 +876,8 @@ body.touch-ui .hq-fs-nav-item {
 .hq-data-minimap-legend-swatch {
   width: 10px;
   height: 10px;
-  border-radius: 2px;
-  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  border: 2px solid #2B2320;
   flex-shrink: 0;
 }
 
@@ -858,9 +896,9 @@ body.touch-ui .hq-fs-nav-item {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #5B6B75;
+  color: #6B5B4F;
   padding-bottom: 6px;
-  border-bottom: 1px solid rgba(43, 52, 64, 0.3);
+  border-bottom: 2px solid rgba(43, 35, 32, 0.35);
 }
 
 .hq-data-details {
@@ -868,15 +906,16 @@ body.touch-ui .hq-fs-nav-item {
   flex-direction: column;
   gap: 6px;
   padding: 10px 12px;
-  background: rgba(43, 52, 64, 0.04);
-  border-radius: 3px;
-  border: 1px solid #2B3440;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 16px;
+  box-shadow: 6px 6px 0 rgba(43, 35, 32, 0.25);
   position: relative;
 }
 
 .hq-data-details-empty {
   font-size: 12px;
-  color: #5B6B75;
+  color: #6B5B4F;
   padding: 6px 0;
 }
 
@@ -889,7 +928,7 @@ body.touch-ui .hq-fs-nav-item {
 }
 
 .hq-data-details-row span {
-  color: #5B6B75;
+  color: #6B5B4F;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   font-size: 10px;
@@ -897,15 +936,16 @@ body.touch-ui .hq-fs-nav-item {
 }
 
 .hq-data-details-row strong {
-  color: #1A2229;
-  font-weight: 600;
+  color: #2B2320;
+  font-weight: 700;
   text-align: right;
 }
 
 .hq-data-badge {
   display: inline-block;
   padding: 3px 10px;
-  border-radius: 3px;
+  border: 3px solid #2B2320;
+  border-radius: 12px;
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
@@ -923,23 +963,24 @@ body.touch-ui .hq-fs-nav-item {
   align-items: center;
   gap: 8px;
   padding: 6px 10px;
-  background: #ECEAE2;
-  border-radius: 3px;
-  border: 1px solid #2B3440;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
+  box-shadow: 4px 4px 0 rgba(43, 35, 32, 0.2);
   font-size: 11px;
 }
 
 .hq-data-cat-swatch {
   width: 14px;
   height: 14px;
-  border-radius: 2px;
-  border: 1px solid rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+  border: 2px solid #2B2320;
   flex-shrink: 0;
 }
 
 .hq-data-cat-label {
   flex: 1;
-  color: #1A2229;
+  color: #2B2320;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -947,7 +988,7 @@ body.touch-ui .hq-fs-nav-item {
 }
 
 .hq-data-cat-count {
-  color: #5B6B75;
+  color: #6B5B4F;
   font-size: 11px;
 }
 
@@ -957,7 +998,7 @@ body.touch-ui .hq-fs-nav-item {
   justify-content: space-between;
   align-items: center;
   padding: 6px 0;
-  border-bottom: 1px solid rgba(240, 232, 216, 0.5);
+  border-bottom: 1px solid rgba(43, 35, 32, 0.15);
   font-size: 11px;
 }
 
@@ -966,7 +1007,7 @@ body.touch-ui .hq-fs-nav-item {
 }
 
 .panel-data-label {
-  color: #5B6B75;
+  color: #6B5B4F;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   font-size: 10px;
@@ -974,8 +1015,8 @@ body.touch-ui .hq-fs-nav-item {
 }
 
 .panel-data-value {
-  color: #1A2229;
-  font-weight: 600;
+  color: #2B2320;
+  font-weight: 700;
   text-align: right;
   max-width: 65%;
   word-break: break-word;
@@ -985,7 +1026,8 @@ body.touch-ui .hq-fs-nav-item {
 .panel-data-badge {
   display: inline-block;
   padding: 2px 8px;
-  border-radius: 3px;
+  border: 3px solid #2B2320;
+  border-radius: 12px;
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -1018,7 +1060,7 @@ body.touch-ui .hq-fs-nav-item {
   }
 
   .hq-data-minimap-wrap {
-    border-radius: 3px;
+    border-radius: 16px;
     padding: 6px;
     -webkit-overflow-scrolling: touch;
   }
@@ -1100,11 +1142,11 @@ body.touch-ui .hq-fs-nav-item {
     left: 8px;
     transform: none;
     padding: 0 12px;
-    border-radius: 3px;
+    border-radius: 16px;
   }
   .hud-left .label { font-size: 10px; }
   .hud-left .value { font-size: 18px; }
-  .hud-btn { padding: 8px 16px; font-size: 12px; }
+  .hud-btn { padding: 6px 16px; font-size: 12px; }
 
   /* HQ terminal: standard mobile-game MODAL pattern — fills the full safe
      viewport (no floating card margins). Header + tab bar + footer are
@@ -1146,18 +1188,19 @@ body.touch-ui .hq-fs-nav-item {
   .hq-fs-title { font-size: 15px; }
   .hq-fs-close { width: 32px; height: 32px; font-size: 18px; }
   body.touch-ui .hq-fs-close { width: 40px; height: 40px; }
-  /* compact sidebar: narrower rail + small square segments on small screens
-     (the sidebar structure itself is shared base CSS at all breakpoints) */
+  /* compact sidebar: narrower rail + smaller chunky segments on small
+     screens (the sidebar structure itself is shared base CSS at all
+     breakpoints) */
   .hq-fs-nav {
     flex: 0 0 64px;
-    gap: 0;
+    gap: 6px;
     padding: 10px 8px;
   }
   .hq-fs-nav-item {
     padding: 10px 4px;
     font-size: 9px;
     letter-spacing: 0.03em;
-    border-radius: 0;
+    border-radius: 14px;
   }
   .hq-fs-content { padding: 14px 16px; }
   .hq-fs-status { padding-bottom: 12px; }
@@ -1180,8 +1223,8 @@ body.touch-ui .hq-fs-nav-item {
     bottom: 60px;
     left: 12px;
     right: auto;
-    border-radius: 3px;
-    box-shadow: none;
+    border-radius: 16px;
+    box-shadow: 6px 6px 0 rgba(43, 35, 32, 0.25);
     transform: none;
   }
   body.touch-ui #tile-popup {
@@ -1190,8 +1233,8 @@ body.touch-ui .hq-fs-nav-item {
     left: 12px;
     right: auto;
   }
-.panel-header { padding: 6px 8px; border-bottom: none; background: transparent; background-image: none; }
-  .panel-title { font-size: 10px; }
+.panel-header { padding: 6px 8px; border-bottom: none; background: transparent; }
+  .panel-title { font-size: 10px; -webkit-text-stroke: 1px #2B2320; }
   .panel-close { width: 20px; height: 20px; font-size: 12px; }
   .panel-body {
     display: grid;
@@ -1227,7 +1270,7 @@ body.touch-ui .hq-fs-nav-item {
   .hq-fs-inventory-item {
     padding: 10px 12px !important;
     margin-bottom: 6px !important;
-    border-radius: 3px !important;
+    border-radius: 16px !important;
   }
   .hq-fs-inventory-item-name { font-size: 15px !important; }
 
@@ -1276,9 +1319,10 @@ body.touch-ui .hud { display: none; }
   align-items: center;
   gap: 2px;
   padding: 10px 6px;
-  background: rgba(244, 243, 238, 0.96);
-  border: 1px solid #2B3440;
-  border-radius: 3px;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 16px;
+  box-shadow: 6px 6px 0 rgba(43, 35, 32, 0.25);
 }
 
 .mu-label {
@@ -1286,36 +1330,44 @@ body.touch-ui .hud { display: none; }
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #5B6B75;
+  color: #6B5B4F;
 }
 
 .mu-value {
   font-size: 16px;
   font-weight: 700;
-  color: #1A2229;
+  color: #2B2320;
 }
 
 .mu-btn {
   padding: 12px 6px;
-  background: #0E7C86;
-  border: 1px solid #0E7C86;
-  border-radius: 3px;
+  background: #0E9AA6;
+  box-shadow: 0 5px 0 0 #087B84;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
   color: #FFFFFF;
   font-size: 14px;
   font-weight: 700;
-  font-family: "Baloo 2", sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: transform 0.09s ease, box-shadow 0.09s ease,
+    background 0.15s ease;
 }
 
-.mu-btn:active { background: #0A6870; }
+.mu-btn:hover {
+  background: #0C8A93;
+}
+
+.mu-btn:active {
+  transform: translateY(5px);
+  box-shadow: 0 0 0 0 transparent;
+}
 
 .mu-btn:disabled {
-  background: #D3D1C7;
-  border-color: #D3D1C7;
-  color: #888780;
+  background: #E3DCCB;
+  color: #A69B88;
+  box-shadow: none;
   cursor: not-allowed;
 }
 
@@ -1325,16 +1377,27 @@ body.touch-ui .hud { display: none; }
   align-items: center;
   justify-content: center;
   padding: 12px 22px;
-  background: #0E7C86;
-  border: 1px solid #0E7C86;
-  border-radius: 3px;
+  background: #0E9AA6;
+  box-shadow: 0 5px 0 0 #087B84;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
   color: #FFFFFF;
-  font-family: "Baloo 2", sans-serif;
   font-size: 14px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   cursor: pointer;
+  transition: transform 0.09s ease, box-shadow 0.09s ease,
+    background 0.15s ease;
+}
+
+.rotate-enter:hover {
+  background: #0C8A93;
+}
+
+.rotate-enter:active {
+  transform: translateY(5px);
+  box-shadow: 0 0 0 0 transparent;
 }
 
 body.touch-ui .rotate-enter { display: inline-flex; }
@@ -1351,19 +1414,29 @@ body.touch-ui .rotate-enter { display: inline-flex; }
   align-items: center;
   justify-content: center;
   padding: 0;
-  background: #F4F3EE;
-  border: 1px solid #2B3440;
-  border-radius: 3px;
+  background: #0E9AA6;
+  box-shadow: 0 5px 0 0 #087B84;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
   cursor: pointer;
   touch-action: none;
+  transition: transform 0.09s ease, box-shadow 0.09s ease,
+    background 0.15s ease;
 }
 
-.fs-btn:active { background: #E7E5DC; }
+.fs-btn:hover {
+  background: #0C8A93;
+}
+
+.fs-btn:active {
+  transform: translateY(5px);
+  box-shadow: 0 0 0 0 transparent;
+}
 
 .fs-btn svg {
   width: 22px;
   height: 22px;
-  fill: #0E7C86;
+  fill: #FFFFFF;
 }
 
 /* ---- mobile polish: safe-area insets + tap behavior (later-file overrides) --
@@ -1375,10 +1448,6 @@ html,
 body {
   -webkit-tap-highlight-color: transparent; /* no grey flash on tap */
   -webkit-touch-callout: none;              /* no iOS long-press callout */
-}
-
-button {
-  touch-action: manipulation; /* no double-tap zoom delay on UI taps */
 }
 
 .fs-btn {
