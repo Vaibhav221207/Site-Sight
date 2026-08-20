@@ -181,6 +181,7 @@ window.InputHandler = (function () {
   api.isTileOccupied = function (c, r) {
     return (window.GameState.hqTile && window.GameState.hqTile.col === c && window.GameState.hqTile.row === r);
   };
+  api.isScanBusy = isScanBusy;
   api.isPlacementMode = function () { return api._placementMode || false; };
   api.setPlacementMode = function (v) { api._placementMode = !!v; };
   api.isDroneMode = function () { return api._droneMode || false; };
@@ -192,10 +193,19 @@ window.InputHandler = (function () {
     if (api.canvas) api.canvas.style.cursor = api._cursor;
   };
 
+  // true while a Drone or GPR sweep is running. During a scan the map tiles and
+  // the HQ become non-interactive (no inspect popups, no HQ terminal) so the
+  // scan reads cleanly; camera panning still works so the player can watch.
+  function isScanBusy() {
+    return !!((window.DroneDeploy && window.DroneDeploy.deploying) ||
+              (window.GprDeploy && window.GprDeploy.deploying));
+  }
+
   // single click router: drone placement -> DroneDeploy.attempt;
   // placement mode -> HQBuild.attempt; otherwise normal inspect click
   api.onTileClick = function (col, row) {
     if (window.HqPanel && window.HqPanel.isOpen) return;
+    if (isScanBusy()) return; // tiles + HQ disabled while a scan is running
     if (api._droneMode) {
       if (window.DroneDeploy) {
         window.DroneDeploy.attempt(col, row);
