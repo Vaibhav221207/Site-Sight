@@ -115,6 +115,10 @@ window.HqPanel = (function () {
     if (!api.footerEl) return;
     api.footerEl.innerHTML = "";
     api.inventoryDeployContainer = null;
+    // stale "hidden" state is only valid while viewing INVENTORY with no
+    // selection (set by refreshDeployVisibility); every tab switch rebuilds
+    // the footer, so the strip must be visible again (STORE shows buy buttons).
+    api.footerEl.classList.remove("hq-fs-footer--hidden");
     if (api.currentSection === "store") {
       if (api.orderBtn && api.orderBtn.parentNode !== api.footerEl) api.footerEl.appendChild(api.orderBtn);
       if (api.gprOrderBtn && api.gprOrderBtn.parentNode !== api.footerEl) api.footerEl.appendChild(api.gprOrderBtn);
