@@ -1221,16 +1221,15 @@ body.touch-ui .hq-fs-nav-item {
   .hud-left .value { font-size: 18px; }
   .hud-btn { padding: 6px 16px; font-size: 12px; }
 
-  /* HQ terminal: standard mobile-game MODAL pattern — fills the full safe
-     viewport (no floating card margins). Header + tab bar + footer are
-     pinned (flex-shrink:0); ONLY the content region between them scrolls.
-     dvh tracks the real visible viewport (mobile URL-bar collapse) and
-     env() safe-area insets keep it clear of the notch/home indicator. */
-  #hq-overlay {
+  /* HQ terminal full-screen sheet: touch devices ONLY (landscape phones).
+     body.touch-ui is set by js/mobileUI.js at boot. Desktop and non-touch
+     windows — even short/narrow ones — keep the floating chunky card with
+     its hard offset shadow + 16px radius (base #hq-panel rules). */
+  body.touch-ui #hq-overlay {
     align-items: stretch;
     justify-content: stretch;
   }
-  #hq-panel {
+  body.touch-ui #hq-panel {
     width: 100vw;
     max-width: none;
     height: 100vh;
@@ -1240,13 +1239,6 @@ body.touch-ui .hq-fs-nav-item {
     box-shadow: none;
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-  body.touch-ui #hq-panel {
-    width: 100vw;
-    max-width: none;
-    height: 100vh;
-    height: 100dvh;
-    max-height: none;
   }
   .hq-fs-content {
     flex: 1 1 0;
