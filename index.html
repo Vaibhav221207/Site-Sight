@@ -50,29 +50,26 @@
           </nav>
           <div class="hq-fs-content">
             <div id="hq-section-data" class="hq-fs-section" style="display:none">
-          <div class="hq-data-map-wrap">
-            <div class="hq-data-map-header">
-              <span class="hq-data-map-title">SITE SURVEY MAP</span>
-              <div class="hq-data-map-controls">
-                <select id="hq-data-layer" class="hq-data-select">
-                  <option value="terrain">Terrain</option>
-                  <option value="quality">Soil Quality</option>
-                  <option value="stability">Stability</option>
-                  <option value="water">Water Table</option>
-                  <option value="mineral">Minerals</option>
-                  <option value="scanned">Aerial Survey</option>
-                  <option value="subsurface">GPR Survey</option>
-                </select>
-                <button id="hq-data-legend-toggle" class="hq-data-btn" title="Toggle Legend">🗝</button>
+              <div class="hq-data-layout">
+                <div class="hq-data-minimap-col">
+                  <div class="hq-data-map-header">
+                    <span class="hq-data-map-title">SITE SURVEY MAP</span>
+                    <span class="hq-data-map-hint">tap a tile for details</span>
+                  </div>
+                  <div class="hq-data-minimap-wrap">
+                    <canvas id="data-minimap" width="400" height="400"></canvas>
+                  </div>
+                </div>
+                <div class="hq-data-side-col">
+                  <div class="hq-data-section-header">TILE DETAILS</div>
+                  <div id="data-details" class="hq-data-details">
+                    <div class="hq-data-details-empty">Select a tile on the mini-map to see its survey data</div>
+                  </div>
+                  <div class="hq-data-section-header">CATEGORY SUMMARY</div>
+                  <div id="data-categories" class="hq-data-categories"></div>
+                </div>
               </div>
             </div>
-            <div class="hq-data-map-canvas-wrap">
-              <canvas id="hq-data-map" width="600" height="600"></canvas>
-            </div>
-            <div id="hq-data-legend" class="hq-data-legend hidden"></div>
-          </div>
-          <div class="hq-data-summary" id="hq-data-summary"></div>
-        </div>
             <div id="hq-section-inventory" class="hq-fs-section" style="display:none">
               <div class="hq-fs-placeholder">Coming soon</div>
             </div>
@@ -181,9 +178,10 @@
     <script src="js/landData.js"></script>
     <script src="js/gprDeploy.js"></script>
     <script src="js/hqBuild.js"></script>
-    <script src="js/droneDeploy.js"></script>
-    <script src="js/buildMenu.js"></script>
-    <script src="js/hqPanel.js"></script>
+<script src="js/droneDeploy.js"></script>
+<script src="js/buildMenu.js"></script>
+<script src="js/dataMap.js"></script>
+<script src="js/hqPanel.js"></script>
     <script src="js/main.js"></script>
     <script src="js/mobileUI.js"></script>
     <script src="js/fullscreen.js"></script>
