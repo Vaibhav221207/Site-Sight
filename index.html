@@ -14,6 +14,14 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 </head>
 <body>
+    <!-- Flat banded-sky decorations (behind the opaque game canvas):
+         sun + two clouds, chunky flat style with thick ink outlines -->
+    <div id="sky-deco" aria-hidden="true">
+      <span class="sun"></span>
+      <span class="cloud cloud--1"></span>
+      <span class="cloud cloud--2"></span>
+    </div>
+
     <!-- Game canvas: extruded 3D isometric blocks, fills the browser window -->
     <canvas id="game-canvas"></canvas>
 
@@ -141,6 +149,11 @@
          layout; blocks all interaction with the game underneath. Controlled
          by js/orientation.js (display flex/none). -->
     <div id="rotate-overlay" class="rotate-overlay" style="display:none">
+      <div class="rotate-sky-deco" aria-hidden="true">
+        <span class="sun"></span>
+        <span class="cloud cloud--1"></span>
+        <span class="cloud cloud--2"></span>
+      </div>
       <div class="rotate-card">
         <svg class="rotate-icon" viewBox="0 0 72 72" fill="none" aria-hidden="true">
           <!-- phone in portrait with a curved rotation arrow -->

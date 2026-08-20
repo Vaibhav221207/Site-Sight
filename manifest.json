@@ -4,6 +4,6 @@
   "display": "fullscreen",
   "orientation": "landscape",
   "start_url": "./index.html",
-  "background_color": "#6EC6FF",
+  "background_color": "#F5C88A",
   "theme_color": "#00ACC1"
 }

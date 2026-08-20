@@ -18,10 +18,96 @@ body {
   height: 100%;
   overflow: hidden;
   overscroll-behavior: none; /* no pull-to-refresh / bounce-scroll on mobile */
-  background: linear-gradient(180deg, #6EC6FF 0%, #A8E6A3 100%);
+  /* BANDED sky backdrop (chunky/flat theme): hard color stops create sharp
+     band transitions, NOT a smooth blend. Warm golden-peach top -> soft sand
+     -> pale cream, easing toward the ground plane. */
+  background: linear-gradient(180deg, #F5C88A 0% 33%, #F2D4A0 33% 66%, #EFE0BC 66% 100%);
   font-family: "Baloo 2", sans-serif;
   color: #2B2320;
   overflow-x: hidden;
+}
+
+/* Flat sky decorations (sun + clouds) — chunky flat language: solid fills,
+   thick 3px ink outlines, hard offset shadows, zero blur. The layer sits
+   BEHIND the opaque game canvas (z-index -1) so it frames the banded sky on
+   the page/rotate backdrop without ever covering the tiles. */
+#sky-deco {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+#sky-deco .sun,
+.rotate-sky-deco .sun {
+  position: absolute;
+  top: 56px;
+  right: 72px;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: #FFD966;
+  border: 3px solid #2B2320;
+  box-shadow: 6px 6px 0 rgba(43, 35, 32, 0.25);
+}
+#sky-deco .cloud,
+.rotate-sky-deco .cloud {
+  position: absolute;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  box-shadow: 5px 5px 0 rgba(43, 35, 32, 0.2);
+}
+#sky-deco .cloud--1,
+.rotate-sky-deco .cloud--1 {
+  top: 132px;
+  left: 88px;
+  width: 150px;
+  height: 46px;
+  border-radius: 23px;
+}
+#sky-deco .cloud--1::before,
+.rotate-sky-deco .cloud--1::before {
+  content: "";
+  position: absolute;
+  width: 56px;
+  height: 56px;
+  top: -22px;
+  left: 24px;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 50%;
+}
+#sky-deco .cloud--1::after,
+.rotate-sky-deco .cloud--1::after {
+  content: "";
+  position: absolute;
+  width: 38px;
+  height: 38px;
+  top: -14px;
+  right: 30px;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 50%;
+}
+#sky-deco .cloud--2,
+.rotate-sky-deco .cloud--2 {
+  top: 244px;
+  right: 120px;
+  width: 120px;
+  height: 40px;
+  border-radius: 20px;
+}
+#sky-deco .cloud--2::before,
+.rotate-sky-deco .cloud--2::before {
+  content: "";
+  position: absolute;
+  width: 46px;
+  height: 46px;
+  top: -18px;
+  left: 18px;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 50%;
 }
 
 #game-canvas {
@@ -505,13 +591,24 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(180deg, #6EC6FF 0%, #A8E6A3 100%);
+  /* same banded sky as the page backdrop: hard color stops, no blending */
+  background: linear-gradient(180deg, #F5C88A 0% 33%, #F2D4A0 33% 66%, #EFE0BC 66% 100%);
   user-select: none;
   -webkit-user-select: none;
   touch-action: none;
 }
 
+.rotate-sky-deco {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
 .rotate-card {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
