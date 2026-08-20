@@ -71,29 +71,133 @@ window.DataMap = (function () {
 
   // ---- mini-map rendering -------------------------------------------------
 
+  // rounded-rect path helper (canvas lacks it in older browsers)
+  function roundedRectPath(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  // faint terrain-context overlays on top of the category grid: river, trench,
+  // rock clusters and the HQ building. Reads the SAME terrain state as the main
+  // isometric map (window.Terrain) — nothing is recalculated here. All overlays
+  // are subtle strokes/small icons so the discrete category fill stays readable.
+  function drawTerrainOverlays(ctx, cell) {
+    var t = window.Terrain;
+    if (!t) return;
+    var g = gridSize();
+    var inset = Math.max(1, cell * 0.05);
+
+    // river: thin light-blue outline around river tiles
+    ctx.strokeStyle = "rgba(64, 196, 255, 0.45)";
+    ctx.lineWidth = Math.max(1, cell * 0.06);
+    for (var r = 0; r < g; r++) {
+      for (var c = 0; c < g; c++) {
+        if (!t.isRiver(c, r)) continue;
+        ctx.strokeRect(c * cell + inset, r * cell + inset, cell - inset * 2, cell - inset * 2);
+      }
+    }
+
+    // trench: thin dark outline around trench tiles
+    ctx.strokeStyle = "rgba(30, 20, 10, 0.38)";
+    ctx.lineWidth = Math.max(1, cell * 0.06);
+    for (var r = 0; r < g; r++) {
+      for (var c = 0; c < g; c++) {
+        if (t.typeAt(c, r) !== "trench") continue;
+        ctx.strokeRect(c * cell + inset, r * cell + inset, cell - inset * 2, cell - inset * 2);
+      }
+    }
+
+    // rock clusters: small gray dots at the same boulder positions the main map
+    // uses (cluster center + per-rock dc/dr offsets)
+    var clusters = t.hillClusters || [];
+    for (var ci = 0; ci < clusters.length; ci++) {
+      var rocks = (clusters[ci].rocks || []).slice();
+      for (var ri = 0; ri < rocks.length; ri++) {
+        var rock = rocks[ri];
+        var px = (clusters[ci].cx + rock.dc) * cell;
+        var py = (clusters[ci].cy + rock.dr) * cell;
+        var rad = Math.max(1.5, cell * 0.13 * (rock.size || 1));
+        ctx.beginPath();
+        ctx.arc(px, py, rad, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(125, 125, 130, 0.6)";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(0, 0, 0, 0.25)";
+        ctx.lineWidth = Math.max(0.75, cell * 0.04);
+        ctx.stroke();
+      }
+    }
+
+    // HQ: small amber building glyph (roof + body) at the HQ tile
+    for (var r = 0; r < g; r++) {
+      for (var c = 0; c < g; c++) {
+        if (!t.isHQ(c, r)) continue;
+        var hcx = (c + 0.5) * cell;
+        var hcy = (r + 0.5) * cell;
+        var s = cell * 0.32; // building half-size
+        var roof = s * 0.15;
+        ctx.beginPath();
+        ctx.moveTo(hcx - s, hcy - roof);
+        ctx.lineTo(hcx, hcy - s * 1.1);
+        ctx.lineTo(hcx + s, hcy - roof);
+        ctx.closePath();
+        ctx.fillStyle = "#FFD54F";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(60, 40, 0, 0.8)";
+        ctx.lineWidth = Math.max(1, cell * 0.05);
+        ctx.stroke();
+        ctx.fillStyle = "#FFE082";
+        ctx.fillRect(hcx - s * 0.7, hcy - roof, s * 1.4, s * 0.9);
+        ctx.strokeRect(hcx - s * 0.7, hcy - roof, s * 1.4, s * 0.9);
+        return;
+      }
+    }
+  }
+
   function render() {
     if (!api.ctx || !api.canvas) return;
     var g = gridSize();
     var canvas = api.canvas;
     var ctx = api.ctx;
     var cell = canvas.width / g;
-    var pad = 1; // 1px gap between squares
+    var radius = Math.max(2, cell * 0.1); // subtle corner rounding
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     // dark background (matches the wrap)
     ctx.fillStyle = "#1a1a2e";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    // 1) base fill — one rounded square per tile, flush (no dark gaps), each
+    //    colored by its discrete category. Colors stay crisp and unblended.
     for (var row = 0; row < g; row++) {
       for (var col = 0; col < g; col++) {
         var d = window.GameState.getTileData(col, row);
         var cat = categoryById(categoryFor(d.bestUse));
-        var x = col * cell + pad / 2;
-        var y = row * cell + pad / 2;
+        var x = col * cell;
+        var y = row * cell;
+        roundedRectPath(ctx, x, y, cell, cell, radius);
         ctx.fillStyle = cat.color;
-        ctx.fillRect(x, y, cell - pad, cell - pad);
+        ctx.fill();
       }
     }
+
+    // 2) soft grid lines — thin light strokes (not harsh dark borders), so the
+    //    grid reads as one cohesive surface with a gentle tile separation
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+    ctx.lineWidth = 1;
+    for (var row = 0; row < g; row++) {
+      for (var col = 0; col < g; col++) {
+        roundedRectPath(ctx, col * cell, row * cell, cell, cell, radius);
+        ctx.stroke();
+      }
+    }
+
+    // 3) terrain-context overlays (river / trench / rocks / HQ) — faint on top
+    drawTerrainOverlays(ctx, cell);
 
     // highlight the selected tile
     if (api.selected) {
