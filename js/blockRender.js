@@ -148,9 +148,9 @@ window.BlockRender = (function () {
   // sits flush on the ground plane and the flat land tile is drawn underneath
   // it, so the grid always renders complete with no gaps.
 
-  var ROCK_TOP = "#c0bbb0";    // bright flat stone — the top facet
-  var ROCK_LEFT = "#95908a";   // medium gray — left-facing side
-  var ROCK_RIGHT = "#605c55";  // darker gray — right-facing side
+  var ROCK_TOP = "#AEB8BE";    // cool slate stone — top facet (reference grey)
+  var ROCK_LEFT = "#7F8A93";   // slate blue-grey — left-facing side
+  var ROCK_RIGHT = "#5B636A";  // dark slate — right-facing side
   var ROCK_TAPER = 0.55;       // top-face inset vs base width (chunky taper)
   var ROCK_JIT = 0.12;         // per-rock vertex irregularity (fraction of width)
   // ---- trench (one connected recessed pit) ---------------------------
@@ -170,8 +170,8 @@ window.BlockRender = (function () {
   var TRENCH_DEPTH = 6;          // px the pit drops below the land surface
   var WALL_SHADE = 0.64;         // lit west-facing wall (matches LEFT_SHADE)
   var WALL_SHADOW = 0.40;        // shadowed east-facing wall (matches RIGHT_SHADE)
-  var FLOOR_TONE = "#4A1A0E";    // deep brick — the pit floor (darker than button #E8604A)
-  var WALL_TONE = "#8C2E14";    // dark brick wall (coral button hue, darker)
+  var FLOOR_TONE = "#3E2010";    // deep chocolate — pit floor (reference dark earth)
+  var WALL_TONE = "#6E3A1F";    // warm chocolate wall (reference winding path)
 
   // deterministic per-rock jitter so every boulder is a different chunk
   function rockJit(cx, cy, size, k) {

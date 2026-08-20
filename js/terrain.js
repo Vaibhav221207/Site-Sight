@@ -25,9 +25,9 @@ window.Terrain = (function () {
 
   // base top-face palette (side faces get shaded darker in blockRender)
   var PALETTE = {
-    land: "#6dd400",   // vivid lime green — bright saturated grass
-    hill: "#4a9a3c",   // hill base underneath rocks
-    trench: "#8C2E14", // dark brick (coral button hue, darker)
+    land: "#7EB24A",   // soft moss green — muted sage from reference (was vivid lime #6dd400)
+    hill: "#6A9A3E",   // moss hill base under rocks (desaturated to match reference foliage)
+    trench: "#6E3A1F", // warm chocolate brown — winding earth path from reference
     river: "#29b6f6",  // bright vivid sky blue
     hq: "#44ddbb",     // base tone under HQ building
   };
