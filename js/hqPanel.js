@@ -203,24 +203,7 @@ window.HqPanel = (function () {
       if (gprN > 0) api._buildFleet("gpr", "GPR FLEET", "GPR System", gprN);
     }
 
-    // Deploy button — below the inventory items, not in the shared footer
-    var deployBox = document.createElement("div");
-    deployBox.className = "hq-fs-inventory-deploy";
-    deployBox.style.marginTop = "16px";
-    deployBox.style.display = "flex";
-    deployBox.style.justifyContent = "flex-end";
-    var deployBtn = document.createElement("button");
-    deployBtn.type = "button";
-    deployBtn.className = "hq-order-btn";
-    deployBtn.textContent = "Deploy";
-    deployBtn.addEventListener("click", function (ev) {
-      ev.stopPropagation();
-      api.deploySelected();
-    });
-    deployBox.appendChild(deployBtn);
-    api.inventorySection.appendChild(deployBox);
-    api.inventoryDeployContainer = deployBox;
-
+    api.inventoryDeployContainer = null;
     api.refreshDeployVisibility();
   };
 
@@ -239,13 +222,18 @@ window.HqPanel = (function () {
     var selectedId = type === "drone" ? gs.inventory.selectedDroneId : gs.inventory.selectedGprId;
     for (var i = 1; i <= count; i++) {
       var id = type + "-" + i;
+      var wrap = document.createElement("div");
+      wrap.className = "hq-fs-inventory-item-wrap";
+      wrap.style.marginBottom = "14px";
+      wrap.dataset.itemType = type;
+      wrap.dataset.itemId = id;
       var entry = document.createElement("div");
       entry.className = "hq-fs-inventory-item";
       entry.dataset.itemType = type;
       entry.dataset.itemId = id;
       entry.style.cssText =
         "display:flex;align-items:center;justify-content:space-between;" +
-        "padding:14px 18px;margin-bottom:8px;background:#FFFBF0;" +
+        "padding:14px 18px;background:#FFFBF0;" +
         "border:3px solid #2B2320;border-radius:16px;cursor:pointer;" +
         "box-shadow:6px 6px 0 #000;" +
         "transition:border-color 0.15s ease,background 0.15s ease;";
@@ -254,10 +242,25 @@ window.HqPanel = (function () {
         '<span class="hq-fs-inventory-item-name" style="font-size:17px;font-weight:700;color:' + accent + '">' + name + '</span>';
       entry.addEventListener("click", function (ev) {
         ev.stopPropagation();
-        api.selectItem(this);
+        var w = this.closest(".hq-fs-inventory-item-wrap");
+        if (w) api.selectItem(w); else api.selectItem(this);
       });
       if (selectedId === id) api.markSelected(entry, true);
-      list.appendChild(entry);
+      var deployBtn = document.createElement("button");
+      deployBtn.type = "button";
+      deployBtn.className = "hq-order-btn";
+      deployBtn.textContent = "Deploy";
+      deployBtn.style.width = "100%";
+      deployBtn.style.marginTop = "8px";
+      deployBtn.style.display = selectedId === id ? "" : "none";
+      deployBtn.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        var w = this.closest(".hq-fs-inventory-item-wrap");
+        if (w) { api.selectItem(w); api.deploySelected(); } else api.deploySelected();
+      });
+      wrap.appendChild(entry);
+      wrap.appendChild(deployBtn);
+      list.appendChild(wrap);
     }
   };
 
@@ -271,6 +274,8 @@ window.HqPanel = (function () {
   // picking a unit of one type clears any selection of the other type; clicking
   // the active one deselects it.
   api.selectItem = function (entry) {
+    var wrap = entry.closest ? entry.closest(".hq-fs-inventory-item-wrap") : null;
+    if (wrap) entry = wrap;
     var type = entry.dataset.itemType;
     var id = entry.dataset.itemId;
     var gs = window.GameState;
@@ -291,17 +296,29 @@ window.HqPanel = (function () {
     if (!wasSelected) {
       if (type === "drone") gs.inventory.selectedDroneId = id;
       else gs.inventory.selectedGprId = id;
-      api.markSelected(entry, true);
+      var card = entry.querySelector ? entry.querySelector(".hq-fs-inventory-item") : entry;
+      if (card) api.markSelected(card, true); else api.markSelected(entry, true);
     }
     api.refreshDeployVisibility();
   };
 
-  // Show the Deploy button (now below inventory items) only while selected
+  // Show per-item Deploy buttons below each inventory card only while that item is selected
   api.refreshDeployVisibility = function () {
     var gs = window.GameState.inventory;
-    var hasSelection = !!(gs.selectedDroneId || gs.selectedGprId);
+    if (api.inventorySection) {
+      var wraps = api.inventorySection.querySelectorAll(".hq-fs-inventory-item-wrap");
+      for (var i = 0; i < wraps.length; i++) {
+        var w = wraps[i];
+        var btn = w.querySelector(".hq-order-btn");
+        if (!btn) continue;
+        var type = w.dataset.itemType, id = w.dataset.itemId;
+        var isSel = (type === "drone" && gs.selectedDroneId === id) || (type === "gpr" && gs.selectedGprId === id);
+        btn.style.display = isSel ? "" : "none";
+      }
+    }
     if (api.inventoryDeployContainer) {
-      api.inventoryDeployContainer.style.display = hasSelection ? "" : "none";
+      var hasSel = !!(gs.selectedDroneId || gs.selectedGprId);
+      api.inventoryDeployContainer.style.display = hasSel ? "" : "none";
     }
   };
 
