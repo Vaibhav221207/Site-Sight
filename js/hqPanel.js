@@ -108,24 +108,17 @@ window.HqPanel = (function () {
   // footer below the scrollable content, pinned to the bottom of the modal at
   // every viewport size — the sidebar layout is shared across breakpoints.
 
-  // Rebuild the footer for the ACTIVE tab: STORE order buttons on STORE,
-  // nothing on DATA; the INVENTORY Deploy button is appended by
-  // renderInventory() right after this runs.
+  // Footer now only holds the INVENTORY Deploy button; STORE buy buttons
+  // stay below each item inside their own cards (column layout), not in a
+  // shared footer — matches the requested "below each item" placement.
   api.refreshFooter = function () {
     if (!api.footerEl) return;
     api.footerEl.innerHTML = "";
     api.inventoryDeployContainer = null;
-    // stale "hidden" state is only valid while viewing INVENTORY with no
-    // selection (set by refreshDeployVisibility); every tab switch rebuilds
-    // the footer, so the strip must be visible again (STORE shows buy buttons).
     api.footerEl.classList.remove("hq-fs-footer--hidden");
-    if (api.currentSection === "store") {
-      if (api.orderBtn && api.orderBtn.parentNode !== api.footerEl) api.footerEl.appendChild(api.orderBtn);
-      if (api.gprOrderBtn && api.gprOrderBtn.parentNode !== api.footerEl) api.footerEl.appendChild(api.gprOrderBtn);
-    } else {
-      if (api.orderBtn && api.storeRow1 && api.orderBtn.parentNode !== api.storeRow1) api.storeRow1.appendChild(api.orderBtn);
-      if (api.gprOrderBtn && api.storeRow2 && api.gprOrderBtn.parentNode !== api.storeRow2) api.storeRow2.appendChild(api.gprOrderBtn);
-    }
+    // always keep STORE buttons in their cards, never in the footer
+    if (api.orderBtn && api.storeRow1 && api.orderBtn.parentNode !== api.storeRow1) api.storeRow1.appendChild(api.orderBtn);
+    if (api.gprOrderBtn && api.storeRow2 && api.gprOrderBtn.parentNode !== api.storeRow2) api.storeRow2.appendChild(api.gprOrderBtn);
   };
 
   api.switchSection = function (name) {
