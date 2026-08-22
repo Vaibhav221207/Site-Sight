@@ -745,8 +745,8 @@ window.BlockRender = (function () {
           anime({
             targets: state,
             glow: 1,
-            duration: 1400 + Math.random() * 800, // 1400-2200ms slow pulse
-            delay: Math.random() * 800,
+            duration: 900 + Math.random() * 700, // 900-1600ms visible pulse
+            delay: Math.random() * 600,
             direction: "alternate",
             loop: true,
             easing: "easeInOutSine"
@@ -764,7 +764,7 @@ window.BlockRender = (function () {
       ctx.lineTo(cx - iso, topY);
       ctx.closePath();
       ctx.clip();
-      var a = 0.08 + entry.state.glow * 0.14; // 0.08-0.22 gentle shimmer
+      var a = 0.16 + entry.state.glow * 0.32; // 0.16-0.48 clearly visible shimmer
       ctx.globalAlpha = a;
       ctx.fillStyle = RIVER_LIGHT;
       ctx.beginPath();
