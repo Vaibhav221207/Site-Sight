@@ -89,7 +89,7 @@ button {
     background 0.15s ease, color 0.15s ease;
 }
 .btn-3d:active {
-  transform: translateY(3px);
+  transform: translateY(2px);
   box-shadow: 0 0 0 0 transparent !important;
 }
 .btn-3d:disabled,
@@ -108,7 +108,7 @@ button {
 /* primary coral keycap button */
 .btn-coral {
   background: #E8604A;
-  box-shadow: 0 3px 0 0 #000; /* darker coral bottom edge, zero blur */
+  box-shadow: 0 2px 0 0 #000; /* darker coral bottom edge, zero blur */
 }
 .btn-coral:hover {
   background: #D05240;
@@ -123,7 +123,7 @@ button {
   background: #FFFBF0;
   border: 3px solid #2B2320;
   border-radius: 16px;
-  box-shadow: 4px 4px 0 #000; /* hard offset, zero blur */
+  box-shadow: 3px 3px 0 #000; /* hard offset, zero blur */
   z-index: 900;
   overflow: hidden;
   visibility: hidden;
@@ -158,7 +158,7 @@ button {
   width: 28px;
   height: 28px;
   background: #E8604A;
-  box-shadow: 0 3px 0 0 #000;
+  box-shadow: 0 2px 0 0 #000;
   border: 3px solid #2B2320;
   border-radius: 14px;
   color: #FFFFFF;
@@ -173,7 +173,7 @@ button {
   background: #D05240;
 }
 .panel-close:active {
-  transform: translateY(3px);
+  transform: translateY(2px);
   box-shadow: 0 0 0 0 transparent;
 }
 
@@ -213,7 +213,7 @@ button {
   background: #FFFBF0;
   border: 3px solid #2B2320;
   border-radius: 16px;
-  box-shadow: 4px 4px 0 #000;
+  box-shadow: 3px 3px 0 #000;
   z-index: 1000;
 }
 
@@ -242,7 +242,7 @@ button {
 .hud-btn {
   padding: 8px 26px;
   background: #E8604A;
-  box-shadow: 0 3px 0 0 #000;
+  box-shadow: 0 2px 0 0 #000;
   border: 3px solid #2B2320;
   border-radius: 14px;
   color: #FFFFFF;
@@ -260,7 +260,7 @@ button {
 }
 
 .hud-btn:active {
-  transform: translateY(3px);
+  transform: translateY(2px);
   box-shadow: 0 0 0 0 transparent;
 }
 
@@ -289,7 +289,7 @@ button {
   background: #FFFBF0;
   border: 3px solid #2B2320;
   border-radius: 16px;
-  box-shadow: 4px 4px 0 #000;
+  box-shadow: 3px 3px 0 #000;
   z-index: 1001;
   overflow: hidden;
 }
@@ -338,7 +338,7 @@ button {
 .build-item.selected {
   background: #E8604A;
   color: #FFFFFF;
-  box-shadow: 0 3px 0 0 #000; /* selected = raised keycap look */
+  box-shadow: 0 2px 0 0 #000; /* selected = raised keycap look */
 }
 
 .build-item.selected .build-item-name,
@@ -489,7 +489,7 @@ button {
 .hq-order-btn {
   padding: 8px 22px;
   background: #E8604A;
-  box-shadow: 0 3px 0 0 #000;
+  box-shadow: 0 2px 0 0 #000;
   border: 3px solid #2B2320;
   border-radius: 14px;
   color: #FFFFFF;
@@ -508,13 +508,13 @@ button {
 }
 
 .hq-order-btn:active {
-  transform: translateY(3px);
+  transform: translateY(2px);
   box-shadow: 0 0 0 0 transparent;
 }
 
 .hq-order-btn.hq-order-btn--flash {
   background: #F07060; /* brief "Ordered!" confirmation flash */
-  box-shadow: 0 3px 0 0 #000;
+  box-shadow: 0 2px 0 0 #000;
 }
 
 /* ONE-TIME purchase state: permanently grayed out once the Drone System has
@@ -559,7 +559,7 @@ button {
   background: #FFFBF0;
   border: 3px solid #2B2320;
   border-radius: 16px;
-  box-shadow: 4px 4px 0 #000;
+  box-shadow: 3px 3px 0 #000;
   text-align: center;
   overflow: hidden;
 }
@@ -602,7 +602,7 @@ button {
   background: #FFFBF0;
   border: 3px solid #2B2320;
   border-radius: 16px;
-  box-shadow: 4px 4px 0 #000;
+  box-shadow: 3px 3px 0 #000;
   position: relative;
   overflow: hidden;
   opacity: 0;
@@ -635,7 +635,7 @@ button {
   width: 38px;
   height: 38px;
   background: #E8604A;
-  box-shadow: 0 3px 0 0 #000;
+  box-shadow: 0 2px 0 0 #000;
   border: 3px solid #2B2320;
   border-radius: 14px;
   color: #FFFFFF;
@@ -652,7 +652,7 @@ button {
 }
 
 .hq-fs-close:active {
-  transform: translateY(3px);
+  transform: translateY(2px);
   box-shadow: 0 0 0 0 transparent;
 }
 
@@ -732,7 +732,7 @@ button {
 }
 
 .hq-fs-nav-item:active {
-  transform: translateY(3px);
+  transform: translateY(2px);
   box-shadow: 0 0 0 0 transparent;
 }
 
@@ -740,7 +740,7 @@ button {
 .hq-fs-nav-item--active {
   color: #FFFFFF;
   background: #E8604A;
-  box-shadow: 0 3px 0 0 #000;
+  box-shadow: 0 2px 0 0 #000;
 }
 
 body.touch-ui .hq-fs-nav-item {
@@ -825,7 +825,7 @@ body.touch-ui .hq-fs-nav-item {
   background: #FFFBF0;
   border: 3px solid #2B2320;
   border-radius: 16px;
-  box-shadow: 4px 4px 0 #000;
+  box-shadow: 3px 3px 0 #000;
   overflow: hidden;
 }
 
@@ -928,7 +928,7 @@ body.touch-ui .hq-fs-nav-item {
   background: #1a1a2e; /* dark survey void behind the world map */
   border: 3px solid #2B2320;
   border-radius: 16px;
-  box-shadow: 4px 4px 0 #000;
+  box-shadow: 3px 3px 0 #000;
   overflow: auto;
   padding: 8px;
 }
@@ -1008,7 +1008,7 @@ body.touch-ui .hq-fs-nav-item {
   background: #FFFBF0;
   border: 3px solid #2B2320;
   border-radius: 16px;
-  box-shadow: 4px 4px 0 #000;
+  box-shadow: 3px 3px 0 #000;
   position: relative;
   overflow: hidden;
 }
@@ -1339,7 +1339,7 @@ body.touch-ui .hq-fs-nav-item {
     left: 12px;
     right: auto;
     border-radius: 16px;
-    box-shadow: 4px 4px 0 #000;
+    box-shadow: 3px 3px 0 #000;
     transform: none;
   }
   body.touch-ui #tile-popup {
@@ -1437,7 +1437,7 @@ body.touch-ui .hud { display: none; }
   background: #FFFBF0;
   border: 3px solid #2B2320;
   border-radius: 16px;
-  box-shadow: 4px 4px 0 #000;
+  box-shadow: 3px 3px 0 #000;
   overflow: hidden;
 }
 
@@ -1460,7 +1460,7 @@ body.touch-ui .hud { display: none; }
 .mu-btn {
   padding: 12px 6px;
   background: #E8604A;
-  box-shadow: 0 3px 0 0 #000;
+  box-shadow: 0 2px 0 0 #000;
   border: 3px solid #2B2320;
   border-radius: 14px;
   color: #FFFFFF;
@@ -1478,7 +1478,7 @@ body.touch-ui .hud { display: none; }
 }
 
 .mu-btn:active {
-  transform: translateY(3px);
+  transform: translateY(2px);
   box-shadow: 0 0 0 0 transparent;
 }
 
@@ -1496,7 +1496,7 @@ body.touch-ui .hud { display: none; }
   justify-content: center;
   padding: 12px 22px;
   background: #E8604A;
-  box-shadow: 0 3px 0 0 #000;
+  box-shadow: 0 2px 0 0 #000;
   border: 3px solid #2B2320;
   border-radius: 14px;
   color: #FFFFFF;
@@ -1514,7 +1514,7 @@ body.touch-ui .hud { display: none; }
 }
 
 .rotate-enter:active {
-  transform: translateY(3px);
+  transform: translateY(2px);
   box-shadow: 0 0 0 0 transparent;
 }
 
@@ -1533,7 +1533,7 @@ body.touch-ui .rotate-enter { display: inline-flex; }
   justify-content: center;
   padding: 0;
   background: #E8604A;
-  box-shadow: 0 3px 0 0 #000;
+  box-shadow: 0 2px 0 0 #000;
   border: 3px solid #2B2320;
   border-radius: 14px;
   cursor: pointer;
@@ -1547,7 +1547,7 @@ body.touch-ui .rotate-enter { display: inline-flex; }
 }
 
 .fs-btn:active {
-  transform: translateY(3px);
+  transform: translateY(2px);
   box-shadow: 0 0 0 0 transparent;
 }
 
