@@ -35,9 +35,16 @@ window.BlockRender = (function () {
     staticLayer: null,
     selected: null,     // { col, row } | null
     shimmerPhase: 0,
+    ripplePhase: 0,
     _dpr: 1,
     _dirty: false,
   };
+
+  // river blocky ripple — flat sub-tile grid, slow independent oscillation
+  var RIVER_BASE = "#5B6FA8";
+  var RIVER_RIPPLE_DIV = 3;
+  var RIVER_RIPPLE_AMP = 0.14;
+  var RIVER_ALPHA = 0.85;
 
   var ORDER = [];       // tiles sorted back-to-front by (col+row)
   var rises = {};       // "col,row" -> current animated rise (px)
@@ -52,8 +59,8 @@ window.BlockRender = (function () {
     var r = parseInt(hex.slice(1, 3), 16);
     var g = parseInt(hex.slice(3, 5), 16);
     var b = parseInt(hex.slice(5, 7), 16);
-    var out = "rgb(" + Math.round(r * factor) + "," + Math.round(g * factor) +
-              "," + Math.round(b * factor) + ")";
+    var out = "rgb(" + Math.min(255, Math.round(r * factor)) + "," + Math.min(255, Math.round(g * factor)) +
+              "," + Math.min(255, Math.round(b * factor)) + ")";
     shadeCache[ck] = out;
     return out;
   }
@@ -124,7 +131,10 @@ window.BlockRender = (function () {
       ctx.fill();
     }
 
-    // top face
+    // top face — river shows slight transparency (riverbed depth)
+    var isRiverTile = !!(api.terrain && api.terrain.isRiver && api.terrain.isRiver(c, r));
+    if (isRiverTile) ctx.save();
+    if (isRiverTile) ctx.globalAlpha = RIVER_ALPHA;
     ctx.beginPath();
     ctx.moveTo(n.x, n.y);
     ctx.lineTo(e.x, e.y);
@@ -133,6 +143,7 @@ window.BlockRender = (function () {
     ctx.closePath();
     ctx.fillStyle = topColor;
     ctx.fill();
+    if (isRiverTile) ctx.restore();
     ctx.strokeStyle = isSelected ? SELECT_STROKE : TOP_STROKE;
     ctx.lineWidth = isSelected ? 2.5 : 1;
     ctx.stroke();
@@ -713,13 +724,20 @@ window.BlockRender = (function () {
     }
   };
 
-  // river shimmer: flowing highlight bands that travel along the river path
-  // (south-bound along the east edge). Each tile keeps its own timing and
-  // intensity variation; only river tiles are touched every frame.
+  // river blocky ripple: Minecraft-style tile-based texture. Each river
+  // tile's top diamond is subdivided into a 3x3 grid of flat sub-blocks.
+  // Each sub-block's brightness oscillates on its own offset timer (slow
+  // sine, per-tile + per-cell hash) so the pattern ripples gradually.
+  // Flat-shaded, no gradients/blur. The river base in the static layer is
+  // already at ~0.85 alpha, so the rippling overlay reads as depth.
   function drawShimmer(ctx) {
     var g = api.grid;
+    if (!g || !g.isoSize) return;
     var iso = g.isoSize, half = iso / 2;
-    var phase = api.shimmerPhase;
+    var phase = (api.ripplePhase != null ? api.ripplePhase : api.shimmerPhase) || 0;
+    var div = RIVER_RIPPLE_DIV;
+    var cellW = (2 * iso) / div;
+    var cellH = iso / div;
     for (var i = 0; i < ORDER.length; i++) {
       var t = ORDER[i];
       if (!api.terrain.isRiver(t.c, t.r)) continue;
@@ -727,19 +745,9 @@ window.BlockRender = (function () {
       var topY = p.y - totalHeight(t.c, t.r);
       var cx = p.x;
 
-      // the river hugs the east edge and flows south, so row is a monotonic
-      // "distance along the current" for each water tile
-      var along = t.r;
-
-      // travelling wave: the highlight slides toward increasing `along` over time
-      var wave = (((along * 0.13 - phase * 2.2) % 1) + 1) % 1;
-
-      // per-tile timing/intensity variation (stable hash of the tile coords)
-      var h = Math.abs(Math.sin(t.c * 12.9898 + t.r * 78.233) * 43758.5453) % 1;
-      var band = (((wave + (h - 0.5) * 0.16) % 1) + 1) % 1;
-
-      var a = Math.max(0, band - 0.22);
-      var cc = Math.min(1, band + 0.22);
+      // tile-level hash so neighboring tiles are out of phase
+      var tileHash = ((t.c * 12.9898 + t.r * 78.233) % 1 + 1) % 1;
+      var tileOff = tileHash * Math.PI * 2;
 
       ctx.save();
       ctx.beginPath();
@@ -750,21 +758,28 @@ window.BlockRender = (function () {
       ctx.closePath();
       ctx.clip();
 
-      var grad = ctx.createLinearGradient(cx - iso, topY, cx + iso, topY);
-      var alpha = (0.25 + 0.32 * riverGlow).toFixed(3);
-      grad.addColorStop(0, "rgba(155, 170, 240, 0)");
-      grad.addColorStop(a, "rgba(155, 170, 240, 0)");
-      grad.addColorStop(band, "rgba(190, 200, 255, " + alpha + ")");
-      grad.addColorStop(cc, "rgba(155, 170, 240, 0)");
-      grad.addColorStop(1, "rgba(155, 170, 240, 0)");
-      ctx.fillStyle = grad;
-      ctx.fillRect(cx - iso, topY - half, iso * 2, iso);
+      for (var si = 0; si < div; si++) {
+        for (var sj = 0; sj < div; sj++) {
+          var x0 = cx - iso + sj * cellW;
+          var y0 = topY - half + si * cellH;
+          // per-sub-block phase offset — deterministic, slow, not random flicker
+          var cellOff = si * 0.95 + sj * 1.27 + tileOff * 0.3;
+          var ang = phase * Math.PI * 2 * 1.0 + tileOff + cellOff;
+          var s = Math.sin(ang);
+          var factor = 1 + s * RIVER_RIPPLE_AMP;
+          // clamp via shade helper
+          ctx.fillStyle = shade(RIVER_BASE, factor);
+          // flat solid fill, no gradient/blur
+          ctx.fillRect(x0, y0, cellW + 0.6, cellH + 0.6);
+        }
+      }
       ctx.restore();
     }
   }
 
-  // ---- river shimmer animation (driven by anime.js when available) -----
+  // ---- river shimmer / blocky ripple animation (driven by anime.js when available) -----
   var shimmerAnim = null;
+  var rippleAnim = null;
   var glowAnim = null;
   var riverGlow = 0.5; // 0..1 pulsing brightness, modulates highlight alpha
 
@@ -782,6 +797,17 @@ window.BlockRender = (function () {
       update: function () { api.shimmerPhase = phaseState.phase; },
     });
 
+    // blocky ripple phase — slow independent cycle for per-sub-block oscillation
+    var rippleState = { phase: 0 };
+    rippleAnim = anime({
+      targets: rippleState,
+      phase: 1,
+      duration: 1600,
+      easing: "linear",
+      loop: true,
+      update: function () { api.ripplePhase = rippleState.phase; },
+    });
+
     // subtle brightness pulse overlaid on the flow so the water glints
     var glowState = { v: 0 };
     glowAnim = anime({
@@ -797,12 +823,16 @@ window.BlockRender = (function () {
 
    // ---- services ----------------------------------------------------
 
-   // per-frame update: rebuild cache only if dirty. The shimmer phase is
-  // driven by anime.js; we fall back to manual advancement if it is missing.
+   // per-frame update: rebuild cache only if dirty. The shimmer/ripple
+  // phase is driven by anime.js; we fall back to manual advancement if missing.
   api.tick = function () {
     if (!shimmerAnim) {
       api.shimmerPhase += 0.015;
       if (api.shimmerPhase > 1) api.shimmerPhase -= 1;
+    }
+    if (!rippleAnim) {
+      api.ripplePhase += 0.011;
+      if (api.ripplePhase > 1) api.ripplePhase -= 1;
     }
     if (api._dirty) {
       api.redrawStatic();
