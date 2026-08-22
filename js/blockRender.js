@@ -40,10 +40,11 @@ window.BlockRender = (function () {
     _dirty: false,
   };
 
-  // river water — flat base + scattered wavy ripple lines
+  // river water — simple flat fill + subtle shimmer (matches chunky flat vibe)
   var RIVER_BASE = "#5B6FA8";
+  var RIVER_LIGHT = "#7A90C8"; // subtle lighter glint, same hue
   var RIVER_ALPHA = 0.85;
-  var RIVER_RIPPLE_CACHE = {};
+  var RIVER_CACHE = {};
 
   var ORDER = [];       // tiles sorted back-to-front by (col+row)
   var rises = {};       // "col,row" -> current animated rise (px)
@@ -723,8 +724,9 @@ window.BlockRender = (function () {
     }
   };
 
-  // river diagonal shimmer — thin lighter stripes scrolling along the
-  // river flat strips — 20-30 small white rectangles per tile, gentle anime fade
+  // river — simple flat water, no pattern. Base is solid RIVER_BASE at
+  // 0.85 alpha (drawn in staticLayer). Overlay is a single subtle lighter
+  // diamond per tile that gently pulses via anime, matching the chunky flat vibe.
   function drawShimmer(ctx) {
     var g = api.grid;
     if (!g || !g.isoSize) return;
@@ -736,36 +738,24 @@ window.BlockRender = (function () {
       var topY = p.y - totalHeight(t.c, t.r);
       var cx = p.x;
       var key = t.c + "," + t.r;
-      var entry = RIVER_RIPPLE_CACHE[key];
+      var entry = RIVER_CACHE[key];
       if (!entry) {
-        var count = 20 + Math.floor(Math.random() * 11); // 20-30 strips
-        var strips = [];
-        for (var k = 0; k < count; k++) {
-          var rx = 0.05 + Math.random() * 0.70; // 0.05-0.75
-          var ry = 0.10 + Math.random() * 0.75; // 0.10-0.85
-          var w = 8 + Math.random() * 12; // 8-20px
-          var h = 2 + Math.random() * 2; // 2-4px
-          var ang = (Math.random() - 0.5) * 0.62; // ± ~17.7° (±15-20° range)
-          var state = { alpha: 0.42 + Math.random() * 0.16 }; // 0.42-0.58 start
-          if (typeof anime !== "undefined" && anime) {
-            var low = 0.30 + Math.random() * 0.10; // 0.30-0.40
-            var high = 0.55 + Math.random() * 0.10; // 0.55-0.65
-            anime({
-              targets: state,
-              alpha: [low, high],
-              duration: 700 + Math.random() * 900, // 700-1600ms
-              delay: Math.random() * 600,
-              direction: "alternate",
-              loop: true,
-              easing: "easeInOutSine"
-            });
-          }
-          strips.push({ rx: rx, ry: ry, w: w, h: h, ang: ang, state: state });
+        var state = { glow: 0 };
+        if (typeof anime !== "undefined" && anime) {
+          anime({
+            targets: state,
+            glow: 1,
+            duration: 1400 + Math.random() * 800, // 1400-2200ms slow pulse
+            delay: Math.random() * 800,
+            direction: "alternate",
+            loop: true,
+            easing: "easeInOutSine"
+          });
         }
-        entry = { strips: strips };
-        RIVER_RIPPLE_CACHE[key] = entry;
+        entry = { state: state };
+        RIVER_CACHE[key] = entry;
       }
-      var bx = cx - iso, by = topY - half, bw = 2 * iso, bh = iso;
+      // very subtle light overlay — same diamond, inset slightly so edge stays crisp
       ctx.save();
       ctx.beginPath();
       ctx.moveTo(cx, topY - half);
@@ -774,19 +764,16 @@ window.BlockRender = (function () {
       ctx.lineTo(cx - iso, topY);
       ctx.closePath();
       ctx.clip();
-      for (var k = 0; k < entry.strips.length; k++) {
-        var s = entry.strips[k];
-        var x = bx + s.rx * bw;
-        var y = by + s.ry * bh;
-        var cxS = x + s.w * 0.5, cyS = y + s.h * 0.5;
-        ctx.save();
-        ctx.globalAlpha = s.state.alpha;
-        ctx.fillStyle = "rgba(255,255,255,1)";
-        ctx.translate(cxS, cyS);
-        ctx.rotate(s.ang);
-        ctx.fillRect(-s.w * 0.5, -s.h * 0.5, s.w, s.h);
-        ctx.restore();
-      }
+      var a = 0.08 + entry.state.glow * 0.14; // 0.08-0.22 gentle shimmer
+      ctx.globalAlpha = a;
+      ctx.fillStyle = RIVER_LIGHT;
+      ctx.beginPath();
+      ctx.moveTo(cx, topY - half);
+      ctx.lineTo(cx + iso, topY);
+      ctx.lineTo(cx, topY + half);
+      ctx.lineTo(cx - iso, topY);
+      ctx.closePath();
+      ctx.fill();
       ctx.restore();
     }
   }
