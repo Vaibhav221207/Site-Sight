@@ -54,12 +54,23 @@ window.TilePanel = (function () {
     api.orderBtn = document.getElementById("hq-order-drone");
     api.closeBtn.addEventListener("click", function () { api.toggle(); });
     if (api.orderBtn) {
+      var refreshPanelBtn = function () {
+        var purchased = !!(window.GameState && window.GameState.droneSystemPurchased);
+        api.orderBtn.disabled = purchased;
+        api.orderBtn.textContent = purchased ? "ORDERED" : "Order Drone";
+      };
+      refreshPanelBtn();
+      // keep in sync if HQ purchase happens elsewhere
+      setInterval(refreshPanelBtn, 400);
       api.orderBtn.addEventListener("click", function () {
         console.log("[ConTech HQ] Order Drone requested");
+        var wasPurchased = !!(window.GameState && window.GameState.droneSystemPurchased);
         api.orderBtn.textContent = "Ordered!";
         api.orderBtn.classList.add("hq-order-btn--flash");
         setTimeout(function () {
-          api.orderBtn.textContent = "Order Drone";
+          var stillPurchased = !!(window.GameState && window.GameState.droneSystemPurchased);
+          api.orderBtn.textContent = stillPurchased || wasPurchased ? "ORDERED" : "Order Drone";
+          if (stillPurchased || wasPurchased) api.orderBtn.disabled = true;
           api.orderBtn.classList.remove("hq-order-btn--flash");
         }, 900);
       });

@@ -170,6 +170,7 @@ window.HqPanel = (function () {
     if (!api.orderBtn) return;
     var purchased = !!(window.GameState && window.GameState.droneSystemPurchased);
     api.orderBtn.disabled = purchased;
+    api.orderBtn.textContent = purchased ? "ORDERED" : "ORDER DRONE";
   };
 
   // ONE-TIME PURCHASE state for the GPR System — mirrors the Drone System.
@@ -177,6 +178,7 @@ window.HqPanel = (function () {
     if (!api.gprOrderBtn) return;
     var purchased = !!(window.GameState && window.GameState.gprSystemPurchased);
     api.gprOrderBtn.disabled = purchased;
+    api.gprOrderBtn.textContent = purchased ? "ORDERED" : "ORDER GPR";
   };
 
   // (Re)builds the INVENTORY tab contents from GameState.inventory:
@@ -415,7 +417,8 @@ window.HqPanel = (function () {
           api.orderBtn.classList.add("hq-order-btn--flash");
           setTimeout(function () {
             if (!api.orderBtn) return;
-            api.orderBtn.textContent = "Order Drone";
+            var stillPurchased = !!(window.GameState && window.GameState.droneSystemPurchased);
+            api.orderBtn.textContent = stillPurchased ? "ORDERED" : "ORDER DRONE";
             api.orderBtn.classList.remove("hq-order-btn--flash");
           }, 900);
       }
@@ -441,7 +444,8 @@ window.HqPanel = (function () {
         api.gprOrderBtn.classList.add("hq-order-btn--flash");
         setTimeout(function () {
           if (!api.gprOrderBtn) return;
-          api.gprOrderBtn.textContent = "Order GPR";
+          var stillPurchased = !!(window.GameState && window.GameState.gprSystemPurchased);
+          api.gprOrderBtn.textContent = stillPurchased ? "ORDERED" : "ORDER GPR";
           api.gprOrderBtn.classList.remove("hq-order-btn--flash");
         }, 900);
       }
