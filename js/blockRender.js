@@ -725,19 +725,18 @@ window.BlockRender = (function () {
   };
 
   // river blocky ripple: Minecraft-style tile-based texture. Each river
-  // tile's top diamond is subdivided into a 3x3 grid of flat sub-blocks.
-  // Each sub-block's brightness oscillates on its own offset timer (slow
-  // sine, per-tile + per-cell hash) so the pattern ripples gradually.
-  // Flat-shaded, no gradients/blur. The river base in the static layer is
-  // already at ~0.85 alpha, so the rippling overlay reads as depth.
+  // tile's top diamond is subdivided into a 3x3 grid of flat sub-blocks,
+  // but with heavily irregularized sizes/timing so no checkerboard reads.
+  // Size jitter ±25%, per-sub-block independent phase/speed/amp (seeded
+  // once per tile+cell, deterministic), flat-shaded, no gradients/blur.
+  // The river base in the static layer is already at ~0.85 alpha.
   function drawShimmer(ctx) {
     var g = api.grid;
     if (!g || !g.isoSize) return;
     var iso = g.isoSize, half = iso / 2;
     var phase = (api.ripplePhase != null ? api.ripplePhase : api.shimmerPhase) || 0;
     var div = RIVER_RIPPLE_DIV;
-    var cellW = (2 * iso) / div;
-    var cellH = iso / div;
+    function hash01(x) { var s = Math.sin(x) * 43758.5453; return s - Math.floor(s); }
     for (var i = 0; i < ORDER.length; i++) {
       var t = ORDER[i];
       if (!api.terrain.isRiver(t.c, t.r)) continue;
@@ -745,9 +744,17 @@ window.BlockRender = (function () {
       var topY = p.y - totalHeight(t.c, t.r);
       var cx = p.x;
 
-      // tile-level hash so neighboring tiles are out of phase
-      var tileHash = ((t.c * 12.9898 + t.r * 78.233) % 1 + 1) % 1;
-      var tileOff = tileHash * Math.PI * 2;
+      // irregular split positions per tile — seeded, consistent, ±0.08 ≈ ±24% of cell
+      var hx1 = hash01(t.c * 17.13 + t.r * 8.47 + 0.11);
+      var hx2 = hash01(t.c * 31.37 + t.r * 11.59 + 0.22);
+      var hy1 = hash01(t.c * 7.91 + t.r * 31.13 + 0.33);
+      var hy2 = hash01(t.c * 19.33 + t.r * 41.27 + 0.44);
+      var dx1 = (hx1 - 0.5) * 0.16;
+      var dx2 = (hx2 - 0.5) * 0.16;
+      var dy1 = (hy1 - 0.5) * 0.16;
+      var dy2 = (hy2 - 0.5) * 0.16;
+      var sx = [0, 0.333 + dx1, 0.666 + dx2, 1];
+      var sy = [0, 0.333 + dy1, 0.666 + dy2, 1];
 
       ctx.save();
       ctx.beginPath();
@@ -760,17 +767,25 @@ window.BlockRender = (function () {
 
       for (var si = 0; si < div; si++) {
         for (var sj = 0; sj < div; sj++) {
-          var x0 = cx - iso + sj * cellW;
-          var y0 = topY - half + si * cellH;
-          // per-sub-block phase offset — deterministic, slow, not random flicker
-          var cellOff = si * 0.95 + sj * 1.27 + tileOff * 0.3;
-          var ang = phase * Math.PI * 2 * 1.0 + tileOff + cellOff;
+          var x0 = cx - iso + sx[sj] * 2 * iso;
+          var x1 = cx - iso + sx[sj + 1] * 2 * iso;
+          var y0 = topY - half + sy[si] * iso;
+          var y1 = topY - half + sy[si + 1] * iso;
+          var w = x1 - x0;
+          var h = y1 - y0;
+          // per-sub-block independent timing — heavily randomized, seeded once
+          var hPh = hash01(t.c * 12.9898 + t.r * 78.233 + si * 37.13 + sj * 91.7 + 0.33);
+          var hSp = hash01(t.c * 23.11 + t.r * 13.57 + si * 57.71 + sj * 31.33 + 1.71);
+          var hAm = hash01(t.c * 47.13 + t.r * 51.77 + si * 19.31 + sj * 47.53 + 2.91);
+          var phaseOff = hPh * Math.PI * 2;
+          var speed = 0.65 + hSp * 0.70; // 0.65–1.35× duration variation
+          var amp = RIVER_RIPPLE_AMP * (0.55 + hAm * 0.90); // 0.55–1.45× brightness range
+          var ang = phase * Math.PI * 2 * speed + phaseOff;
           var s = Math.sin(ang);
-          var factor = 1 + s * RIVER_RIPPLE_AMP;
-          // clamp via shade helper
+          var factor = 1 + s * amp;
           ctx.fillStyle = shade(RIVER_BASE, factor);
-          // flat solid fill, no gradient/blur
-          ctx.fillRect(x0, y0, cellW + 0.6, cellH + 0.6);
+          // flat solid fill, no gradient/blur — slight overlap hides seams
+          ctx.fillRect(x0, y0, w + 0.8, h + 0.8);
         }
       }
       ctx.restore();
