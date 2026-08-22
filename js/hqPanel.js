@@ -240,7 +240,7 @@ window.HqPanel = (function () {
         "display:flex;align-items:center;justify-content:space-between;" +
         "padding:14px 18px;background:#FFFBF0;" +
         "border:3px solid #2B2320;border-radius:16px;cursor:pointer;" +
-        "box-shadow:6px 6px 0 #000;" +
+        "box-shadow:4px 4px 0 #000;" +
         "transition:border-color 0.15s ease,background 0.15s ease;";
       var accent = type === "gpr" ? "#E0962A" : "#E8604A";
       entry.innerHTML =
