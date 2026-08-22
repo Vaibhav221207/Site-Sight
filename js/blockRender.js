@@ -727,6 +727,8 @@ window.BlockRender = (function () {
   // river — simple flat water, no pattern. Base is solid RIVER_BASE at
   // 0.85 alpha (drawn in staticLayer). Overlay is a single subtle lighter
   // diamond per tile that gently pulses via anime, matching the chunky flat vibe.
+  // river — simple clean water: solid base + 1 soft overlay + 2 tiny sparkles per tile
+  // flat, no blocks/stripes, clearly alive via anime opacity pulse + traveling wave
   function drawShimmer(ctx) {
     var g = api.grid;
     if (!g || !g.isoSize) return;
@@ -740,28 +742,39 @@ window.BlockRender = (function () {
       var key = t.c + "," + t.r;
       var entry = RIVER_CACHE[key];
       if (!entry) {
-        var spots = [];
-        var count = 3 + Math.floor(Math.random() * 3); // 3-5 glints per tile
-        for (var k = 0; k < count; k++) {
-          var rx = 0.18 + Math.random() * 0.64; // 0.18-0.82
-          var ry = 0.22 + Math.random() * 0.56; // 0.22-0.78
-          var sz = 0.22 + Math.random() * 0.18; // 0.22-0.40 of iso (visible without zoom)
-          var state = { glow: Math.random() };
-          var waveDelay = (t.r * 85 + t.c * 35) % 600;
+        var main = { glow: Math.random() * 0.6 };
+        var waveDelay = (t.r * 90) % 700;
+        if (typeof anime !== "undefined" && anime) {
+          anime({
+            targets: main,
+            glow: 1,
+            duration: 1000 + Math.random() * 700,
+            delay: waveDelay + Math.random() * 300,
+            direction: "alternate",
+            loop: true,
+            easing: "easeInOutSine"
+          });
+        }
+        var sparkles = [];
+        for (var k = 0; k < 2; k++) {
+          var rx = 0.20 + Math.random() * 0.60;
+          var ry = 0.25 + Math.random() * 0.50;
+          var r = 1.8 + Math.random() * 1.6; // 1.8-3.4px radius
+          var s = { glow: Math.random() };
           if (typeof anime !== "undefined" && anime) {
             anime({
-              targets: state,
+              targets: s,
               glow: 1,
-              duration: 700 + Math.random() * 900, // 700-1600ms
-              delay: waveDelay + Math.random() * 500,
+              duration: 700 + Math.random() * 800,
+              delay: waveDelay + 200 + Math.random() * 600,
               direction: "alternate",
               loop: true,
               easing: "easeInOutSine"
             });
           }
-          spots.push({ rx: rx, ry: ry, sz: sz, state: state });
+          sparkles.push({ rx: rx, ry: ry, r: r, state: s });
         }
-        entry = { spots: spots };
+        entry = { main: main, sparkles: sparkles };
         RIVER_CACHE[key] = entry;
       }
       var bx = cx - iso, by = topY - half, bw = 2 * iso, bh = iso;
@@ -773,21 +786,31 @@ window.BlockRender = (function () {
       ctx.lineTo(cx - iso, topY);
       ctx.closePath();
       ctx.clip();
-      for (var k = 0; k < entry.spots.length; k++) {
-        var s = entry.spots[k];
-        var a = 0.28 + s.state.glow * 0.38; // 0.28-0.66 more visible than before
-        var sz = s.sz * iso;
-        var sx = bx + s.rx * bw;
-        var sy = by + s.ry * bh;
+      // main soft overlay — inset diamond, clearly visible shimmer
+      var aMain = 0.18 + entry.main.glow * 0.32; // 0.18-0.50
+      var inset = 3 + entry.main.glow * 2; // subtle breathing 3-5px
+      ctx.save();
+      ctx.globalAlpha = aMain;
+      ctx.fillStyle = RIVER_LIGHT;
+      ctx.beginPath();
+      ctx.moveTo(cx, topY - half + inset);
+      ctx.lineTo(cx + iso - inset, topY);
+      ctx.lineTo(cx, topY + half - inset);
+      ctx.lineTo(cx - iso + inset, topY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+      // tiny sparkles — small circles, more visible detail without zoom
+      for (var k = 0; k < entry.sparkles.length; k++) {
+        var sp = entry.sparkles[k];
+        var aSp = 0.35 + sp.state.glow * 0.40; // 0.35-0.75 bright sparkle
+        var sx = bx + sp.rx * bw;
+        var sy = by + sp.ry * bh;
         ctx.save();
-        ctx.globalAlpha = a;
-        ctx.fillStyle = RIVER_LIGHT;
+        ctx.globalAlpha = aSp;
+        ctx.fillStyle = "rgba(255,255,255,1)";
         ctx.beginPath();
-        ctx.moveTo(sx, sy - sz * 0.5);
-        ctx.lineTo(sx + sz, sy);
-        ctx.lineTo(sx, sy + sz * 0.5);
-        ctx.lineTo(sx - sz, sy);
-        ctx.closePath();
+        ctx.arc(sx, sy, sp.r, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
       }
