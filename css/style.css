@@ -1106,19 +1106,23 @@ body.touch-ui .hq-fs-nav-item {
   white-space: nowrap;
 }
 
-/* panel data rows (tile popup) */
+/* panel data rows — chunky cards (fix AI thin-divider flat rows) */
 .panel-data-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 0;
-  border-bottom: 1px solid rgba(43, 35, 32, 0.15);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 12px;
+  box-shadow: 4px 4px 0 #000;
   font-size: 11px;
   overflow: hidden;
 }
 
 .panel-data-row:last-child {
-  border-bottom: none;
+  margin-bottom: 0;
 }
 
 .panel-data-label {
