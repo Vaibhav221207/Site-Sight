@@ -264,7 +264,20 @@ window.HqPanel = (function () {
       deployBtn.addEventListener("click", function (ev) {
         ev.stopPropagation();
         var w = this.closest(".hq-fs-inventory-item-wrap");
-        if (w) { api.selectItem(w); api.deploySelected(); } else api.deploySelected();
+        if (w) {
+          var type = w.dataset.itemType, id = w.dataset.itemId;
+          var gs = window.GameState;
+          if (gs) {
+            // force-select this item (don't toggle off if already selected)
+            if (type === "drone") { gs.inventory.selectedDroneId = id; gs.inventory.selectedGprId = null; }
+            else { gs.inventory.selectedGprId = id; gs.inventory.selectedDroneId = null; }
+            var items = api.inventorySection.querySelectorAll(".hq-fs-inventory-item");
+            for (var i = 0; i < items.length; i++) api.markSelected(items[i], false);
+            var card = w.querySelector(".hq-fs-inventory-item");
+            if (card) api.markSelected(card, true);
+          }
+        }
+        api.deploySelected();
       });
       wrap.appendChild(entry);
       wrap.appendChild(deployBtn);
