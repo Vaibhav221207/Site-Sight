@@ -40,11 +40,15 @@ window.BlockRender = (function () {
     _dirty: false,
   };
 
-  // river — simple flat water, single gentle global shimmer
-  var RIVER_BASE = "#5B6FA8";
-  var RIVER_LIGHT = "#7A90C8";
-  var RIVER_ALPHA = 0.85;
+  // river — natural blue with sandy banks + brown cliffs, soft foam shimmer
+  var RIVER_BASE = "#1E9AC8";
+  var RIVER_LIGHT = "#6EC6E8";
+  var RIVER_SAND = "#E8D5A8";
+  var RIVER_CLIFF = "#6B3A1F";
+  var RIVER_ALPHA = 0.96;
   var riverShimmer = { v: 0 };
+  var RIVER_FOAM_CACHE = {};
+  var RIVER_FOAM_CACHE = {};
 
   var ORDER = [];       // tiles sorted back-to-front by (col+row)
   var rises = {};       // "col,row" -> current animated rise (px)
@@ -109,6 +113,33 @@ window.BlockRender = (function () {
     var sb = { x: cx, y: cy + half };      // south base
     var eb = { x: cx + iso, y: cy };       // east base
 
+    var isRiverTile = !!(api.terrain && api.terrain.isRiver && api.terrain.isRiver(c, r));
+    if (isRiverTile) {
+      // river cliffs — brown sides instead of shaded blue
+      if (totalH > 0.5) {
+        ctx.beginPath(); ctx.moveTo(w.x, w.y); ctx.lineTo(s.x, s.y); ctx.lineTo(sb.x, sb.y); ctx.lineTo(cx - iso, cy); ctx.closePath();
+        ctx.fillStyle = shade(RIVER_CLIFF, LEFT_SHADE); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(e.x, e.y); ctx.lineTo(eb.x, eb.y); ctx.lineTo(sb.x, sb.y); ctx.closePath();
+        ctx.fillStyle = shade(RIVER_CLIFF, RIGHT_SHADE); ctx.fill();
+      }
+      // top: sandy bank + blue water inset
+      ctx.save(); ctx.globalAlpha = RIVER_ALPHA;
+      ctx.beginPath(); ctx.moveTo(n.x, n.y); ctx.lineTo(e.x, e.y); ctx.lineTo(s.x, s.y); ctx.lineTo(w.x, w.y); ctx.closePath();
+      ctx.fillStyle = RIVER_SAND; ctx.fill();
+      ctx.restore();
+      ctx.save(); ctx.globalAlpha = RIVER_ALPHA;
+      var inset = 3;
+      ctx.beginPath();
+      ctx.moveTo(cx, n.y + inset); ctx.lineTo(e.x - inset * 0.9, topY); ctx.lineTo(cx, s.y - inset); ctx.lineTo(w.x + inset * 0.9, topY); ctx.closePath();
+      ctx.fillStyle = topColor; ctx.fill();
+      ctx.restore();
+      ctx.strokeStyle = isSelected ? SELECT_STROKE : TOP_STROKE;
+      ctx.lineWidth = isSelected ? 2.5 : 1;
+      ctx.beginPath(); ctx.moveTo(n.x, n.y); ctx.lineTo(e.x, e.y); ctx.lineTo(s.x, s.y); ctx.lineTo(w.x, w.y); ctx.closePath();
+      ctx.stroke();
+      return;
+    }
+
     if (totalH > 0.5) {
       // left face (front-left): W -> S -> S_base -> W_base
       ctx.beginPath();
@@ -131,10 +162,7 @@ window.BlockRender = (function () {
       ctx.fill();
     }
 
-    // top face — river shows slight transparency (riverbed depth)
-    var isRiverTile = !!(api.terrain && api.terrain.isRiver && api.terrain.isRiver(c, r));
-    if (isRiverTile) ctx.save();
-    if (isRiverTile) ctx.globalAlpha = RIVER_ALPHA;
+    // top face
     ctx.beginPath();
     ctx.moveTo(n.x, n.y);
     ctx.lineTo(e.x, e.y);
@@ -724,22 +752,47 @@ window.BlockRender = (function () {
     }
   };
 
-  // river — simple flat water, no pattern. Base is solid RIVER_BASE at
-  // 0.85 alpha (drawn in staticLayer). Overlay is a single subtle lighter
-  // diamond per tile that gently pulses via anime, matching the chunky flat vibe.
-  // river — ultra simple: solid base + one gentle global shimmer over the whole river
-  // No per-tile strips/blocks/sparkles — just a calm, clean pulse that matches the flat vibe
+  // river — natural water with foam: sandy blue base (staticLayer) + scattered
+  // white foam patches that gently pulse. Foam is 5-7 small white diamonds per tile
+  // with traveling wave offsets so the river feels alive like the reference.
   function drawShimmer(ctx) {
     var g = api.grid;
     if (!g || !g.isoSize) return;
     var iso = g.isoSize, half = iso / 2;
-    var a = 0.14 + riverShimmer.v * 0.22; // 0.14-0.36 subtle but visible
     for (var i = 0; i < ORDER.length; i++) {
       var t = ORDER[i];
       if (!api.terrain.isRiver(t.c, t.r)) continue;
       var p = g.worldToScreen(t.c, t.r);
       var topY = p.y - totalHeight(t.c, t.r);
       var cx = p.x;
+      var key = t.c + "," + t.r;
+      var entry = RIVER_FOAM_CACHE[key];
+      if (!entry) {
+        var spots = [];
+        var count = 5 + Math.floor(Math.random() * 3); // 5-7 foam patches per tile
+        for (var k = 0; k < count; k++) {
+          var rx = 0.15 + Math.random() * 0.70;
+          var ry = 0.20 + Math.random() * 0.60;
+          var sz = 0.10 + Math.random() * 0.14; // 0.10-0.24 of iso
+          var state = { glow: Math.random() };
+          var waveDelay = (t.r * 90 + t.c * 35) % 600;
+          if (typeof anime !== "undefined" && anime) {
+            anime({
+              targets: state,
+              glow: 1,
+              duration: 900 + Math.random() * 800,
+              delay: waveDelay + Math.random() * 400,
+              direction: "alternate",
+              loop: true,
+              easing: "easeInOutSine"
+            });
+          }
+          spots.push({ rx: rx, ry: ry, sz: sz, state: state });
+        }
+        entry = { spots: spots };
+        RIVER_FOAM_CACHE[key] = entry;
+      }
+      var bx = cx - iso, by = topY - half, bw = 2 * iso, bh = iso;
       ctx.save();
       ctx.beginPath();
       ctx.moveTo(cx, topY - half);
@@ -748,15 +801,24 @@ window.BlockRender = (function () {
       ctx.lineTo(cx - iso, topY);
       ctx.closePath();
       ctx.clip();
-      ctx.globalAlpha = a;
-      ctx.fillStyle = RIVER_LIGHT;
-      ctx.beginPath();
-      ctx.moveTo(cx, topY - half + 2);
-      ctx.lineTo(cx + iso - 2, topY);
-      ctx.lineTo(cx, topY + half - 2);
-      ctx.lineTo(cx - iso + 2, topY);
-      ctx.closePath();
-      ctx.fill();
+      for (var k = 0; k < entry.spots.length; k++) {
+        var s = entry.spots[k];
+        var a = 0.32 + s.state.glow * 0.38; // 0.32-0.70 foam shimmer
+        var sz = s.sz * iso;
+        var sx = bx + s.rx * bw;
+        var sy = by + s.ry * bh;
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.fillStyle = "rgba(255,255,255,1)";
+        ctx.beginPath();
+        ctx.moveTo(sx, sy - sz * 0.5);
+        ctx.lineTo(sx + sz, sy);
+        ctx.lineTo(sx, sy + sz * 0.5);
+        ctx.lineTo(sx - sz, sy);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
       ctx.restore();
     }
   }
