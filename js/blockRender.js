@@ -752,11 +752,11 @@ window.BlockRender = (function () {
 
       var grad = ctx.createLinearGradient(cx - iso, topY, cx + iso, topY);
       var alpha = (0.25 + 0.32 * riverGlow).toFixed(3);
-      grad.addColorStop(0, "rgba(140, 210, 255, 0)");
-      grad.addColorStop(a, "rgba(140, 210, 255, 0)");
-      grad.addColorStop(band, "rgba(175, 230, 255, " + alpha + ")");
-      grad.addColorStop(cc, "rgba(140, 210, 255, 0)");
-      grad.addColorStop(1, "rgba(140, 210, 255, 0)");
+      grad.addColorStop(0, "rgba(155, 170, 240, 0)");
+      grad.addColorStop(a, "rgba(155, 170, 240, 0)");
+      grad.addColorStop(band, "rgba(190, 200, 255, " + alpha + ")");
+      grad.addColorStop(cc, "rgba(155, 170, 240, 0)");
+      grad.addColorStop(1, "rgba(155, 170, 240, 0)");
       ctx.fillStyle = grad;
       ctx.fillRect(cx - iso, topY - half, iso * 2, iso);
       ctx.restore();

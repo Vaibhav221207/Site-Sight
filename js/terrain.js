@@ -28,7 +28,7 @@ window.Terrain = (function () {
     land: "#7EB24A",   // soft moss green — muted sage from reference (was vivid lime #6dd400)
     hill: "#6A9A3E",   // moss hill base under rocks (desaturated to match reference foliage)
     trench: "#4A3F6B", // deep violet/indigo hazard — distinct from black + moss land
-    river: "#29b6f6",  // bright vivid sky blue
+    river: "#5B6FA8",  // blue-violet — cooler harmonized partner to trench violet #4A3F6B
     hq: "#44ddbb",     // base tone under HQ building
   };
 
