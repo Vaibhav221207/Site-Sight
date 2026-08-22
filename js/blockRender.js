@@ -724,14 +724,11 @@ window.BlockRender = (function () {
   };
 
   // river diagonal shimmer — thin lighter stripes scrolling along the
-  // river wavy ripple — scattered thin white wavy lines over flat base.
-  // 4-8 per tile, semi-random positions/lengths/curves, gentle opacity fade.
+  // river flat strips — 20-30 small white rectangles per tile, gentle anime fade
   function drawShimmer(ctx) {
     var g = api.grid;
     if (!g || !g.isoSize) return;
     var iso = g.isoSize, half = iso / 2;
-    var now = Date.now();
-    var tSec = now * 0.001;
     for (var i = 0; i < ORDER.length; i++) {
       var t = ORDER[i];
       if (!api.terrain.isRiver(t.c, t.r)) continue;
@@ -741,20 +738,31 @@ window.BlockRender = (function () {
       var key = t.c + "," + t.r;
       var entry = RIVER_RIPPLE_CACHE[key];
       if (!entry) {
-        var count = 4 + Math.floor(Math.random() * 5); // 4-8 lines
-        var lines = [];
+        var count = 20 + Math.floor(Math.random() * 11); // 20-30 strips
+        var strips = [];
         for (var k = 0; k < count; k++) {
-          var rx = 0.08 + Math.random() * 0.62; // 0.08-0.70
-          var ry = 0.18 + Math.random() * 0.64; // 0.18-0.82
-          var lenFrac = 0.18 + Math.random() * 0.22; // 0.18-0.40 of bw
-          var amp = 1.5 + Math.random() * 2.5; // 1.5-4.0 px wave
-          var type = Math.random() < 0.5 ? 0 : 1; // 0: single hump, 1: S-curve
-          var phaseOff = Math.random() * Math.PI * 2;
-          var speed = 0.7 + Math.random() * 0.6; // 0.7-1.3 Hz variation
-          var lw = Math.random() < 0.6 ? 1 : 1.3;
-          lines.push({ rx: rx, ry: ry, lenFrac: lenFrac, amp: amp, type: type, phaseOff: phaseOff, speed: speed, lw: lw });
+          var rx = 0.05 + Math.random() * 0.70; // 0.05-0.75
+          var ry = 0.10 + Math.random() * 0.75; // 0.10-0.85
+          var w = 8 + Math.random() * 12; // 8-20px
+          var h = 2 + Math.random() * 2; // 2-4px
+          var ang = (Math.random() - 0.5) * 0.62; // ± ~17.7° (±15-20° range)
+          var state = { alpha: 0.42 + Math.random() * 0.16 }; // 0.42-0.58 start
+          if (typeof anime !== "undefined" && anime) {
+            var low = 0.30 + Math.random() * 0.10; // 0.30-0.40
+            var high = 0.55 + Math.random() * 0.10; // 0.55-0.65
+            anime({
+              targets: state,
+              alpha: [low, high],
+              duration: 700 + Math.random() * 900, // 700-1600ms
+              delay: Math.random() * 600,
+              direction: "alternate",
+              loop: true,
+              easing: "easeInOutSine"
+            });
+          }
+          strips.push({ rx: rx, ry: ry, w: w, h: h, ang: ang, state: state });
         }
-        entry = { lines: lines };
+        entry = { strips: strips };
         RIVER_RIPPLE_CACHE[key] = entry;
       }
       var bx = cx - iso, by = topY - half, bw = 2 * iso, bh = iso;
@@ -766,28 +774,17 @@ window.BlockRender = (function () {
       ctx.lineTo(cx - iso, topY);
       ctx.closePath();
       ctx.clip();
-      for (var k = 0; k < entry.lines.length; k++) {
-        var L = entry.lines[k];
-        var x0 = bx + L.rx * bw;
-        var y0 = by + L.ry * bh;
-        var len = L.lenFrac * bw;
-        var a = 0.42 + 0.18 * Math.sin(tSec * L.speed * 1.15 + L.phaseOff);
-        if (a < 0.18) a = 0.18; if (a > 0.62) a = 0.62;
+      for (var k = 0; k < entry.strips.length; k++) {
+        var s = entry.strips[k];
+        var x = bx + s.rx * bw;
+        var y = by + s.ry * bh;
+        var cxS = x + s.w * 0.5, cyS = y + s.h * 0.5;
         ctx.save();
-        ctx.globalAlpha = a;
-        ctx.strokeStyle = "rgba(255,255,255,1)";
-        ctx.lineWidth = L.lw;
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-        ctx.beginPath();
-        ctx.moveTo(x0, y0);
-        if (L.type === 0) {
-          var dir = (k % 2 === 0) ? 1 : -1;
-          ctx.quadraticCurveTo(x0 + len * 0.5, y0 + dir * L.amp, x0 + len, y0);
-        } else {
-          ctx.bezierCurveTo(x0 + len * 0.33, y0 - L.amp, x0 + len * 0.66, y0 + L.amp, x0 + len, y0);
-        }
-        ctx.stroke();
+        ctx.globalAlpha = s.state.alpha;
+        ctx.fillStyle = "rgba(255,255,255,1)";
+        ctx.translate(cxS, cyS);
+        ctx.rotate(s.ang);
+        ctx.fillRect(-s.w * 0.5, -s.h * 0.5, s.w, s.h);
         ctx.restore();
       }
       ctx.restore();
