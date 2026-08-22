@@ -40,12 +40,10 @@ window.BlockRender = (function () {
     _dirty: false,
   };
 
-  // river water — diagonal shimmer stripes over flat base
+  // river water — flat base + scattered wavy ripple lines
   var RIVER_BASE = "#5B6FA8";
-  var RIVER_LIGHT = "#687FC0"; // ~14% lighter, second shade only
   var RIVER_ALPHA = 0.85;
-  var RIVER_STRIPE_SPACING = 14;
-  var RIVER_STRIPE_WIDTH = 3;
+  var RIVER_RIPPLE_CACHE = {};
 
   var ORDER = [];       // tiles sorted back-to-front by (col+row)
   var rises = {};       // "col,row" -> current animated rise (px)
@@ -726,45 +724,40 @@ window.BlockRender = (function () {
   };
 
   // river diagonal shimmer — thin lighter stripes scrolling along the
-  // river's actual curve. Base at RIVER_ALPHA, stripes in RIVER_LIGHT.
-  // Per-tile flow direction from 4-neighbor river topology, stripes at
-  // 45° to flow, continuously scrolled via shimmerPhase (smooth, not discrete).
+  // river wavy ripple — scattered thin white wavy lines over flat base.
+  // 4-8 per tile, semi-random positions/lengths/curves, gentle opacity fade.
   function drawShimmer(ctx) {
     var g = api.grid;
     if (!g || !g.isoSize) return;
     var iso = g.isoSize, half = iso / 2;
-    var phase = api.shimmerPhase;
-    if (phase == null) phase = 0;
-    var spacing = RIVER_STRIPE_SPACING;
-    var stripeW = RIVER_STRIPE_WIDTH;
-    function hash01(x) { var s = Math.sin(x) * 43758.5453; return s - Math.floor(s); }
+    var now = Date.now();
+    var tSec = now * 0.001;
     for (var i = 0; i < ORDER.length; i++) {
       var t = ORDER[i];
       if (!api.terrain.isRiver(t.c, t.r)) continue;
       var p = g.worldToScreen(t.c, t.r);
       var topY = p.y - totalHeight(t.c, t.r);
       var cx = p.x;
-      // per-tile local flow direction (same 4-neighbor method as previous pass)
-      var nbs = [];
-      var cand = [[-1,0],[1,0],[0,-1],[0,1]];
-      for (var d = 0; d < 4; d++) {
-        var nc = t.c + cand[d][0], nr = t.r + cand[d][1];
-        if (nc >= 0 && nc < g.gridSize && nr >= 0 && nr < g.gridSize && api.terrain.isRiver(nc, nr)) nbs.push({ c: nc, r: nr });
+      var key = t.c + "," + t.r;
+      var entry = RIVER_RIPPLE_CACHE[key];
+      if (!entry) {
+        var count = 4 + Math.floor(Math.random() * 5); // 4-8 lines
+        var lines = [];
+        for (var k = 0; k < count; k++) {
+          var rx = 0.08 + Math.random() * 0.62; // 0.08-0.70
+          var ry = 0.18 + Math.random() * 0.64; // 0.18-0.82
+          var lenFrac = 0.18 + Math.random() * 0.22; // 0.18-0.40 of bw
+          var amp = 1.5 + Math.random() * 2.5; // 1.5-4.0 px wave
+          var type = Math.random() < 0.5 ? 0 : 1; // 0: single hump, 1: S-curve
+          var phaseOff = Math.random() * Math.PI * 2;
+          var speed = 0.7 + Math.random() * 0.6; // 0.7-1.3 Hz variation
+          var lw = Math.random() < 0.6 ? 1 : 1.3;
+          lines.push({ rx: rx, ry: ry, lenFrac: lenFrac, amp: amp, type: type, phaseOff: phaseOff, speed: speed, lw: lw });
+        }
+        entry = { lines: lines };
+        RIVER_RIPPLE_CACHE[key] = entry;
       }
-      var dirX = 0, dirY = 1;
-      if (nbs.length === 2) {
-        var dx = nbs[1].c - nbs[0].c, dy = nbs[1].r - nbs[0].r;
-        var len = Math.sqrt(dx*dx + dy*dy);
-        if (len > 1e-6) { dirX = dx / len; dirY = dy / len; }
-      } else if (nbs.length === 1) {
-        var dx = nbs[0].c - t.c, dy = nbs[0].r - t.r;
-        var len = Math.sqrt(dx*dx + dy*dy);
-        if (len > 1e-6) { dirX = dx / len; dirY = dy / len; }
-      }
-      var flowAngle = Math.atan2(dirY, dirX);
-      var stripeAngle = flowAngle + Math.PI / 4; // 45° diagonal to flow
-      var tileOff = hash01(t.c * 12.9898 + t.r * 78.233) * spacing;
-      var scroll = (phase * spacing + tileOff) % spacing;
+      var bx = cx - iso, by = topY - half, bw = 2 * iso, bh = iso;
       ctx.save();
       ctx.beginPath();
       ctx.moveTo(cx, topY - half);
@@ -773,16 +766,29 @@ window.BlockRender = (function () {
       ctx.lineTo(cx - iso, topY);
       ctx.closePath();
       ctx.clip();
-      // stripes are drawn in a rotated space around the tile center
-      ctx.translate(cx, topY);
-      ctx.rotate(stripeAngle);
-      ctx.globalAlpha = RIVER_ALPHA;
-      ctx.fillStyle = RIVER_LIGHT;
-      var extent = 2 * iso + 20;
-      var count = Math.ceil(extent / spacing) + 3;
-      for (var s = -count; s < count; s++) {
-        var x = s * spacing + scroll - spacing * 0.5;
-        ctx.fillRect(x - stripeW / 2, -extent, stripeW, extent * 2);
+      for (var k = 0; k < entry.lines.length; k++) {
+        var L = entry.lines[k];
+        var x0 = bx + L.rx * bw;
+        var y0 = by + L.ry * bh;
+        var len = L.lenFrac * bw;
+        var a = 0.42 + 0.18 * Math.sin(tSec * L.speed * 1.15 + L.phaseOff);
+        if (a < 0.18) a = 0.18; if (a > 0.62) a = 0.62;
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.strokeStyle = "rgba(255,255,255,1)";
+        ctx.lineWidth = L.lw;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.beginPath();
+        ctx.moveTo(x0, y0);
+        if (L.type === 0) {
+          var dir = (k % 2 === 0) ? 1 : -1;
+          ctx.quadraticCurveTo(x0 + len * 0.5, y0 + dir * L.amp, x0 + len, y0);
+        } else {
+          ctx.bezierCurveTo(x0 + len * 0.33, y0 - L.amp, x0 + len * 0.66, y0 + L.amp, x0 + len, y0);
+        }
+        ctx.stroke();
+        ctx.restore();
       }
       ctx.restore();
     }
