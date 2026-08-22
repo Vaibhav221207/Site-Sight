@@ -203,11 +203,10 @@ window.HqPanel = (function () {
       if (gprN > 0) api._buildFleet("gpr", "GPR FLEET", "GPR System", gprN);
     }
 
-    // Deploy button — deploys whichever unit type is currently selected.
+    // Deploy button — below the inventory items, not in the shared footer
     var deployBox = document.createElement("div");
     deployBox.className = "hq-fs-inventory-deploy";
     deployBox.style.marginTop = "16px";
-    deployBox.style.display = "none";
     deployBox.style.display = "flex";
     deployBox.style.justifyContent = "flex-end";
     var deployBtn = document.createElement("button");
@@ -219,13 +218,7 @@ window.HqPanel = (function () {
       api.deploySelected();
     });
     deployBox.appendChild(deployBtn);
-    // pinned footer action bar (all breakpoints): Deploy is always visible
-    // without scrolling, right beside the STORE order buttons
-    if (api.footerEl) {
-      api.footerEl.appendChild(deployBox);
-    } else {
-      api.inventorySection.appendChild(deployBox);
-    }
+    api.inventorySection.appendChild(deployBox);
     api.inventoryDeployContainer = deployBox;
 
     api.refreshDeployVisibility();
@@ -303,17 +296,12 @@ window.HqPanel = (function () {
     api.refreshDeployVisibility();
   };
 
-  // Show the Deploy button only while a drone OR a GPR unit is selected.
+  // Show the Deploy button (now below inventory items) only while selected
   api.refreshDeployVisibility = function () {
     var gs = window.GameState.inventory;
     var hasSelection = !!(gs.selectedDroneId || gs.selectedGprId);
     if (api.inventoryDeployContainer) {
       api.inventoryDeployContainer.style.display = hasSelection ? "" : "none";
-    }
-    // hide the whole footer strip while it holds only a hidden Deploy
-    if (api.footerEl) {
-      var onInventory = api.currentSection === "inventory";
-      api.footerEl.classList.toggle("hq-fs-footer--hidden", onInventory && !hasSelection);
     }
   };
 
