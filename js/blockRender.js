@@ -40,11 +40,11 @@ window.BlockRender = (function () {
     _dirty: false,
   };
 
-  // river blocky ripple — flat sub-tile grid, slow independent oscillation
+  // river Minecraft water — two flat shades, jigsaw, frame-swap
   var RIVER_BASE = "#5B6FA8";
-  var RIVER_RIPPLE_DIV = 3;
-  var RIVER_RIPPLE_AMP = 0.14;
+  var RIVER_LIGHT = "#687FC0"; // ~14% lighter (same hue), second shade only
   var RIVER_ALPHA = 0.85;
+  var RIVER_JIGSAW_CACHE = {};
 
   var ORDER = [];       // tiles sorted back-to-front by (col+row)
   var rises = {};       // "col,row" -> current animated rise (px)
@@ -724,38 +724,54 @@ window.BlockRender = (function () {
     }
   };
 
-  // river blocky ripple: Minecraft-style tile-based texture. Each river
-  // tile's top diamond is subdivided into a 3x3 grid of flat sub-blocks,
-  // but with heavily irregularized sizes/timing so no checkerboard reads.
-  // Size jitter ±25%, per-sub-block independent phase/speed/amp (seeded
-  // once per tile+cell, deterministic), flat-shaded, no gradients/blur.
-  // The river base in the static layer is already at ~0.85 alpha.
+  // river Minecraft water — irregular jigsaw rectangular blocks in two
+  // flat shades (base #5B6FA8 and ~14% lighter #687FC0), frame-swap
+  // animation every 200-350ms with per-tile desync, no smooth fading.
   function drawShimmer(ctx) {
     var g = api.grid;
     if (!g || !g.isoSize) return;
     var iso = g.isoSize, half = iso / 2;
-    var phase = (api.ripplePhase != null ? api.ripplePhase : api.shimmerPhase) || 0;
-    var div = RIVER_RIPPLE_DIV;
-    function hash01(x) { var s = Math.sin(x) * 43758.5453; return s - Math.floor(s); }
+    var now = Date.now();
     for (var i = 0; i < ORDER.length; i++) {
       var t = ORDER[i];
       if (!api.terrain.isRiver(t.c, t.r)) continue;
       var p = g.worldToScreen(t.c, t.r);
       var topY = p.y - totalHeight(t.c, t.r);
       var cx = p.x;
-
-      // irregular split positions per tile — seeded, consistent, ±0.08 ≈ ±24% of cell
-      var hx1 = hash01(t.c * 17.13 + t.r * 8.47 + 0.11);
-      var hx2 = hash01(t.c * 31.37 + t.r * 11.59 + 0.22);
-      var hy1 = hash01(t.c * 7.91 + t.r * 31.13 + 0.33);
-      var hy2 = hash01(t.c * 19.33 + t.r * 41.27 + 0.44);
-      var dx1 = (hx1 - 0.5) * 0.16;
-      var dx2 = (hx2 - 0.5) * 0.16;
-      var dy1 = (hy1 - 0.5) * 0.16;
-      var dy2 = (hy2 - 0.5) * 0.16;
-      var sx = [0, 0.333 + dx1, 0.666 + dx2, 1];
-      var sy = [0, 0.333 + dy1, 0.666 + dy2, 1];
-
+      var key = t.c + "," + t.r;
+      var entry = RIVER_JIGSAW_CACHE[key];
+      if (!entry || now >= entry.nextSwap) {
+        // generate fresh jigsaw layout for this tile — BSP subdivision
+        var target = 15 + Math.floor(Math.random() * 11); // 15-25 blocks
+        var rects = [{ x: 0, y: 0, w: 1, h: 1 }]; // normalized [0,1] bbox
+        while (rects.length < target) {
+          var bestIdx = 0, bestArea = 0;
+          for (var k = 0; k < rects.length; k++) {
+            var a = rects[k].w * rects[k].h;
+            if (a > bestArea) { bestArea = a; bestIdx = k; }
+          }
+          var cur = rects.splice(bestIdx, 1)[0];
+          var splitVert;
+          if (cur.w > cur.h * 1.35) splitVert = true;
+          else if (cur.h > cur.w * 1.35) splitVert = false;
+          else splitVert = Math.random() < 0.5;
+          var ratio = 0.30 + Math.random() * 0.40; // 30-70%
+          if (splitVert) {
+            var w1 = cur.w * ratio, w2 = cur.w - w1;
+            rects.push({ x: cur.x, y: cur.y, w: w1, h: cur.h });
+            rects.push({ x: cur.x + w1, y: cur.y, w: w2, h: cur.h });
+          } else {
+            var h1 = cur.h * ratio, h2 = cur.h - h1;
+            rects.push({ x: cur.x, y: cur.y, w: cur.w, h: h1 });
+            rects.push({ x: cur.x, y: cur.y + h1, w: cur.w, h: h2 });
+          }
+        }
+        for (var k = 0; k < rects.length; k++) rects[k].color = Math.random() < 0.5 ? RIVER_BASE : RIVER_LIGHT;
+        var interval = 200 + Math.random() * 150; // 200-350ms, per-tile desync
+        entry = { rects: rects, nextSwap: now + interval };
+        RIVER_JIGSAW_CACHE[key] = entry;
+      }
+      var bx = cx - iso, by = topY - half, bw = 2 * iso, bh = iso;
       ctx.save();
       ctx.beginPath();
       ctx.moveTo(cx, topY - half);
@@ -764,29 +780,12 @@ window.BlockRender = (function () {
       ctx.lineTo(cx - iso, topY);
       ctx.closePath();
       ctx.clip();
-
-      for (var si = 0; si < div; si++) {
-        for (var sj = 0; sj < div; sj++) {
-          var x0 = cx - iso + sx[sj] * 2 * iso;
-          var x1 = cx - iso + sx[sj + 1] * 2 * iso;
-          var y0 = topY - half + sy[si] * iso;
-          var y1 = topY - half + sy[si + 1] * iso;
-          var w = x1 - x0;
-          var h = y1 - y0;
-          // per-sub-block independent timing — heavily randomized, seeded once
-          var hPh = hash01(t.c * 12.9898 + t.r * 78.233 + si * 37.13 + sj * 91.7 + 0.33);
-          var hSp = hash01(t.c * 23.11 + t.r * 13.57 + si * 57.71 + sj * 31.33 + 1.71);
-          var hAm = hash01(t.c * 47.13 + t.r * 51.77 + si * 19.31 + sj * 47.53 + 2.91);
-          var phaseOff = hPh * Math.PI * 2;
-          var speed = 0.65 + hSp * 0.70; // 0.65–1.35× duration variation
-          var amp = RIVER_RIPPLE_AMP * (0.55 + hAm * 0.90); // 0.55–1.45× brightness range
-          var ang = phase * Math.PI * 2 * speed + phaseOff;
-          var s = Math.sin(ang);
-          var factor = 1 + s * amp;
-          ctx.fillStyle = shade(RIVER_BASE, factor);
-          // flat solid fill, no gradient/blur — slight overlap hides seams
-          ctx.fillRect(x0, y0, w + 0.8, h + 0.8);
-        }
+      ctx.globalAlpha = RIVER_ALPHA;
+      for (var k = 0; k < entry.rects.length; k++) {
+        var r = entry.rects[k];
+        var x = bx + r.x * bw, y = by + r.y * bh, w = r.w * bw, h = r.h * bh;
+        ctx.fillStyle = r.color;
+        ctx.fillRect(x, y, w + 0.7, h + 0.7);
       }
       ctx.restore();
     }
