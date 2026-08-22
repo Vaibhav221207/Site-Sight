@@ -108,7 +108,7 @@ button {
 /* primary coral keycap button */
 .btn-coral {
   background: #E8604A;
-  box-shadow: 0 5px 0 0 #B8432F; /* darker coral bottom edge, zero blur */
+  box-shadow: 0 5px 0 0 #000; /* darker coral bottom edge, zero blur */
 }
 .btn-coral:hover {
   background: #D05240;
@@ -158,7 +158,7 @@ button {
   width: 28px;
   height: 28px;
   background: #E8604A;
-  box-shadow: 0 5px 0 0 #B8432F;
+  box-shadow: 0 5px 0 0 #000;
   border: 3px solid #2B2320;
   border-radius: 14px;
   color: #FFFFFF;
@@ -242,7 +242,7 @@ button {
 .hud-btn {
   padding: 8px 26px;
   background: #E8604A;
-  box-shadow: 0 5px 0 0 #B8432F;
+  box-shadow: 0 5px 0 0 #000;
   border: 3px solid #2B2320;
   border-radius: 14px;
   color: #FFFFFF;
@@ -338,7 +338,7 @@ button {
 .build-item.selected {
   background: #E8604A;
   color: #FFFFFF;
-  box-shadow: 0 5px 0 0 #B8432F; /* selected = raised keycap look */
+  box-shadow: 0 5px 0 0 #000; /* selected = raised keycap look */
 }
 
 .build-item.selected .build-item-name,
@@ -489,7 +489,7 @@ button {
 .hq-order-btn {
   padding: 8px 22px;
   background: #E8604A;
-  box-shadow: 0 5px 0 0 #B8432F;
+  box-shadow: 0 5px 0 0 #000;
   border: 3px solid #2B2320;
   border-radius: 14px;
   color: #FFFFFF;
@@ -514,7 +514,7 @@ button {
 
 .hq-order-btn.hq-order-btn--flash {
   background: #F07060; /* brief "Ordered!" confirmation flash */
-  box-shadow: 0 5px 0 0 #C04030;
+  box-shadow: 0 5px 0 0 #000;
 }
 
 /* ONE-TIME purchase state: permanently grayed out once the Drone System has
@@ -635,7 +635,7 @@ button {
   width: 38px;
   height: 38px;
   background: #E8604A;
-  box-shadow: 0 5px 0 0 #B8432F;
+  box-shadow: 0 5px 0 0 #000;
   border: 3px solid #2B2320;
   border-radius: 14px;
   color: #FFFFFF;
@@ -740,7 +740,7 @@ button {
 .hq-fs-nav-item--active {
   color: #FFFFFF;
   background: #E8604A;
-  box-shadow: 0 5px 0 0 #B8432F;
+  box-shadow: 0 5px 0 0 #000;
 }
 
 body.touch-ui .hq-fs-nav-item {
@@ -1448,7 +1448,7 @@ body.touch-ui .hud { display: none; }
 .mu-btn {
   padding: 12px 6px;
   background: #E8604A;
-  box-shadow: 0 5px 0 0 #B8432F;
+  box-shadow: 0 5px 0 0 #000;
   border: 3px solid #2B2320;
   border-radius: 14px;
   color: #FFFFFF;
@@ -1484,7 +1484,7 @@ body.touch-ui .hud { display: none; }
   justify-content: center;
   padding: 12px 22px;
   background: #E8604A;
-  box-shadow: 0 5px 0 0 #B8432F;
+  box-shadow: 0 5px 0 0 #000;
   border: 3px solid #2B2320;
   border-radius: 14px;
   color: #FFFFFF;
@@ -1521,7 +1521,7 @@ body.touch-ui .rotate-enter { display: inline-flex; }
   justify-content: center;
   padding: 0;
   background: #E8604A;
-  box-shadow: 0 5px 0 0 #B8432F;
+  box-shadow: 0 5px 0 0 #000;
   border: 3px solid #2B2320;
   border-radius: 14px;
   cursor: pointer;
