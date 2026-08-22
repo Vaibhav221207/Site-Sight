@@ -123,7 +123,7 @@ button {
   background: #FFFBF0;
   border: 3px solid #2B2320;
   border-radius: 16px;
-  box-shadow: 6px 6px 0 rgba(43, 35, 32, 0.25); /* hard offset, zero blur */
+  box-shadow: 6px 6px 0 #000; /* hard offset, zero blur */
   z-index: 900;
   overflow: hidden;
   visibility: hidden;
@@ -213,7 +213,7 @@ button {
   background: #FFFBF0;
   border: 3px solid #2B2320;
   border-radius: 16px;
-  box-shadow: 6px 6px 0 rgba(43, 35, 32, 0.25);
+  box-shadow: 6px 6px 0 #000;
   z-index: 1000;
 }
 
@@ -289,7 +289,7 @@ button {
   background: #FFFBF0;
   border: 3px solid #2B2320;
   border-radius: 16px;
-  box-shadow: 6px 6px 0 rgba(43, 35, 32, 0.25);
+  box-shadow: 6px 6px 0 #000;
   z-index: 1001;
   overflow: hidden;
 }
@@ -321,7 +321,7 @@ button {
   background: #FFFBF0;
   border: 3px solid #2B2320;
   border-radius: 14px;
-  box-shadow: 4px 4px 0 rgba(43, 35, 32, 0.2);
+  box-shadow: 4px 4px 0 #000;
   color: #2B2320;
   font-family: "Baloo 2", sans-serif;
   text-align: left;
@@ -459,7 +459,7 @@ button {
   background: #FFFBF0;
   border: 3px solid #2B2320;
   border-radius: 14px;
-  box-shadow: 4px 4px 0 rgba(43, 35, 32, 0.2);
+  box-shadow: 4px 4px 0 #000;
   overflow: hidden;
 }
 
@@ -559,7 +559,7 @@ button {
   background: #FFFBF0;
   border: 3px solid #2B2320;
   border-radius: 16px;
-  box-shadow: 6px 6px 0 rgba(43, 35, 32, 0.25);
+  box-shadow: 6px 6px 0 #000;
   text-align: center;
   overflow: hidden;
 }
@@ -602,7 +602,7 @@ button {
   background: #FFFBF0;
   border: 3px solid #2B2320;
   border-radius: 16px;
-  box-shadow: 6px 6px 0 rgba(43, 35, 32, 0.25);
+  box-shadow: 6px 6px 0 #000;
   position: relative;
   overflow: hidden;
   opacity: 0;
@@ -825,7 +825,7 @@ body.touch-ui .hq-fs-nav-item {
   background: #FFFBF0;
   border: 3px solid #2B2320;
   border-radius: 16px;
-  box-shadow: 6px 6px 0 rgba(43, 35, 32, 0.25);
+  box-shadow: 6px 6px 0 #000;
   overflow: hidden;
 }
 
@@ -891,7 +891,7 @@ body.touch-ui .hq-fs-nav-item {
   background: #F6EEDC;
   border: 3px solid #2B2320;
   border-radius: 14px;
-  box-shadow: 4px 4px 0 rgba(43, 35, 32, 0.2);
+  box-shadow: 4px 4px 0 #000;
   overflow: hidden;
 }
 
@@ -920,7 +920,7 @@ body.touch-ui .hq-fs-nav-item {
   background: #1a1a2e; /* dark survey void behind the world map */
   border: 3px solid #2B2320;
   border-radius: 16px;
-  box-shadow: 6px 6px 0 rgba(43, 35, 32, 0.25);
+  box-shadow: 6px 6px 0 #000;
   overflow: auto;
   padding: 8px;
 }
@@ -946,7 +946,7 @@ body.touch-ui .hq-fs-nav-item {
   background: #F6EEDC;
   border: 3px solid #2B2320;
   border-radius: 14px;
-  box-shadow: 4px 4px 0 rgba(43, 35, 32, 0.2);
+  box-shadow: 4px 4px 0 #000;
   font-size: 9px;
   font-weight: 700;
   text-transform: uppercase;
@@ -1000,7 +1000,7 @@ body.touch-ui .hq-fs-nav-item {
   background: #FFFBF0;
   border: 3px solid #2B2320;
   border-radius: 16px;
-  box-shadow: 6px 6px 0 rgba(43, 35, 32, 0.25);
+  box-shadow: 6px 6px 0 #000;
   position: relative;
   overflow: hidden;
 }
@@ -1066,7 +1066,7 @@ body.touch-ui .hq-fs-nav-item {
   background: #FFFBF0;
   border: 3px solid #2B2320;
   border-radius: 14px;
-  box-shadow: 4px 4px 0 rgba(43, 35, 32, 0.2);
+  box-shadow: 4px 4px 0 #000;
   font-size: 11px;
   overflow: hidden;
 }
@@ -1327,7 +1327,7 @@ body.touch-ui .hq-fs-nav-item {
     left: 12px;
     right: auto;
     border-radius: 16px;
-    box-shadow: 6px 6px 0 rgba(43, 35, 32, 0.25);
+    box-shadow: 6px 6px 0 #000;
     transform: none;
   }
   body.touch-ui #tile-popup {
@@ -1425,7 +1425,7 @@ body.touch-ui .hud { display: none; }
   background: #FFFBF0;
   border: 3px solid #2B2320;
   border-radius: 16px;
-  box-shadow: 6px 6px 0 rgba(43, 35, 32, 0.25);
+  box-shadow: 6px 6px 0 #000;
   overflow: hidden;
 }
 

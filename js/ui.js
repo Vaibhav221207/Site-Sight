@@ -38,7 +38,7 @@ window.UI = (function () {
       "pointer-events:none;max-width:80vw;padding:10px 18px;border-radius:16px;" +
       "background:#2B2320;color:#fff;font-family:'Baloo 2',sans-serif;" +
       "font-size:14px;font-weight:700;letter-spacing:0.02em;" +
-      "box-shadow:4px 4px 0 rgba(43,35,32,0.35);" +
+      "box-shadow:4px 4px 0 #000;" +
       "border:3px solid " + color + ";";
     t.textContent = (opts.icon ? opts.icon + "  " : "") + message;
     s.appendChild(t);
