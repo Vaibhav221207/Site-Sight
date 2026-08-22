@@ -724,9 +724,11 @@ window.BlockRender = (function () {
     }
   };
 
-  // river Minecraft water — irregular jigsaw rectangular blocks in two
-  // flat shades (base #5B6FA8 and ~14% lighter #687FC0), frame-swap
-  // animation every 200-350ms with per-tile desync, no smooth fading.
+  // river Minecraft water — irregular jigsaw in two flat shades with
+  // gradual neighbor-average evolution + directional flow shift (no full reshuffle).
+  // Initial jigsaw generated once per tile (BSP 15-25 rects), then each
+  // 100-150ms tick: each block's value = 0.68*avg(neighbors)+0.32*self+noise,
+  // and the whole pattern shifts south by a small fraction, wrapping at edge.
   function drawShimmer(ctx) {
     var g = api.grid;
     if (!g || !g.isoSize) return;
@@ -740,10 +742,10 @@ window.BlockRender = (function () {
       var cx = p.x;
       var key = t.c + "," + t.r;
       var entry = RIVER_JIGSAW_CACHE[key];
-      if (!entry || now >= entry.nextSwap) {
-        // generate fresh jigsaw layout for this tile — BSP subdivision
-        var target = 15 + Math.floor(Math.random() * 11); // 15-25 blocks
-        var rects = [{ x: 0, y: 0, w: 1, h: 1 }]; // normalized [0,1] bbox
+      if (!entry || !entry.neighbors || entry.rects[0].val === undefined || entry.nextEvolve === undefined) {
+        // first-time generation — persistent layout, not regenerated on every swap
+        var target = 16 + Math.floor(Math.random() * 9); // 16-24 blocks
+        var rects = [{ x: 0, y: 0, w: 1, h: 1, val: 0, color: RIVER_BASE }];
         while (rects.length < target) {
           var bestIdx = 0, bestArea = 0;
           for (var k = 0; k < rects.length; k++) {
@@ -752,24 +754,59 @@ window.BlockRender = (function () {
           }
           var cur = rects.splice(bestIdx, 1)[0];
           var splitVert;
-          if (cur.w > cur.h * 1.35) splitVert = true;
-          else if (cur.h > cur.w * 1.35) splitVert = false;
+          if (cur.w > cur.h * 1.4) splitVert = true;
+          else if (cur.h > cur.w * 1.4) splitVert = false;
           else splitVert = Math.random() < 0.5;
-          var ratio = 0.30 + Math.random() * 0.40; // 30-70%
+          var ratio = 0.32 + Math.random() * 0.36; // 32-68%
           if (splitVert) {
             var w1 = cur.w * ratio, w2 = cur.w - w1;
-            rects.push({ x: cur.x, y: cur.y, w: w1, h: cur.h });
-            rects.push({ x: cur.x + w1, y: cur.y, w: w2, h: cur.h });
+            rects.push({ x: cur.x, y: cur.y, w: w1, h: cur.h, val: 0, color: RIVER_BASE });
+            rects.push({ x: cur.x + w1, y: cur.y, w: w2, h: cur.h, val: 0, color: RIVER_BASE });
           } else {
             var h1 = cur.h * ratio, h2 = cur.h - h1;
-            rects.push({ x: cur.x, y: cur.y, w: cur.w, h: h1 });
-            rects.push({ x: cur.x, y: cur.y + h1, w: cur.w, h: h2 });
+            rects.push({ x: cur.x, y: cur.y, w: cur.w, h: h1, val: 0, color: RIVER_BASE });
+            rects.push({ x: cur.x, y: cur.y + h1, w: cur.w, h: h2, val: 0, color: RIVER_BASE });
           }
         }
-        for (var k = 0; k < rects.length; k++) rects[k].color = Math.random() < 0.5 ? RIVER_BASE : RIVER_LIGHT;
-        var interval = 200 + Math.random() * 150; // 200-350ms, per-tile desync
-        entry = { rects: rects, nextSwap: now + interval };
+        for (var k = 0; k < rects.length; k++) {
+          rects[k].val = Math.random();
+          rects[k].color = rects[k].val > 0.5 ? RIVER_LIGHT : RIVER_BASE;
+        }
+        // neighbor map for evolution (shared edges)
+        var neigh = [];
+        for (var k = 0; k < rects.length; k++) neigh[k] = [];
+        var eps = 1e-6;
+        for (var a = 0; a < rects.length; a++) for (var b = a + 1; b < rects.length; b++) {
+          var ra = rects[a], rb = rects[b];
+          var aR = ra.x + ra.w, aB = ra.y + ra.h, bR = rb.x + rb.w, bB = rb.y + rb.h;
+          var vAdj = (Math.abs(aR - rb.x) < eps || Math.abs(bR - ra.x) < eps) && !(a.y + a.h <= rb.y + eps || rb.y + rb.h <= ra.y + eps) && Math.min(aB, bB) - Math.max(ra.y, rb.y) > eps;
+          var hAdj = (Math.abs(aB - rb.y) < eps || Math.abs(bB - ra.y) < eps) && !(ra.x + ra.w <= rb.x + eps || rb.x + rb.w <= ra.x + eps) && Math.min(aR, bR) - Math.max(ra.x, rb.x) > eps;
+          if (vAdj || hAdj) { neigh[a].push(b); neigh[b].push(a); }
+        }
+        var interval = 105 + Math.random() * 45; // 105-150ms per-tile desync
+        var speed = 0.18 + Math.random() * 0.12; // 0.18-0.30 normalized units/sec south
+        entry = { rects: rects, neighbors: neigh, shiftY: 0, shiftSpeed: speed, interval: interval, nextEvolve: now + interval };
         RIVER_JIGSAW_CACHE[key] = entry;
+      }
+      if (now >= entry.nextEvolve) {
+        // gradual neighbor-average evolution (Minecraft-like)
+        var oldVals = [];
+        for (var k = 0; k < entry.rects.length; k++) oldVals[k] = entry.rects[k].val;
+        var newVals = [];
+        for (var k = 0; k < entry.rects.length; k++) {
+          var nb = entry.neighbors[k];
+          var avg = 0;
+          if (nb.length) { for (var n = 0; n < nb.length; n++) avg += oldVals[nb[n]]; avg /= nb.length; } else avg = oldVals[k];
+          var nv = avg * 0.68 + oldVals[k] * 0.32 + (Math.random() - 0.5) * 0.10;
+          if (nv < 0) nv = 0; if (nv > 1) nv = 1;
+          newVals[k] = nv;
+        }
+        for (var k = 0; k < entry.rects.length; k++) {
+          entry.rects[k].val = newVals[k];
+          entry.rects[k].color = newVals[k] > 0.5 ? RIVER_LIGHT : RIVER_BASE;
+        }
+        entry.shiftY = (entry.shiftY + entry.shiftSpeed * (entry.interval / 1000)) % 1;
+        entry.nextEvolve = now + entry.interval;
       }
       var bx = cx - iso, by = topY - half, bw = 2 * iso, bh = iso;
       ctx.save();
@@ -783,9 +820,20 @@ window.BlockRender = (function () {
       ctx.globalAlpha = RIVER_ALPHA;
       for (var k = 0; k < entry.rects.length; k++) {
         var r = entry.rects[k];
-        var x = bx + r.x * bw, y = by + r.y * bh, w = r.w * bw, h = r.h * bh;
+        var yShifted = (r.y + entry.shiftY) % 1;
+        var x = bx + r.x * bw;
+        var w = r.w * bw;
+        var y = by + yShifted * bh;
+        var h = r.h * bh;
         ctx.fillStyle = r.color;
-        ctx.fillRect(x, y, w + 0.7, h + 0.7);
+        if (yShifted + r.h <= 1 + 1e-6) {
+          ctx.fillRect(x, y, w + 0.7, h + 0.7);
+        } else {
+          var h1 = (1 - yShifted) * bh;
+          var h2 = r.h * bh - h1;
+          ctx.fillRect(x, y, w + 0.7, h1 + 0.7);
+          ctx.fillRect(x, by, w + 0.7, h2 + 0.7);
+        }
       }
       ctx.restore();
     }
