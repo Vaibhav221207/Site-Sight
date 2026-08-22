@@ -740,32 +740,31 @@ window.BlockRender = (function () {
       var key = t.c + "," + t.r;
       var entry = RIVER_CACHE[key];
       if (!entry) {
-        var state = { glow: Math.random() * 0.5, scale: 0 };
-        // traveling wave: delay based on row so shimmer flows south downstream
-        var waveDelay = (t.r * 85) % 700;
-        if (typeof anime !== "undefined" && anime) {
-          anime({
-            targets: state,
-            glow: 1,
-            duration: 900 + Math.random() * 700, // 900-1600ms
-            delay: waveDelay + Math.random() * 250,
-            direction: "alternate",
-            loop: true,
-            easing: "easeInOutSine"
-          });
-          anime({
-            targets: state,
-            scale: 1,
-            duration: 900 + Math.random() * 700,
-            delay: waveDelay + Math.random() * 250,
-            direction: "alternate",
-            loop: true,
-            easing: "easeInOutSine"
-          });
+        var spots = [];
+        var count = 3 + Math.floor(Math.random() * 3); // 3-5 glints per tile
+        for (var k = 0; k < count; k++) {
+          var rx = 0.18 + Math.random() * 0.64; // 0.18-0.82
+          var ry = 0.22 + Math.random() * 0.56; // 0.22-0.78
+          var sz = 0.22 + Math.random() * 0.18; // 0.22-0.40 of iso (visible without zoom)
+          var state = { glow: Math.random() };
+          var waveDelay = (t.r * 85 + t.c * 35) % 600;
+          if (typeof anime !== "undefined" && anime) {
+            anime({
+              targets: state,
+              glow: 1,
+              duration: 700 + Math.random() * 900, // 700-1600ms
+              delay: waveDelay + Math.random() * 500,
+              direction: "alternate",
+              loop: true,
+              easing: "easeInOutSine"
+            });
+          }
+          spots.push({ rx: rx, ry: ry, sz: sz, state: state });
         }
-        entry = { state: state };
+        entry = { spots: spots };
         RIVER_CACHE[key] = entry;
       }
+      var bx = cx - iso, by = topY - half, bw = 2 * iso, bh = iso;
       ctx.save();
       ctx.beginPath();
       ctx.moveTo(cx, topY - half);
@@ -774,18 +773,24 @@ window.BlockRender = (function () {
       ctx.lineTo(cx - iso, topY);
       ctx.closePath();
       ctx.clip();
-      // shimmer now breathes in both opacity and size — more alive, still flat
-      var a = 0.16 + entry.state.glow * 0.32; // 0.16-0.48
-      var inset = 1.5 + entry.state.scale * 2.5; // 1.5-4.0 px breathing
-      ctx.globalAlpha = a;
-      ctx.fillStyle = RIVER_LIGHT;
-      ctx.beginPath();
-      ctx.moveTo(cx, topY - half + inset);
-      ctx.lineTo(cx + iso - inset, topY);
-      ctx.lineTo(cx, topY + half - inset);
-      ctx.lineTo(cx - iso + inset, topY);
-      ctx.closePath();
-      ctx.fill();
+      for (var k = 0; k < entry.spots.length; k++) {
+        var s = entry.spots[k];
+        var a = 0.28 + s.state.glow * 0.38; // 0.28-0.66 more visible than before
+        var sz = s.sz * iso;
+        var sx = bx + s.rx * bw;
+        var sy = by + s.ry * bh;
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.fillStyle = RIVER_LIGHT;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy - sz * 0.5);
+        ctx.lineTo(sx + sz, sy);
+        ctx.lineTo(sx, sy + sz * 0.5);
+        ctx.lineTo(sx - sz, sy);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
       ctx.restore();
     }
   }
