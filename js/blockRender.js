@@ -40,11 +40,11 @@ window.BlockRender = (function () {
     _dirty: false,
   };
 
-  // river water — simple flat fill + subtle shimmer (matches chunky flat vibe)
+  // river — simple flat water, single gentle global shimmer
   var RIVER_BASE = "#5B6FA8";
-  var RIVER_LIGHT = "#7A90C8"; // subtle lighter glint, same hue
+  var RIVER_LIGHT = "#7A90C8";
   var RIVER_ALPHA = 0.85;
-  var RIVER_CACHE = {};
+  var riverShimmer = { v: 0 };
 
   var ORDER = [];       // tiles sorted back-to-front by (col+row)
   var rises = {};       // "col,row" -> current animated rise (px)
@@ -727,57 +727,19 @@ window.BlockRender = (function () {
   // river — simple flat water, no pattern. Base is solid RIVER_BASE at
   // 0.85 alpha (drawn in staticLayer). Overlay is a single subtle lighter
   // diamond per tile that gently pulses via anime, matching the chunky flat vibe.
-  // river — simple clean water: solid base + 1 soft overlay + 2 tiny sparkles per tile
-  // flat, no blocks/stripes, clearly alive via anime opacity pulse + traveling wave
+  // river — ultra simple: solid base + one gentle global shimmer over the whole river
+  // No per-tile strips/blocks/sparkles — just a calm, clean pulse that matches the flat vibe
   function drawShimmer(ctx) {
     var g = api.grid;
     if (!g || !g.isoSize) return;
     var iso = g.isoSize, half = iso / 2;
+    var a = 0.14 + riverShimmer.v * 0.22; // 0.14-0.36 subtle but visible
     for (var i = 0; i < ORDER.length; i++) {
       var t = ORDER[i];
       if (!api.terrain.isRiver(t.c, t.r)) continue;
       var p = g.worldToScreen(t.c, t.r);
       var topY = p.y - totalHeight(t.c, t.r);
       var cx = p.x;
-      var key = t.c + "," + t.r;
-      var entry = RIVER_CACHE[key];
-      if (!entry) {
-        var main = { glow: Math.random() * 0.6 };
-        var waveDelay = (t.r * 90) % 700;
-        if (typeof anime !== "undefined" && anime) {
-          anime({
-            targets: main,
-            glow: 1,
-            duration: 1000 + Math.random() * 700,
-            delay: waveDelay + Math.random() * 300,
-            direction: "alternate",
-            loop: true,
-            easing: "easeInOutSine"
-          });
-        }
-        var sparkles = [];
-        for (var k = 0; k < 2; k++) {
-          var rx = 0.20 + Math.random() * 0.60;
-          var ry = 0.25 + Math.random() * 0.50;
-          var r = 1.8 + Math.random() * 1.6; // 1.8-3.4px radius
-          var s = { glow: Math.random() };
-          if (typeof anime !== "undefined" && anime) {
-            anime({
-              targets: s,
-              glow: 1,
-              duration: 700 + Math.random() * 800,
-              delay: waveDelay + 200 + Math.random() * 600,
-              direction: "alternate",
-              loop: true,
-              easing: "easeInOutSine"
-            });
-          }
-          sparkles.push({ rx: rx, ry: ry, r: r, state: s });
-        }
-        entry = { main: main, sparkles: sparkles };
-        RIVER_CACHE[key] = entry;
-      }
-      var bx = cx - iso, by = topY - half, bw = 2 * iso, bh = iso;
       ctx.save();
       ctx.beginPath();
       ctx.moveTo(cx, topY - half);
@@ -786,34 +748,15 @@ window.BlockRender = (function () {
       ctx.lineTo(cx - iso, topY);
       ctx.closePath();
       ctx.clip();
-      // main soft overlay — inset diamond, clearly visible shimmer
-      var aMain = 0.18 + entry.main.glow * 0.32; // 0.18-0.50
-      var inset = 3 + entry.main.glow * 2; // subtle breathing 3-5px
-      ctx.save();
-      ctx.globalAlpha = aMain;
+      ctx.globalAlpha = a;
       ctx.fillStyle = RIVER_LIGHT;
       ctx.beginPath();
-      ctx.moveTo(cx, topY - half + inset);
-      ctx.lineTo(cx + iso - inset, topY);
-      ctx.lineTo(cx, topY + half - inset);
-      ctx.lineTo(cx - iso + inset, topY);
+      ctx.moveTo(cx, topY - half + 2);
+      ctx.lineTo(cx + iso - 2, topY);
+      ctx.lineTo(cx, topY + half - 2);
+      ctx.lineTo(cx - iso + 2, topY);
       ctx.closePath();
       ctx.fill();
-      ctx.restore();
-      // tiny sparkles — small circles, more visible detail without zoom
-      for (var k = 0; k < entry.sparkles.length; k++) {
-        var sp = entry.sparkles[k];
-        var aSp = 0.35 + sp.state.glow * 0.40; // 0.35-0.75 bright sparkle
-        var sx = bx + sp.rx * bw;
-        var sy = by + sp.ry * bh;
-        ctx.save();
-        ctx.globalAlpha = aSp;
-        ctx.fillStyle = "rgba(255,255,255,1)";
-        ctx.beginPath();
-        ctx.arc(sx, sy, sp.r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      }
       ctx.restore();
     }
   }
@@ -822,6 +765,7 @@ window.BlockRender = (function () {
   var shimmerAnim = null;
   var rippleAnim = null;
   var glowAnim = null;
+  var riverShimmerAnim = null;
   var riverGlow = 0.5; // 0..1 pulsing brightness, modulates highlight alpha
 
   function startShimmerAnim() {
@@ -837,6 +781,18 @@ window.BlockRender = (function () {
       loop: true,
       update: function () { api.shimmerPhase = phaseState.phase; },
     });
+
+    // simple river shimmer — global gentle pulse
+    if (typeof anime !== "undefined" && anime) {
+      riverShimmerAnim = anime({
+        targets: riverShimmer,
+        v: 1,
+        duration: 1600,
+        direction: "alternate",
+        loop: true,
+        easing: "easeInOutSine"
+      });
+    }
 
     // blocky ripple phase — slow independent cycle for per-sub-block oscillation
     var rippleState = { phase: 0 };
@@ -874,6 +830,9 @@ window.BlockRender = (function () {
     if (!rippleAnim) {
       api.ripplePhase += 0.011;
       if (api.ripplePhase > 1) api.ripplePhase -= 1;
+    }
+    if (!riverShimmerAnim) {
+      riverShimmer.v = (Math.sin(Date.now() * 0.002) + 1) * 0.5;
     }
     if (api._dirty) {
       api.redrawStatic();
