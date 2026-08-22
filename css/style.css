@@ -723,8 +723,17 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: pointer;
+  will-change: transform;
   transition: transform 0.09s ease, box-shadow 0.09s ease,
     background 0.15s ease, color 0.15s ease;
+}
+
+.hq-fs-nav-item:hover {
+  transform: translateY(-1px);
+}
+
+.hq-fs-content {
+  will-change: transform, opacity;
 }
 
 .hq-fs-nav-item:hover {

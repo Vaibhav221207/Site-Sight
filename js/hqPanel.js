@@ -121,8 +121,46 @@ window.HqPanel = (function () {
     if (api.gprOrderBtn && api.storeRow2 && api.gprOrderBtn.parentNode !== api.storeRow2) api.storeRow2.appendChild(api.gprOrderBtn);
   };
 
+  // modern micro-interaction for nav buttons
+  function animateNavPress(btn) {
+    if (!btn || typeof anime === "undefined") return;
+    anime.remove(btn);
+    anime({
+      targets: btn,
+      scale: [0.96, 1],
+      duration: 220,
+      easing: "spring(1, 80, 10, 0)"
+    });
+  }
+  function animateSectionEnter(section) {
+    if (!section || typeof anime === "undefined") return;
+    var cards = section.querySelectorAll(".hq-fs-drone-row, .hq-fs-inventory-item-wrap, .hq-data-layout > div, .hq-fs-status");
+    anime.set(section, { opacity: 0, translateY: 10 });
+    if (cards.length) anime.set(cards, { opacity: 0, translateY: 8 });
+    anime({
+      targets: section,
+      opacity: [0, 1],
+      translateY: [10, 0],
+      duration: 220,
+      easing: "easeOutCubic"
+    });
+    if (cards.length) {
+      anime({
+        targets: cards,
+        opacity: [0, 1],
+        translateY: [8, 0],
+        delay: anime.stagger(45, { start: 80 }),
+        duration: 280,
+        easing: "easeOutCubic"
+      });
+    }
+  }
+
   api.switchSection = function (name) {
     if (api.currentSection === name) return;
+    var prev = api.currentSection;
+    var prevBtn = api.navItems[name];
+    if (prevBtn) animateNavPress(prevBtn);
     SECTIONS.forEach(function (s) {
       if (api.navItems[s]) api.navItems[s].classList.toggle("hq-fs-nav-item--active", s === name);
       if (api.sections[s]) api.sections[s].style.display = s === name ? "" : "none";
@@ -135,6 +173,15 @@ window.HqPanel = (function () {
     if (name === "data") {
       api.initDataMap();
       if (api.refreshDataMap) api.refreshDataMap();
+    }
+    var sec = api.sections[name];
+    if (sec) {
+      // ensure it is visible before animating (display was just set)
+      requestAnimationFrame(function () { animateSectionEnter(sec); });
+    }
+    // also animate the outgoing section out subtly if needed (already hidden)
+    if (prev && api.sections[prev]) {
+      // no-op, kept for future directional slide
     }
   };
 
