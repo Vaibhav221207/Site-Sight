@@ -692,12 +692,12 @@ button {
 /* left sidebar nav (shared layout, all breakpoints): fixed vertical rail of
    chunky rounded segments. Never scrolls. */
 .hq-fs-nav {
-  flex: 0 0 112px;
+  flex: 0 0 128px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 8px;
-  padding: 20px 14px;
+  padding: 20px 12px;
   border-right: 3px solid #2B2320;
   background: #F6EEDC;
   overflow: hidden;
@@ -708,15 +708,15 @@ button {
   flex: 0 0 auto;
   width: 100%;
   min-width: 0;
-  padding: 12px 8px;
+  padding: 10px 6px;
   background: #FFFBF0;
   border: 3px solid #2B2320;
   border-radius: 14px;
   color: #2B2320;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   line-height: 1.2;
   text-align: center;
   white-space: nowrap;
