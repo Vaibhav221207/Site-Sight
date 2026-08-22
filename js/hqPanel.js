@@ -225,6 +225,9 @@ window.HqPanel = (function () {
       var wrap = document.createElement("div");
       wrap.className = "hq-fs-inventory-item-wrap";
       wrap.style.marginBottom = "14px";
+      wrap.style.display = "flex";
+      wrap.style.flexDirection = "column";
+      wrap.style.alignItems = "stretch";
       wrap.dataset.itemType = type;
       wrap.dataset.itemId = id;
       var entry = document.createElement("div");
@@ -250,7 +253,10 @@ window.HqPanel = (function () {
       deployBtn.type = "button";
       deployBtn.className = "hq-order-btn";
       deployBtn.textContent = "Deploy";
-      deployBtn.style.width = "100%";
+      deployBtn.style.alignSelf = "flex-end";
+      deployBtn.style.width = "auto";
+      deployBtn.style.padding = "7px 14px";
+      deployBtn.style.fontSize = "12px";
       deployBtn.style.marginTop = "8px";
       deployBtn.style.display = selectedId === id ? "" : "none";
       deployBtn.addEventListener("click", function (ev) {

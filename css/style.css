@@ -830,8 +830,10 @@ body.touch-ui .hq-fs-nav-item {
 }
 
 .hq-fs-drone-row .hq-order-btn {
-  align-self: stretch;
-  width: 100%;
+  align-self: flex-end;
+  width: auto;
+  padding: 7px 14px;
+  font-size: 12px;
   margin-top: 2px;
 }
 
