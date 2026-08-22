@@ -40,11 +40,12 @@ window.BlockRender = (function () {
     _dirty: false,
   };
 
-  // river Minecraft water — two flat shades, jigsaw, frame-swap
+  // river water — diagonal shimmer stripes over flat base
   var RIVER_BASE = "#5B6FA8";
-  var RIVER_LIGHT = "#687FC0"; // ~14% lighter (same hue), second shade only
+  var RIVER_LIGHT = "#687FC0"; // ~14% lighter, second shade only
   var RIVER_ALPHA = 0.85;
-  var RIVER_JIGSAW_CACHE = {};
+  var RIVER_STRIPE_SPACING = 14;
+  var RIVER_STRIPE_WIDTH = 3;
 
   var ORDER = [];       // tiles sorted back-to-front by (col+row)
   var rises = {};       // "col,row" -> current animated rise (px)
@@ -724,110 +725,46 @@ window.BlockRender = (function () {
     }
   };
 
-  // river Minecraft water — irregular jigsaw in two flat shades with
-  // gradual neighbor-average evolution + per-tile curved flow (no full reshuffle).
-  // Initial jigsaw 35-50 rects, then each 105-150ms: val=0.68*avg(neighbors)+0.32*self+noise,
-  // pattern shifts along the river's actual local direction (computed per tile
-  // from its 4-neighbor river topology), wrapping in both axes.
+  // river diagonal shimmer — thin lighter stripes scrolling along the
+  // river's actual curve. Base at RIVER_ALPHA, stripes in RIVER_LIGHT.
+  // Per-tile flow direction from 4-neighbor river topology, stripes at
+  // 45° to flow, continuously scrolled via shimmerPhase (smooth, not discrete).
   function drawShimmer(ctx) {
     var g = api.grid;
     if (!g || !g.isoSize) return;
     var iso = g.isoSize, half = iso / 2;
-    var now = Date.now();
+    var phase = api.shimmerPhase;
+    if (phase == null) phase = 0;
+    var spacing = RIVER_STRIPE_SPACING;
+    var stripeW = RIVER_STRIPE_WIDTH;
+    function hash01(x) { var s = Math.sin(x) * 43758.5453; return s - Math.floor(s); }
     for (var i = 0; i < ORDER.length; i++) {
       var t = ORDER[i];
       if (!api.terrain.isRiver(t.c, t.r)) continue;
       var p = g.worldToScreen(t.c, t.r);
       var topY = p.y - totalHeight(t.c, t.r);
       var cx = p.x;
-      var key = t.c + "," + t.r;
-      var entry = RIVER_JIGSAW_CACHE[key];
-      if (!entry || !entry.neighbors || entry.rects[0].val === undefined || entry.nextEvolve === undefined || entry.dirX === undefined) {
-        // first-time generation — persistent layout, 35-50 smaller blocks
-        var target = 35 + Math.floor(Math.random() * 16); // 35-50 blocks
-        var rects = [{ x: 0, y: 0, w: 1, h: 1, val: 0, color: RIVER_BASE }];
-        while (rects.length < target) {
-          var bestIdx = 0, bestArea = 0;
-          for (var k = 0; k < rects.length; k++) {
-            var a = rects[k].w * rects[k].h;
-            if (a > bestArea) { bestArea = a; bestIdx = k; }
-          }
-          var cur = rects.splice(bestIdx, 1)[0];
-          var splitVert;
-          if (cur.w > cur.h * 1.4) splitVert = true;
-          else if (cur.h > cur.w * 1.4) splitVert = false;
-          else splitVert = Math.random() < 0.5;
-          var ratio = 0.30 + Math.random() * 0.40; // 30-70%
-          if (splitVert) {
-            var w1 = cur.w * ratio, w2 = cur.w - w1;
-            rects.push({ x: cur.x, y: cur.y, w: w1, h: cur.h, val: 0, color: RIVER_BASE });
-            rects.push({ x: cur.x + w1, y: cur.y, w: w2, h: cur.h, val: 0, color: RIVER_BASE });
-          } else {
-            var h1 = cur.h * ratio, h2 = cur.h - h1;
-            rects.push({ x: cur.x, y: cur.y, w: cur.w, h: h1, val: 0, color: RIVER_BASE });
-            rects.push({ x: cur.x, y: cur.y + h1, w: cur.w, h: h2, val: 0, color: RIVER_BASE });
-          }
-        }
-        for (var k = 0; k < rects.length; k++) {
-          rects[k].val = Math.random();
-          rects[k].color = rects[k].val > 0.5 ? RIVER_LIGHT : RIVER_BASE;
-        }
-        var neigh = [];
-        for (var k = 0; k < rects.length; k++) neigh[k] = [];
-        var eps = 1e-6;
-        for (var a = 0; a < rects.length; a++) for (var b = a + 1; b < rects.length; b++) {
-          var ra = rects[a], rb = rects[b];
-          var aR = ra.x + ra.w, aB = ra.y + ra.h, bR = rb.x + rb.w, bB = rb.y + rb.h;
-          var vAdj = (Math.abs(aR - rb.x) < eps || Math.abs(bR - ra.x) < eps) && !(a.y + a.h <= rb.y + eps || rb.y + rb.h <= ra.y + eps) && Math.min(aB, bB) - Math.max(ra.y, rb.y) > eps;
-          var hAdj = (Math.abs(aB - rb.y) < eps || Math.abs(bB - ra.y) < eps) && !(ra.x + ra.w <= rb.x + eps || rb.x + rb.w <= ra.x + eps) && Math.min(aR, bR) - Math.max(ra.x, rb.x) > eps;
-          if (vAdj || hAdj) { neigh[a].push(b); neigh[b].push(a); }
-        }
-        // per-tile local flow direction from river topology (4-neighbor check)
-        var nbs = [];
-        var cand = [[-1,0],[1,0],[0,-1],[0,1]];
-        for (var d = 0; d < 4; d++) {
-          var nc = t.c + cand[d][0], nr = t.r + cand[d][1];
-          if (nc >= 0 && nc < g.gridSize && nr >= 0 && nr < g.gridSize && api.terrain.isRiver(nc, nr)) nbs.push({ c: nc, r: nr });
-        }
-        var dirX = 0, dirY = 1;
-        if (nbs.length === 2) {
-          var dx = nbs[1].c - nbs[0].c, dy = nbs[1].r - nbs[0].r;
-          var len = Math.sqrt(dx*dx + dy*dy);
-          if (len > 1e-6) { dirX = dx / len; dirY = dy / len; }
-        } else if (nbs.length === 1) {
-          var dx = nbs[0].c - t.c, dy = nbs[0].r - t.r;
-          var len = Math.sqrt(dx*dx + dy*dy);
-          if (len > 1e-6) { dirX = dx / len; dirY = dy / len; }
-        }
-        var interval = 105 + Math.random() * 45; // 105-150ms per-tile desync
-        var speed = 0.18 + Math.random() * 0.12; // 0.18-0.30 normalized units/sec along dir
-        entry = { rects: rects, neighbors: neigh, dirX: dirX, dirY: dirY, shiftX: 0, shiftY: 0, shiftSpeed: speed, interval: interval, nextEvolve: now + interval };
-        RIVER_JIGSAW_CACHE[key] = entry;
+      // per-tile local flow direction (same 4-neighbor method as previous pass)
+      var nbs = [];
+      var cand = [[-1,0],[1,0],[0,-1],[0,1]];
+      for (var d = 0; d < 4; d++) {
+        var nc = t.c + cand[d][0], nr = t.r + cand[d][1];
+        if (nc >= 0 && nc < g.gridSize && nr >= 0 && nr < g.gridSize && api.terrain.isRiver(nc, nr)) nbs.push({ c: nc, r: nr });
       }
-      if (now >= entry.nextEvolve) {
-        var oldVals = [];
-        for (var k = 0; k < entry.rects.length; k++) oldVals[k] = entry.rects[k].val;
-        var newVals = [];
-        for (var k = 0; k < entry.rects.length; k++) {
-          var nb = entry.neighbors[k];
-          var avg = 0;
-          if (nb.length) { for (var n = 0; n < nb.length; n++) avg += oldVals[nb[n]]; avg /= nb.length; } else avg = oldVals[k];
-          var nv = avg * 0.68 + oldVals[k] * 0.32 + (Math.random() - 0.5) * 0.10;
-          if (nv < 0) nv = 0; if (nv > 1) nv = 1;
-          newVals[k] = nv;
-        }
-        for (var k = 0; k < entry.rects.length; k++) {
-          entry.rects[k].val = newVals[k];
-          entry.rects[k].color = newVals[k] > 0.5 ? RIVER_LIGHT : RIVER_BASE;
-        }
-        var step = entry.shiftSpeed * (entry.interval / 1000);
-        entry.shiftX = (entry.shiftX + entry.dirX * step) % 1;
-        entry.shiftY = (entry.shiftY + entry.dirY * step) % 1;
-        if (entry.shiftX < 0) entry.shiftX += 1;
-        if (entry.shiftY < 0) entry.shiftY += 1;
-        entry.nextEvolve = now + entry.interval;
+      var dirX = 0, dirY = 1;
+      if (nbs.length === 2) {
+        var dx = nbs[1].c - nbs[0].c, dy = nbs[1].r - nbs[0].r;
+        var len = Math.sqrt(dx*dx + dy*dy);
+        if (len > 1e-6) { dirX = dx / len; dirY = dy / len; }
+      } else if (nbs.length === 1) {
+        var dx = nbs[0].c - t.c, dy = nbs[0].r - t.r;
+        var len = Math.sqrt(dx*dx + dy*dy);
+        if (len > 1e-6) { dirX = dx / len; dirY = dy / len; }
       }
-      var bx = cx - iso, by = topY - half, bw = 2 * iso, bh = iso;
+      var flowAngle = Math.atan2(dirY, dirX);
+      var stripeAngle = flowAngle + Math.PI / 4; // 45° diagonal to flow
+      var tileOff = hash01(t.c * 12.9898 + t.r * 78.233) * spacing;
+      var scroll = (phase * spacing + tileOff) % spacing;
       ctx.save();
       ctx.beginPath();
       ctx.moveTo(cx, topY - half);
@@ -836,32 +773,16 @@ window.BlockRender = (function () {
       ctx.lineTo(cx - iso, topY);
       ctx.closePath();
       ctx.clip();
+      // stripes are drawn in a rotated space around the tile center
+      ctx.translate(cx, topY);
+      ctx.rotate(stripeAngle);
       ctx.globalAlpha = RIVER_ALPHA;
-      for (var k = 0; k < entry.rects.length; k++) {
-        var r = entry.rects[k];
-        var xs = (r.x + entry.shiftX) % 1; if (xs < 0) xs += 1;
-        var ys = (r.y + entry.shiftY) % 1; if (ys < 0) ys += 1;
-        var x = bx + xs * bw, y = by + ys * bh, w = r.w * bw, h = r.h * bh;
-        var wrapsX = xs + r.w > 1 + 1e-6, wrapsY = ys + r.h > 1 + 1e-6;
-        ctx.fillStyle = r.color;
-        if (!wrapsX && !wrapsY) {
-          ctx.fillRect(x, y, w + 0.7, h + 0.7);
-        } else if (wrapsX && !wrapsY) {
-          var w1 = (1 - xs) * bw, w2 = r.w * bw - w1;
-          ctx.fillRect(x, y, w1 + 0.7, h + 0.7);
-          ctx.fillRect(bx, y, w2 + 0.7, h + 0.7);
-        } else if (!wrapsX && wrapsY) {
-          var h1 = (1 - ys) * bh, h2 = r.h * bh - h1;
-          ctx.fillRect(x, y, w + 0.7, h1 + 0.7);
-          ctx.fillRect(x, by, w + 0.7, h2 + 0.7);
-        } else {
-          var w1 = (1 - xs) * bw, w2 = r.w * bw - w1;
-          var h1 = (1 - ys) * bh, h2 = r.h * bh - h1;
-          ctx.fillRect(x, y, w1 + 0.7, h1 + 0.7);
-          ctx.fillRect(bx, y, w2 + 0.7, h1 + 0.7);
-          ctx.fillRect(x, by, w1 + 0.7, h2 + 0.7);
-          ctx.fillRect(bx, by, w2 + 0.7, h2 + 0.7);
-        }
+      ctx.fillStyle = RIVER_LIGHT;
+      var extent = 2 * iso + 20;
+      var count = Math.ceil(extent / spacing) + 3;
+      for (var s = -count; s < count; s++) {
+        var x = s * spacing + scroll - spacing * 0.5;
+        ctx.fillRect(x - stripeW / 2, -extent, stripeW, extent * 2);
       }
       ctx.restore();
     }
