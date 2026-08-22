@@ -83,10 +83,27 @@ window.HqPanel = (function () {
       api.gprOrderBtn.addEventListener("click", function () { api.buyGpr(); });
     }
 
+    // Dynamic Compactor STORE row
+    api.compactorOrderBtn = document.getElementById("hq-order-compactor-fs");
+    if (api.compactorOrderBtn) {
+      var compactorInfoBlock = api.compactorOrderBtn.closest(".hq-fs-drone-row");
+      var compactorInfoEl = compactorInfoBlock ? compactorInfoBlock.querySelector(".hq-fs-drone-info") : null;
+      if (compactorInfoEl) {
+        api.compactorOwnedEl = document.createElement("span");
+        api.compactorOwnedEl.className = "hq-fs-drone-owned";
+        api.compactorOwnedEl.style.fontSize = "13px";
+        api.compactorOwnedEl.style.fontWeight = "700";
+        api.compactorOwnedEl.style.color = "#7C7C74";
+        compactorInfoEl.appendChild(api.compactorOwnedEl);
+      }
+      api.compactorOrderBtn.addEventListener("click", function () { api.buyCompactor(); });
+    }
+
     // ONE-TIME PURCHASE: reflect the permanent purchase state on the button
     // (disabled once the Drone System has been bought, even after deployment).
     api.refreshDronePurchaseState();
     api.refreshGprPurchaseState();
+    api.refreshCompactorPurchaseState();
 
     SECTIONS.forEach(function (name) {
       if (api.navItems[name]) {
@@ -228,6 +245,15 @@ window.HqPanel = (function () {
     api.gprOrderBtn.textContent = purchased ? "ORDERED" : "ORDER GPR";
   };
 
+  // ONE-TIME PURCHASE state for the Dynamic Compactor — mirrors the Drone/GPR System.
+  // Reusable (not consumed), but only one needed per session.
+  api.refreshCompactorPurchaseState = function () {
+    if (!api.compactorOrderBtn) return;
+    var purchased = !!(window.GameState && window.GameState.compactorSystemPurchased);
+    api.compactorOrderBtn.disabled = purchased;
+    api.compactorOrderBtn.textContent = purchased ? "ORDERED" : "ORDER COMPACTOR";
+  };
+
   // (Re)builds the INVENTORY tab contents from GameState.inventory:
   // - owned drones listed individually (selectable)
   // - empty state when none are owned
@@ -241,15 +267,17 @@ window.HqPanel = (function () {
     var gs = window.GameState;
     var droneN = gs.inventory.droneCount;
     var gprN = gs.inventory.gprCount;
+    var compactorOwned = !!(gs.compactorSystemPurchased);
 
-    if ((!droneN || droneN <= 0) && (!gprN || gprN <= 0)) {
+    if ((!droneN || droneN <= 0) && (!gprN || gprN <= 0) && !compactorOwned) {
       var empty = document.createElement("div");
       empty.className = "hq-fs-placeholder";
-      empty.textContent = "No survey equipment in inventory. Order a Drone or GPR System from the STORE tab.";
+      empty.textContent = "No survey equipment in inventory. Order a Drone, GPR System, or Dynamic Compactor from the STORE tab.";
       api.inventorySection.appendChild(empty);
     } else {
       if (droneN > 0) api._buildFleet("drone", "DRONE FLEET", "Drone System", droneN);
       if (gprN > 0) api._buildFleet("gpr", "GPR FLEET", "GPR System", gprN);
+      if (compactorOwned) api._buildCompactorEntry();
     }
 
     api.inventoryDeployContainer = null;
@@ -332,6 +360,64 @@ window.HqPanel = (function () {
     }
   };
 
+  // Build the Dynamic Compactor inventory entry (single reusable tool).
+  api._buildCompactorEntry = function () {
+    var gs = window.GameState;
+    var header = document.createElement("div");
+    header.className = "hq-fs-section-header";
+    header.textContent = "STABILIZATION";
+    api.inventorySection.appendChild(header);
+
+    var list = document.createElement("div");
+    list.className = "hq-fs-inventory-list";
+    api.inventorySection.appendChild(list);
+
+    var wrap = document.createElement("div");
+    wrap.className = "hq-fs-inventory-item-wrap";
+    wrap.style.marginBottom = "14px";
+    wrap.style.display = "flex";
+    wrap.style.flexDirection = "column";
+    wrap.style.alignItems = "stretch";
+    wrap.dataset.itemType = "compactor";
+    wrap.dataset.itemId = "compactor-1";
+
+    var entry = document.createElement("div");
+    entry.className = "hq-fs-inventory-item";
+    entry.dataset.itemType = "compactor";
+    entry.dataset.itemId = "compactor-1";
+    entry.style.cssText =
+      "display:flex;align-items:center;justify-content:space-between;" +
+      "padding:14px 18px;background:#FFFBF0;" +
+      "border:3px solid #2B2320;border-radius:16px;cursor:pointer;" +
+      "box-shadow:4px 4px 0 #000;" +
+      "transition:border-color 0.15s ease,background 0.15s ease;";
+    entry.innerHTML =
+      '<span class="hq-fs-inventory-item-name" style="font-size:17px;font-weight:700;color:#7C7C74">Dynamic Compactor</span>';
+    entry.addEventListener("click", function (ev) {
+      ev.stopPropagation();
+      var w = this.closest(".hq-fs-inventory-item-wrap");
+      if (w) api.selectItem(w); else api.selectItem(this);
+    });
+    api.markSelected(entry, true);
+
+    var deployBtn = document.createElement("button");
+    deployBtn.type = "button";
+    deployBtn.className = "hq-order-btn";
+    deployBtn.textContent = "Deploy";
+    deployBtn.style.alignSelf = "flex-end";
+    deployBtn.style.width = "auto";
+    deployBtn.style.padding = "7px 14px";
+    deployBtn.style.fontSize = "12px";
+    deployBtn.style.marginTop = "8px";
+    deployBtn.addEventListener("click", function (ev) {
+      ev.stopPropagation();
+      api.deploySelected();
+    });
+    wrap.appendChild(entry);
+    wrap.appendChild(deployBtn);
+    list.appendChild(wrap);
+  };
+
   // Toggle the selected state of an inventory entry element.
   api.markSelected = function (entry, selected) {
     entry.style.borderColor = selected ? "#E8604A" : "#2B2320";
@@ -348,7 +434,10 @@ window.HqPanel = (function () {
     var id = entry.dataset.itemId;
     var gs = window.GameState;
     if (!gs) return;
-    var wasSelected = (type === "drone" ? gs.inventory.selectedDroneId : gs.inventory.selectedGprId) === id;
+    var wasSelected = false;
+    if (type === "drone") wasSelected = gs.inventory.selectedDroneId === id;
+    else if (type === "gpr") wasSelected = gs.inventory.selectedGprId === id;
+    else if (type === "compactor") wasSelected = gs.inventory.selectedCompactorId === id;
 
     // clear any active entry visually (across both fleets)
     if (api.inventorySection) {
@@ -358,12 +447,14 @@ window.HqPanel = (function () {
       }
     }
 
-    // clear both selection ids, then set the chosen one (or none if toggling off)
+    // clear all selection ids, then set the chosen one (or none if toggling off)
     gs.inventory.selectedDroneId = null;
     gs.inventory.selectedGprId = null;
+    gs.inventory.selectedCompactorId = null;
     if (!wasSelected) {
       if (type === "drone") gs.inventory.selectedDroneId = id;
-      else gs.inventory.selectedGprId = id;
+      else if (type === "gpr") gs.inventory.selectedGprId = id;
+      else if (type === "compactor") gs.inventory.selectedCompactorId = id;
       var card = entry.querySelector ? entry.querySelector(".hq-fs-inventory-item") : entry;
       if (card) api.markSelected(card, true); else api.markSelected(entry, true);
     }
@@ -380,20 +471,23 @@ window.HqPanel = (function () {
         var btn = w.querySelector(".hq-order-btn");
         if (!btn) continue;
         var type = w.dataset.itemType, id = w.dataset.itemId;
-        var isSel = (type === "drone" && gs.selectedDroneId === id) || (type === "gpr" && gs.selectedGprId === id);
+        var isSel = (type === "drone" && gs.selectedDroneId === id) ||
+                    (type === "gpr" && gs.selectedGprId === id) ||
+                    (type === "compactor" && gs.selectedCompactorId === id);
         btn.style.display = isSel ? "" : "none";
       }
     }
     if (api.inventoryDeployContainer) {
-      var hasSel = !!(gs.selectedDroneId || gs.selectedGprId);
+      var hasSel = !!(gs.selectedDroneId || gs.selectedGprId || gs.selectedCompactorId);
       api.inventoryDeployContainer.style.display = hasSel ? "" : "none";
     }
   };
 
-  // Deploy whichever unit type is currently selected (drone or GPR).
+  // Deploy whichever unit type is currently selected (drone, GPR, or compactor).
   api.deploySelected = function () {
     var gs = window.GameState.inventory;
-    if (gs.selectedGprId) api.deployGpr();
+    if (gs.selectedCompactorId) api.deployCompactor();
+    else if (gs.selectedGprId) api.deployGpr();
     else if (gs.selectedDroneId) api.deployDrone();
   };
 
@@ -421,6 +515,16 @@ window.HqPanel = (function () {
     console.log("[HQ] Deploy GPR: selected " + id + " -> " + (started ? "whole-map GPR sweep started" : "deploy failed (no GPR Systems available)"));
     if (api.isOpen) api.close();
     if (!started) api.showMsg("[DEPLOY] no GPR Systems available", false, api.inventoryDeployContainer);
+  };
+
+  // Deploy the Dynamic Compactor — triggers the CompactorTool placement mode.
+  // The CompactorTool handles the animation sequence and stability update.
+  api.deployCompactor = function () {
+    var id = window.GameState.inventory.selectedCompactorId;
+    if (!id) return;
+    console.log("[HQ] Deploy Compactor: selected " + id + " -> entering placement mode");
+    if (window.CompactorTool) window.CompactorTool.startPlacement();
+    if (api.isOpen) api.close();
   };
 
   api.showMsg = function (text, success, container) {
@@ -514,6 +618,32 @@ window.HqPanel = (function () {
     }
   };
 
+  // Buy a Dynamic Compactor — one-time unlock, REUSABLE (not consumed on use).
+  api.buyCompactor = function () {
+    var gs = window.GameState;
+    if (!gs) return;
+    if (gs.compactorSystemPurchased) return;
+    if (gs.cash >= gs.compactorCost) {
+      gs.cash -= gs.compactorCost;
+      gs.compactorSystemPurchased = true;
+      if (window.Main && window.Main.updateHUD) window.Main.updateHUD();
+      api.updateOwned();
+      api.refreshCompactorPurchaseState();
+      if (api.compactorOrderBtn) {
+        api.compactorOrderBtn.textContent = "Ordered!";
+        api.compactorOrderBtn.classList.add("hq-order-btn--flash");
+        setTimeout(function () {
+          if (!api.compactorOrderBtn) return;
+          var stillPurchased = !!(window.GameState && window.GameState.compactorSystemPurchased);
+          api.compactorOrderBtn.textContent = stillPurchased ? "ORDERED" : "ORDER COMPACTOR";
+          api.compactorOrderBtn.classList.remove("hq-order-btn--flash");
+        }, 900);
+      }
+    } else {
+      api.showMsg("Insufficient funds", false);
+    }
+  };
+
    api.open = function () {
     if (api.isOpen) return;
     api.isOpen = true;
@@ -524,6 +654,7 @@ window.HqPanel = (function () {
     api.renderInventory();
     api.refreshDronePurchaseState();
     api.refreshGprPurchaseState();
+    api.refreshCompactorPurchaseState();
 
     if (typeof anime !== "undefined" && anime) {
       anime({

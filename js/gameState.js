@@ -26,6 +26,8 @@ window.GameState = (function () {
     // have already had an aerial Drone scan.
     gprSystemPurchased: false,
     gprCost: 4000,            // price of one GPR System
+    compactorSystemPurchased: false,
+    compactorCost: 6000,
     inventory: {              // owned items — add future item types here
       droneCount: 0,
       // id of the drone currently selected in the INVENTORY tab, or null.
@@ -40,6 +42,7 @@ window.GameState = (function () {
       gprCount: 0,
       selectedGprId: null,
       gprDeployed: null,
+      selectedCompactorId: null,
     },
     // permanently scanned tiles (AERIAL / Drone tier), keyed "col,row" -> true.
     // A completed Drone System scan marks EVERY tile inside its 5x10 footprint;
@@ -148,6 +151,13 @@ window.GameState = (function () {
   api._recalcBestUse = function (d) {
     if (!d) return;
     d.bestUse = api.computeBestUse(d);
+  };
+
+  // public: recompute bestUse for a specific tile after external data change
+  api.recalcBestUse = function (col, row) {
+    var d = api.getTileData(col, row);
+    api._recalcBestUse(d);
+    return d.bestUse;
   };
 
   // Drone (aerial) scan completed for this tile: mark it scanned and generate

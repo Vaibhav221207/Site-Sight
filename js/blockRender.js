@@ -890,6 +890,7 @@ window.BlockRender = (function () {
     // the drop-in animation and the cursor-following preview stay smooth)
     if (window.DroneDeploy) window.DroneDeploy.renderMain(ctx, api.grid);
     if (window.GprDeploy) window.GprDeploy.renderMain(ctx, api.grid);
+    if (window.CompactorTool) window.CompactorTool.render(ctx, api.grid);
     if (gc) ctx.globalCompositeOperation = gc;
   };
 
