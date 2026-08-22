@@ -740,13 +740,24 @@ window.BlockRender = (function () {
       var key = t.c + "," + t.r;
       var entry = RIVER_CACHE[key];
       if (!entry) {
-        var state = { glow: 0 };
+        var state = { glow: Math.random() * 0.5, scale: 0 };
+        // traveling wave: delay based on row so shimmer flows south downstream
+        var waveDelay = (t.r * 85) % 700;
         if (typeof anime !== "undefined" && anime) {
           anime({
             targets: state,
             glow: 1,
-            duration: 800 + Math.random() * 900, // 800-1700ms visible pulse
-            delay: Math.random() * 900,
+            duration: 900 + Math.random() * 700, // 900-1600ms
+            delay: waveDelay + Math.random() * 250,
+            direction: "alternate",
+            loop: true,
+            easing: "easeInOutSine"
+          });
+          anime({
+            targets: state,
+            scale: 1,
+            duration: 900 + Math.random() * 700,
+            delay: waveDelay + Math.random() * 250,
             direction: "alternate",
             loop: true,
             easing: "easeInOutSine"
@@ -755,7 +766,6 @@ window.BlockRender = (function () {
         entry = { state: state };
         RIVER_CACHE[key] = entry;
       }
-      // very subtle light overlay — same diamond, inset slightly so edge stays crisp
       ctx.save();
       ctx.beginPath();
       ctx.moveTo(cx, topY - half);
@@ -764,14 +774,16 @@ window.BlockRender = (function () {
       ctx.lineTo(cx - iso, topY);
       ctx.closePath();
       ctx.clip();
-      var a = 0.18 + entry.state.glow * 0.35; // 0.18-0.53 clearly visible shimmer
+      // shimmer now breathes in both opacity and size — more alive, still flat
+      var a = 0.16 + entry.state.glow * 0.32; // 0.16-0.48
+      var inset = 1.5 + entry.state.scale * 2.5; // 1.5-4.0 px breathing
       ctx.globalAlpha = a;
       ctx.fillStyle = RIVER_LIGHT;
       ctx.beginPath();
-      ctx.moveTo(cx, topY - half);
-      ctx.lineTo(cx + iso, topY);
-      ctx.lineTo(cx, topY + half);
-      ctx.lineTo(cx - iso, topY);
+      ctx.moveTo(cx, topY - half + inset);
+      ctx.lineTo(cx + iso - inset, topY);
+      ctx.lineTo(cx, topY + half - inset);
+      ctx.lineTo(cx - iso + inset, topY);
       ctx.closePath();
       ctx.fill();
       ctx.restore();
