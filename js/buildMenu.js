@@ -123,11 +123,48 @@ window.BuildMenu = (function () {
     api.isOpen = true;
     barEl.classList.remove("hidden");
     api.refresh();
+    if (typeof anime !== "undefined" && anime) {
+      anime.remove(barEl);
+      anime.set(barEl, { translateY: 16, opacity: 0 });
+      anime({
+        targets: barEl,
+        translateY: [16, 0],
+        opacity: [0, 1],
+        duration: 280,
+        easing: "easeOutCubic"
+      });
+      var cards = barEl.querySelectorAll(".build-item");
+      if (cards.length) {
+        anime.set(cards, { translateY: 8, opacity: 0 });
+        anime({
+          targets: cards,
+          translateY: [8, 0],
+          opacity: [0, 1],
+          delay: anime.stagger(60),
+          duration: 260,
+          easing: "easeOutCubic"
+        });
+      }
+    }
   };
 
   api.close = function () {
     if (!barEl) return;
     api.isOpen = false;
+    if (typeof anime !== "undefined" && anime) {
+      anime({
+        targets: barEl,
+        translateY: [0, 12],
+        opacity: [1, 0],
+        duration: 180,
+        easing: "easeInCubic",
+        complete: function () {
+          barEl.classList.add("hidden");
+          anime.set(barEl, { translateY: 0, opacity: 1 });
+        }
+      });
+      return;
+    }
     barEl.classList.add("hidden");
   };
 

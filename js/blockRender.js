@@ -434,12 +434,43 @@ window.BlockRender = (function () {
     ctx.fill();
   }
 
+  // HQ placement animation — modern spring scale + fade
+  var hqPlace = { scale: 1, alpha: 1, active: false };
+  api.triggerHQPlace = function (c, r) {
+    hqPlace.scale = 0.22;
+    hqPlace.alpha = 0;
+    hqPlace.active = true;
+    if (typeof anime !== "undefined" && anime) {
+      anime.remove(hqPlace);
+      anime({
+        targets: hqPlace,
+        scale: 1,
+        alpha: 1,
+        duration: 520,
+        easing: "spring(1, 80, 12, 0)",
+        complete: function () { hqPlace.active = false; api.invalidate(); }
+      });
+    } else {
+      hqPlace.scale = 1; hqPlace.alpha = 1; hqPlace.active = false;
+    }
+    api.invalidate();
+  };
+
   function drawHQBuilding(layer, c, r) {
     var g = api.grid;
     var iso = g.isoSize, half = iso / 2;
     var p = g.worldToScreen(c, r);
     var cx = p.x, cy = p.y;
     var topY = cy - HQ_H;
+    var isNewHQ = hqPlace.active && window.GameState && window.GameState.hqTile && window.GameState.hqTile.col === c && window.GameState.hqTile.row === r;
+    if (isNewHQ) {
+      layer.save();
+      layer.globalAlpha = hqPlace.alpha;
+      // scale around the building's base center so it appears to rise from the ground
+      layer.translate(cx, cy + half * 0.2);
+      layer.scale(hqPlace.scale, hqPlace.scale);
+      layer.translate(-cx, -(cy + half * 0.2));
+    }
 
     // 1) ground: soft shadow under the footprint, then the service cable
     layer.beginPath();
@@ -640,6 +671,7 @@ window.BlockRender = (function () {
     layer.arc(at.x, at.y, iso * 0.045, 0, Math.PI * 2);
     layer.fillStyle = BEACON;
     layer.fill();
+    if (isNewHQ) layer.restore();
   }
 
   // mark the cached scene for rebuild — the actual redraw happens ONCE per

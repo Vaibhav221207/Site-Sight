@@ -33,6 +33,7 @@ window.HQBuild = (function () {
     }
 
     api.isActive = false;
+    if (window.BlockRender && window.BlockRender.triggerHQPlace) window.BlockRender.triggerHQPlace(col, row);
     if (typeof onSuccess === "function") onSuccess(col, row);
     return true;
   };
