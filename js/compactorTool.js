@@ -212,19 +212,20 @@ window.CompactorTool = (function () {
 
   // ---------- PARTICLE SPAWN ----------
   function spawnParticles() {
-    var p = api._target;
-    if (!p || !window.BlockRender || !window.IsoGrid) return;
+    var st = api._state;
+    var target = api._target;
+    if (!target || !window.BlockRender || !window.IsoGrid) return;
     var grid = window.IsoGrid;
-    var tp = grid.worldToScreen(p.col, p.row);
+    var tp = grid.worldToScreen(target.col, target.row);
     var baseX = tp.x, baseY = tp.y - grid.isoSize / 2;
 
-    st.particles = [];
+    var parts = [];
     for (var i = 0; i < 10; i++) {
       var ang = Math.random() * Math.PI * 2;
       var dist = 10 + Math.random() * 24;
       var size = 2 + Math.random() * 3;
       var color = Math.random() < 0.5 ? "#9a8c7a" : "#7a6d5a";
-      st.particles.push({
+      parts.push({
         x: baseX,
         y: baseY,
         vx: Math.cos(ang) * dist,
@@ -235,18 +236,20 @@ window.CompactorTool = (function () {
         life: 1,
       });
     }
-    // animate particles
+    st.particles = parts;
     anime({
-      targets: st.particles,
-      life: [1, 0],
+      targets: parts,
+      life: 0,
       duration: 450,
       easing: "easeOutQuad",
-      update: function (anim) {
-        var p = anim.animatables[0].target;
-        p.x += p.vx * anim.progress / 100;
-        p.y += p.vy * anim.progress / 100;
-        p.vy += 0.35; // gravity
-        p.alpha = p.life;
+      update: function () {
+        for (var j = 0; j < st.particles.length; j++) {
+          var pt = st.particles[j];
+          pt.x += pt.vx * 0.16;
+          pt.y += pt.vy * 0.16;
+          pt.vy += 0.35;
+          pt.alpha = Math.max(0, pt.life);
+        }
       },
       complete: function () { st.particles = []; },
     });
@@ -324,6 +327,7 @@ window.CompactorTool = (function () {
 
   // ---------- RIG DRAWING (concept shapes) ----------
   function drawRig(ctx, cx, cy, iso, half, scale) {
+    var st = api._state;
     ctx.save();
     ctx.translate(cx, cy);
     ctx.scale(scale, scale);

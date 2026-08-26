@@ -167,6 +167,7 @@ window.InputHandler = (function () {
     // placement modes defer to their own module validation (e.g. drones can
     // target hill/river/trench tiles, which are scenery in normal inspect mode)
     if (api._placementMode) {
+      if (window.CompactorTool && window.CompactorTool.isActive) return !!(window.CompactorTool && window.CompactorTool.isValid(c, r));
       return !!(window.HQBuild && window.HQBuild.isValid(c, r));
     }
     if (api._droneMode) {
@@ -213,6 +214,14 @@ window.InputHandler = (function () {
       return;
     }
     if (api._placementMode) {
+      if (window.CompactorTool && window.CompactorTool.isActive) {
+        var cSuccess = window.CompactorTool.attempt(col, row, function () {
+          api.setPlacementMode(false);
+          if (typeof api.onPan === "function") api.onPan();
+        });
+        if (!cSuccess) { /* invalid compactor target — stay in placement mode */ }
+        return;
+      }
         var success = window.HQBuild && window.HQBuild.attempt(col, row, function () {
           api.setPlacementMode(false);
           if (window.BuildMenu && window.BuildMenu.onBuildSuccess) window.BuildMenu.onBuildSuccess();

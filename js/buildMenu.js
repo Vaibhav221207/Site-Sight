@@ -35,23 +35,6 @@ var ITEMS = [
         '</svg>',
       module: function () { return window.HQBuild; },
     },
-    {
-      id: "compactor",
-      name: "Dynamic Compactor",
-      desc: "Improves surface stability by one tier on a scanned tile.",
-      cost: (window.GameState && window.GameState.compactorCost) || 6000,
-      icon:
-        '<svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true">' +
-        '<rect x="8" y="18" width="24" height="10" rx="2" fill="#2B2320"/>' +
-        '<path d="M8 18 L12 12 L16 18 L20 12 L24 18 L28 12 L32 18" stroke="#F2B705" stroke-width="2" fill="none"/>' +
-        '<rect x="18" y="8" width="4" height="14" fill="#7C7C74" stroke="#2B2320" stroke-width="1.5"/>' +
-        '<line x1="20" y1="8" x2="28" y2="16" stroke="#4A4A45" stroke-width="2"/>' +
-        '<rect x="25" y="14" width="10" height="6" rx="1" fill="#8A97A0" stroke="#2B2320" stroke-width="1.5"/>' +
-        '<path d="M26 14 L27 10 L28 14 L29 10 L30 14 L31 10 L32 14 L33 10 L34 14" stroke="#F2B705" stroke-width="1.5" fill="none"/>' +
-        '<circle cx="20" cy="4" r="3" fill="#E0483A"/>' +
-        '</svg>',
-      module: function () { return window.CompactorTool; },
-    },
   ];
 
   var barEl = null;
