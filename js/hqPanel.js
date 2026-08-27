@@ -398,7 +398,9 @@ window.HqPanel = (function () {
       var w = this.closest(".hq-fs-inventory-item-wrap");
       if (w) api.selectItem(w); else api.selectItem(this);
     });
-    api.markSelected(entry, true);
+    // only show selected if this compactor is actually the selected item
+    var compactorSelected = !!(window.GameState && window.GameState.inventory.selectedCompactorId === "compactor-1");
+    api.markSelected(entry, compactorSelected);
 
     var deployBtn = document.createElement("button");
     deployBtn.type = "button";
@@ -409,6 +411,7 @@ window.HqPanel = (function () {
     deployBtn.style.padding = "7px 14px";
     deployBtn.style.fontSize = "12px";
     deployBtn.style.marginTop = "8px";
+    deployBtn.style.display = compactorSelected ? "" : "none";
     deployBtn.addEventListener("click", function (ev) {
       ev.stopPropagation();
       api.deploySelected();

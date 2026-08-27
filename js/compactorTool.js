@@ -24,13 +24,21 @@ window.CompactorTool = (function () {
   // ---- entry point from BuildMenu ----
   api.startPlacement = function () {
     api.isActive = true;
-    if (window.InputHandler) window.InputHandler.setPlacementMode(true);
+    if (window.InputHandler) {
+      window.InputHandler.setPlacementMode(true);
+      window.InputHandler.setCursor("crosshair");
+    }
+    if (window.HqPanel) window.HqPanel.showMsg("Select a scanned tile to compact (not Excellent, not trench)", false);
+    console.log("[Compactor] Placement mode entered — click a scanned tile (droneScanned, not Excellent, not trench)");
   };
 
   api.cancel = function () {
     api.isActive = false;
     api._target = null;
-    if (window.InputHandler) window.InputHandler.setPlacementMode(false);
+    if (window.InputHandler) {
+      window.InputHandler.setPlacementMode(false);
+      window.InputHandler.setCursor("grab");
+    }
     if (api._anim) { api._anim.pause(); api._anim = null; }
   };
 
@@ -48,13 +56,28 @@ window.CompactorTool = (function () {
   };
 
   api.attempt = function (col, row, onSuccess) {
-    if (!api.isValid(col, row)) return false;
+    if (!api.isValid(col, row)) {
+      var data = window.GameState && window.GameState.getTileData
+        ? window.GameState.getTileData(col, row) : null;
+      var type = window.Terrain ? window.Terrain.typeAt(col, row) : "unknown";
+      var reason = "Invalid target";
+      if (type === "trench") reason = "Cannot compact trench (needs excavation)";
+      else if (!data || !data.droneScanned) reason = "Tile not scanned — scan with Drone first";
+      else if (data.surfaceStability === "Excellent") reason = "Tile already Excellent";
+      if (window.HqPanel) window.HqPanel.showMsg(reason, false);
+      console.log("[Compactor] Invalid target (" + col + "," + row + "): " + reason, data);
+      return false;
+    }
 
     api._target = { col: col, row: row };
     api.isActive = false;
-    if (window.InputHandler) window.InputHandler.setPlacementMode(false);
+    if (window.InputHandler) {
+      window.InputHandler.setPlacementMode(false);
+      window.InputHandler.setCursor("grab");
+    }
     if (window.BuildMenu && window.BuildMenu.onBuildSuccess) window.BuildMenu.onBuildSuccess();
 
+    console.log("[Compactor] Deploying on (" + col + "," + row + ")");
     api._runSequence(onSuccess);
     return true;
   };
