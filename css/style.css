@@ -125,12 +125,12 @@ button {
   border-radius: 16px;
   box-shadow: 3px 3px 0 #000; /* hard offset, zero blur */
   z-index: 900;
-  overflow: hidden;
+  overflow: visible;
   visibility: hidden;
-  /* slide in/out is a GPU-composited transform transition (kept snappy on
-     slow mobile devices; panel.js toggles this inline for instant jumps) */
-  transition: transform 0.16s ease-out;
-  will-change: transform;
+  opacity: 0;
+  /* slide + fade is GPU-composited (kept snappy on slow devices) */
+  transition: transform 0.16s ease-out, opacity 0.14s ease-out;
+  will-change: transform, opacity;
 }
 
 .panel-header {
@@ -179,7 +179,7 @@ button {
 
 .panel-body {
   padding: 12px 14px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .tile-coords {
@@ -220,7 +220,7 @@ button {
 .hud-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
 .hud-left .label {
@@ -236,6 +236,7 @@ button {
   font-size: 24px;
   font-weight: 700;
   color: #2B2320;
+  letter-spacing: -0.01em;
   overflow: hidden;
 }
 
@@ -251,17 +252,26 @@ button {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   cursor: pointer;
+  will-change: transform;
   transition: transform 0.09s ease, box-shadow 0.09s ease,
     background 0.15s ease;
 }
 
 .hud-btn:hover {
   background: #D05240;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 0 0 #000;
 }
 
 .hud-btn:active {
   transform: translateY(2px);
   box-shadow: 0 0 0 0 transparent;
+}
+
+.hud-btn:focus-visible {
+  outline: 3px solid #2B2320;
+  outline-offset: 2px;
+  box-shadow: 3px 3px 0 #000;
 }
 
 .hud-btn:disabled, .hud-btn[disabled] {
@@ -284,18 +294,22 @@ button {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 14px 18px;
+  gap: 12px;
+  padding: 16px 18px 18px;
   background: #FFFBF0;
   border: 3px solid #2B2320;
   border-radius: 16px;
   box-shadow: 3px 3px 0 #000;
   z-index: 1001;
-  overflow: hidden;
+  overflow: visible;
+  transition: transform 0.16s ease-out, opacity 0.16s ease-out;
+  will-change: transform, opacity;
 }
 
 .build-bar.hidden {
-  display: none;
+  opacity: 0;
+  transform: translateX(-50%) translateY(12px);
+  pointer-events: none;
 }
 
 .build-bar-title {
@@ -607,6 +621,8 @@ button {
   overflow: hidden;
   opacity: 0;
   transform: scale(0.85);
+  transition: transform 0.18s ease-out, opacity 0.18s ease-out;
+  will-change: transform, opacity;
 }
 
 .hq-fs-header {
@@ -730,14 +746,12 @@ button {
 
 .hq-fs-nav-item:hover {
   transform: translateY(-1px);
+  background: #F6EEDC;
+  box-shadow: 2px 2px 0 #000;
 }
 
 .hq-fs-content {
   will-change: transform, opacity;
-}
-
-.hq-fs-nav-item:hover {
-  background: #F6EEDC;
 }
 
 .hq-fs-nav-item:active {
@@ -792,6 +806,15 @@ body.touch-ui .hq-fs-nav-item {
   overflow: hidden;
 }
 
+.hq-fs-section {
+  margin-top: 22px;
+}
+
+@keyframes hqFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 .hq-fs-status-label {
   font-size: 12px;
   font-weight: 700;
@@ -820,7 +843,7 @@ body.touch-ui .hq-fs-nav-item {
   letter-spacing: 0.08em;
   color: #6B5B4F;
   padding-bottom: 10px;
-  border-bottom: 2px solid rgba(43, 35, 32, 0.35);
+  border-bottom: 2px solid #2B2320;
   margin-bottom: 14px;
   overflow: hidden;
 }
@@ -863,9 +886,10 @@ body.touch-ui .hq-fs-nav-item {
 }
 
 .hq-fs-drone-cost {
-  font-size: 15px;
-  font-weight: 700;
-  color: #2B2320;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6B5B4F;
+  letter-spacing: 0.02em;
   overflow: hidden;
 }
 
