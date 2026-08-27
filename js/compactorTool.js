@@ -42,12 +42,10 @@ window.CompactorTool = (function () {
     if (api._anim) { api._anim.pause(); api._anim = null; }
   };
 
-  // validation: scanned, not Excellent, not trench
+  // validation: scanned, not Excellent (trench now allowed — this is the fix for it)
   api.isValid = function (col, row) {
     if (!api.isActive) return false;
     if (!window.Terrain) return false;
-    var type = window.Terrain.typeAt(col, row);
-    if (type === "trench") return false;
     var data = window.GameState && window.GameState.getTileData
       ? window.GameState.getTileData(col, row) : null;
     if (!data || !data.droneScanned) return false;
@@ -59,10 +57,8 @@ window.CompactorTool = (function () {
     if (!api.isValid(col, row)) {
       var data = window.GameState && window.GameState.getTileData
         ? window.GameState.getTileData(col, row) : null;
-      var type = window.Terrain ? window.Terrain.typeAt(col, row) : "unknown";
       var reason = "Invalid target";
-      if (type === "trench") reason = "Cannot compact trench (needs excavation)";
-      else if (!data || !data.droneScanned) reason = "Tile not scanned — scan with Drone first";
+      if (!data || !data.droneScanned) reason = "Tile not scanned — scan with Drone first";
       else if (data.surfaceStability === "Excellent") reason = "Tile already Excellent";
       if (window.HqPanel) window.HqPanel.showMsg(reason, false);
       console.log("[Compactor] Invalid target (" + col + "," + row + "): " + reason, data);
