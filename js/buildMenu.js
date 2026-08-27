@@ -112,14 +112,13 @@ var ITEMS = [
   // called after a building is successfully placed
   api.onBuildSuccess = function () {
     api.selected = null;
-    // ensure menu is hidden even if close animation is interrupted
     api.isOpen = false;
     if (barEl) {
       if (typeof anime !== "undefined" && anime) anime.remove(barEl);
       barEl.classList.add("hidden");
-      if (typeof anime !== "undefined" && anime) anime.set(barEl, { translateY: 0, opacity: 1 });
-    } else {
-      api.close();
+      // reset inline styles so next open animates from correct start
+      barEl.style.opacity = "";
+      barEl.style.transform = "";
     }
     api.refresh();
     if (window.InputHandler) window.InputHandler.setPlacementMode(false);
@@ -169,7 +168,8 @@ var ITEMS = [
         easing: "easeInCubic",
         complete: function () {
           barEl.classList.add("hidden");
-          anime.set(barEl, { translateY: 0, opacity: 1 });
+          barEl.style.opacity = "";
+          barEl.style.transform = "";
         }
       });
       return;
