@@ -104,6 +104,14 @@ window.Main = (function () {
       });
     }
 
+    // Stop button for compactor placement mode
+    var stopBtn = document.getElementById("hud-stop-btn");
+    if (stopBtn) {
+      stopBtn.addEventListener("click", function () {
+        if (window.CompactorTool) window.CompactorTool.cancel();
+      });
+    }
+
     window.addEventListener("resize", onResize);
     // orientation flips change the viewport dimensions (esp. iPad/Android) —
     // re-fit the canvas so it re-fills and stays crisp under the new geometry

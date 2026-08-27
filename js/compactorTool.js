@@ -6,8 +6,12 @@
 window.CompactorTool = (function () {
   var api = {
     isActive: false,
-    _target: null,      // { col, row }
-    _anim: null,        // main timeline
+    _target: null,      // { col, row } - legacy single target
+    _selection: null,   // { startCol, startRow, endCol, endRow } for drag-select
+    _selectionStart: null, // screen position { x, y } for drag preview
+    _selectionEnd: null,   // screen position { x, y } for drag preview
+    _selectionConfirmed: false, // whether selection is confirmed
+    _anim: null,
     _state: {
       rig: { scale: 0, alpha: 0, y: 0 },
       tamper: { y: 0, alpha: 1 },
@@ -24,27 +28,40 @@ window.CompactorTool = (function () {
   // ---- entry point from BuildMenu ----
   api.startPlacement = function () {
     api.isActive = true;
+    api._selection = null;
+    api._selectionStart = null;
+    api._selectionEnd = null;
+    api._selectionConfirmed = false;
     if (window.InputHandler) {
       window.InputHandler.setPlacementMode(true);
       window.InputHandler.setCursor("crosshair");
     }
-    if (window.HqPanel) window.HqPanel.showMsg("Select a scanned tile to compact (not Excellent, not trench)", false);
-    console.log("[Compactor] Placement mode entered — click a scanned tile (droneScanned, not Excellent, not trench)");
+    // Show stop button in HUD
+    var stopBtn = document.getElementById("hud-stop-btn");
+    if (stopBtn) stopBtn.style.display = "inline-flex";
+    if (window.HqPanel) window.HqPanel.showMsg("Drag to select area for compaction (scanned tiles, not Excellent)", false);
+    console.log("[Compactor] Placement mode entered — drag to select rectangular area");
   };
 
   api.cancel = function () {
     api.isActive = false;
     api._target = null;
+    api._selection = null;
+    api._selectionStart = null;
+    api._selectionEnd = null;
+    api._selectionConfirmed = false;
     if (window.InputHandler) {
       window.InputHandler.setPlacementMode(false);
       window.InputHandler.setCursor("grab");
     }
+    // Hide stop button
+    var stopBtn = document.getElementById("hud-stop-btn");
+    if (stopBtn) stopBtn.style.display = "none";
     if (api._anim) { api._anim.pause(); api._anim = null; }
   };
 
   // validation: scanned, not Excellent (trench now allowed — this is the fix for it)
-  api.isValid = function (col, row) {
-    if (!api.isActive) return false;
+  api.isValidTile = function (col, row) {
     if (!window.Terrain) return false;
     var data = window.GameState && window.GameState.getTileData
       ? window.GameState.getTileData(col, row) : null;
@@ -53,8 +70,34 @@ window.CompactorTool = (function () {
     return true;
   };
 
+  // validation for entire selection rectangle
+  api.isValidSelection = function (selection) {
+    if (!selection) return false;
+    var count = 0;
+    for (var c = selection.startCol; c <= selection.endCol; c++) {
+      for (var r = selection.startRow; r <= selection.endRow; r++) {
+        if (api.isValidTile(c, r)) count++;
+      }
+    }
+    return count > 0;
+  };
+
+  api.getValidTilesInSelection = function (selection) {
+    var tiles = [];
+    for (var c = selection.startCol; c <= selection.endCol; c++) {
+      for (var r = selection.startRow; r <= selection.endRow; r++) {
+        if (api.isValidTile(c, r)) {
+          tiles.push({ col: c, row: r });
+        }
+      }
+    }
+    return tiles;
+  };
+
   api.attempt = function (col, row, onSuccess) {
-    if (!api.isValid(col, row)) {
+    // For backward compatibility with single-tile clicks, but now we expect drag-select
+    // This should not be called directly anymore - drag selection is handled via input.js
+    if (!api.isValidTile(col, row)) {
       var data = window.GameState && window.GameState.getTileData
         ? window.GameState.getTileData(col, row) : null;
       var reason = "Invalid target";
@@ -78,8 +121,41 @@ window.CompactorTool = (function () {
     return true;
   };
 
+  // New drag-select attempt - called when user confirms selection
+  api.confirmSelection = function (selection, onSuccess) {
+    if (!api.isValidSelection(selection)) {
+      if (window.HqPanel) window.HqPanel.showMsg("No valid tiles in selection", false);
+      return false;
+    }
+
+    var validTiles = api.getValidTilesInSelection(selection);
+    if (validTiles.length === 0) {
+      if (window.HqPanel) window.HqPanel.showMsg("No valid tiles in selection", false);
+      return false;
+    }
+
+    api._selection = selection;
+    api._target = { 
+      col: Math.floor((selection.startCol + selection.endCol) / 2), 
+      row: Math.floor((selection.startRow + selection.endRow) / 2) 
+    };
+    api.isActive = false;
+    api._selectionConfirmed = true;
+
+    if (window.InputHandler) {
+      window.InputHandler.setPlacementMode(false);
+      window.InputHandler.setCursor("grab");
+    }
+    if (window.BuildMenu && window.BuildMenu.onBuildSuccess) window.BuildMenu.onBuildSuccess();
+
+    console.log("[Compactor] Deploying on " + validTiles.length + " tiles");
+    api._runSequence(validTiles, onSuccess);
+    return true;
+  };
+
   // ---------- MAIN ANIMATION SEQUENCE ----------
-  api._runSequence = function (onComplete) {
+  // validTiles is an array of {col, row} for all tiles to compact
+  api._runSequence = function (validTiles, onComplete) {
     var st = api._state;
     var target = api._target;
     if (!target || !window.BlockRender || !window.IsoGrid) {
@@ -101,7 +177,7 @@ window.CompactorTool = (function () {
     st.payoff = { alpha: 0, y: 0, oldVal: "", newVal: "" };
     st.cycle = 0;
 
-    // get current stability for payoff
+    // get current stability for payoff (use first tile as reference)
     var data = window.GameState.getTileData
       ? window.GameState.getTileData(target.col, target.row) : null;
     var oldStab = data ? data.surfaceStability : "Poor";
@@ -110,6 +186,7 @@ window.CompactorTool = (function () {
     var newStab = (idx >= 0 && idx < 3) ? tiers[idx + 1] : oldStab;
     st.payoff.oldVal = oldStab;
     st.payoff.newVal = newStab;
+    st.payoff.count = 1; // will be updated in showPayoffAndExit
 
     // ---------- ENTRANCE ----------
     if (typeof anime !== "undefined" && anime) {
@@ -188,24 +265,34 @@ window.CompactorTool = (function () {
     }
 
     function showPayoffAndExit() {
-      // update stability in game state
+      // update stability in game state for ALL valid tiles
       var gs = window.GameState;
+      var validTiles = api.getValidTilesInSelection(api._selection);
+      var updatedCount = 0;
+      
       if (gs && gs.tileData) {
-        var key = target.col + "," + target.row;
-        var td = gs.tileData[key];
-        if (td) {
-          var tiers2 = ["Poor", "Fair", "Good", "Excellent"];
-          var idx2 = tiers2.indexOf(td.surfaceStability);
-          if (idx2 >= 0 && idx2 < 3) {
-            td.surfaceStability = tiers2[idx2 + 1];
-            // recalc bestUse
-            if (window.GameState.recalcBestUse) window.GameState.recalcBestUse(target.col, target.row);
+        var tiers2 = ["Poor", "Fair", "Good", "Excellent"];
+        for (var t = 0; t < validTiles.length; t++) {
+          var key = validTiles[t].col + "," + validTiles[t].row;
+          var td = gs.tileData[key];
+          if (td) {
+            var idx2 = tiers2.indexOf(td.surfaceStability);
+            if (idx2 >= 0 && idx2 < 3) {
+              td.surfaceStability = tiers2[idx2 + 1];
+              if (window.GameState.recalcBestUse) window.GameState.recalcBestUse(validTiles[t].col, validTiles[t].row);
+              updatedCount++;
+            }
           }
         }
       }
 
-      // PAYOFF LABEL
-      st.payoff = { alpha: 1, y: 0, oldVal: st.payoff.oldVal, newVal: st.payoff.newVal };
+      // PAYOFF LABEL - show count if multiple tiles
+      st.payoff.count = updatedCount;
+      if (updatedCount > 1) {
+        st.payoff.oldVal = updatedCount + " tiles";
+        st.payoff.newVal = "improved";
+      }
+      st.payoff = { alpha: 1, y: 0, oldVal: st.payoff.oldVal, newVal: st.payoff.newVal, count: updatedCount };
       anime({
         targets: st.payoff,
         y: [0, -30],
@@ -290,6 +377,34 @@ window.CompactorTool = (function () {
     // camera shake translation
     if (st.camera.x || st.camera.y) ctx.translate(st.camera.x, st.camera.y);
 
+    // ---- SELECTION PREVIEW (drag rectangle) ----
+    if (api._selectionStart && api._selectionEnd && !api._selectionConfirmed) {
+      var p1 = api._selectionStart;
+      var p2 = api._selectionEnd;
+      var x = Math.min(p1.x, p2.x);
+      var y = Math.min(p1.y, p2.y);
+      var w = Math.abs(p2.x - p1.x);
+      var h = Math.abs(p2.y - p1.y);
+      
+      ctx.save();
+      ctx.globalAlpha = 0.4;
+      ctx.strokeStyle = "#E8604A";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 6]);
+      ctx.strokeRect(x, y, w, h);
+      // fill with very subtle color
+      ctx.fillStyle = "rgba(232, 96, 74, 0.08)";
+      ctx.fillRect(x, y, w, h);
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+      ctx.restore();
+    }
+
+    ctx.save();
+
+    // camera shake translation
+    if (st.camera.x || st.camera.y) ctx.translate(st.camera.x, st.camera.y);
+
     // ---- RIG ----
     var rig = st.rig;
     if (rig.alpha > 0) {
@@ -329,7 +444,12 @@ window.CompactorTool = (function () {
       ctx.font = "bold 14px 'Baloo 2', sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "bottom";
-      var text = st.payoff.oldVal + " \u2192 " + st.payoff.newVal;
+      var text;
+      if (st.payoff.count && st.payoff.count > 1) {
+        text = st.payoff.count + " tiles improved";
+      } else {
+        text = st.payoff.oldVal + " \u2192 " + st.payoff.newVal;
+      }
       var x = p.x, y = p.y - grid.isoSize - st.payoff.y;
       // outline
       ctx.strokeStyle = "#2B2320";
@@ -342,6 +462,7 @@ window.CompactorTool = (function () {
     }
 
     ctx.restore();
+    ctx.restore(); // restore the outer save from selection preview
   };
 
   // ---------- RIG DRAWING (concept shapes) ----------

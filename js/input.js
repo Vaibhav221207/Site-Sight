@@ -8,6 +8,7 @@
  *     clickable.
  *   - Normal mode: hill & river tiles are non-interactive scenery; only
  *     land and trench tiles trigger a click.
+ *   - Compactor drag-select: drag to select rectangular area for compaction
  */
 
 window.InputHandler = (function () {
@@ -26,6 +27,9 @@ window.InputHandler = (function () {
     _lastPos: { x: 0, y: 0 },
     _placementMode: false,
     _droneMode: false,      // drone placement mode (click-to-place a drone)
+    _compactorDragSelect: false, // compactor drag-select mode
+    _compactorDragStart: null, // { x, y } screen position where drag started
+    _compactorSelectionEnd: null, // current end position during drag
     _cursor: "grab",
   };
 
@@ -88,6 +92,7 @@ window.InputHandler = (function () {
     if (api._pressed) return; // ignore secondary pointers (multi-touch)
     api._pressed = true;
     api._dragging = false;
+    api._compactorDragSelect = false;
     api._activePointer = evt.pointerId;
     // capture so the drag keeps tracking (and the release arrives) even
     // when the pointer leaves the canvas mid-drag
@@ -97,8 +102,15 @@ window.InputHandler = (function () {
     var pos = pointerPos(evt);
     api._dragStart = pos;
     api._lastPos = pos;
-    if (!api._droneMode) api.canvas.style.cursor = "grabbing";
-  }
+    // For compactor drag-select, record start position but don't start dragging yet
+    if (window.CompactorTool && window.CompactorTool.isActive) {
+      api._compactorDragSelect = true;
+      api._compactorDragStart = pos;
+      api._compactorSelectionEnd = pos;
+    } else if (!api._droneMode) {
+      api.canvas.style.cursor = "grabbing";
+    }
+  };
 
   function onPointerMove(evt) {
     // only the pointer that started the gesture drives it
@@ -111,6 +123,13 @@ window.InputHandler = (function () {
     }
     if (!api._pressed) return;
     if (window.HqPanel && window.HqPanel.isOpen) return;
+    
+    // Handle compactor drag-select preview
+    if (api._compactorDragSelect && window.CompactorTool && window.CompactorTool.isActive) {
+      api._compactorSelectionEnd = pointerPos(evt);
+      return;
+    }
+    
     var dx = pos.x - api._lastPos.x;
     var dy = pos.y - api._lastPos.y;
     var dist = Math.sqrt(dx * dx + dy * dy);
@@ -144,6 +163,60 @@ window.InputHandler = (function () {
     var moved = Math.sqrt(
       Math.pow(pos.x - api._dragStart.x, 2) + Math.pow(pos.y - api._dragStart.y, 2)
     );
+    
+    // Handle compactor drag-select completion
+    if (api._compactorDragSelect && window.CompactorTool && window.CompactorTool.isActive) {
+      api._compactorDragSelect = false;
+      var endPos = pos;
+      api._compactorSelectionEnd = endPos;
+      
+      // Convert screen positions to tile coordinates for selection rectangle
+      if (api._compactorDragStart) {
+        var startTile = api.grid.screenToTile(api._compactorDragStart.x, api._compactorDragStart.y);
+        var endTile = api.grid.screenToTile(endPos.x, endPos.y);
+        if (startTile && endTile) {
+          var startCol = Math.min(startTile.col, endTile.col);
+          var endCol = Math.max(startTile.col, endTile.col);
+          var startRow = Math.min(startTile.row, endTile.row);
+          var endRow = Math.max(startTile.row, endTile.row);
+          
+          var selection = {
+            startCol: startCol,
+            endCol: endCol,
+            startRow: startRow,
+            endRow: endRow
+          };
+          
+          // Show confirmation UI
+          if (window.CompactorTool && window.CompactorTool.isValidSelection) {
+            var validTiles = window.CompactorTool.getValidTilesInSelection(selection);
+            if (validTiles.length > 0) {
+              if (window.HqPanel) {
+                window.HqPanel.showCompactorConfirm(validTiles.length, function(confirmed) {
+                  if (confirmed) {
+                    window.CompactorTool.confirmSelection(selection, function(success) {
+                      if (!success) {
+                        // If failed, allow re-selection
+                      }
+                    });
+                  }
+                });
+              }
+            }
+          }
+        }
+        api._compactorDragStart = null;
+        api._compactorSelectionEnd = null;
+        return;
+      }
+
+    if (window.HqPanel && window.HqPanel.isOpen) return;
+    if (cancelled) return; // gesture was interrupted (no click)
+
+    var pos = pointerPos(evt);
+    var moved = Math.sqrt(
+      Math.pow(pos.x - api._dragStart.x, 2) + Math.pow(pos.y - api._dragStart.y, 2)
+    );
     if (moved < DRAG_THRESHOLD) {
       // if the tile popup is open, close it first — a tap anywhere on the
       // canvas should dismiss the card so it never blocks the map on mobile
@@ -160,6 +233,34 @@ window.InputHandler = (function () {
         api.onTileClick(tile.col, tile.row);
       }
     }
+  }
+
+  function nearestTile(sx, sy) {
+    var g = api.grid;
+    var fr = g.screenToWorld(sx, sy);
+    var c0 = Math.floor(fr.col);
+    var r0 = Math.floor(fr.row);
+    var R = Math.max(18, g.isoSize * 0.8);
+    var best = null;
+    var bestD = Infinity;
+    for (var dc = 0; dc <= 1; dc++) {
+      for (var dr = 0; dr <= 1; dr++) {
+        var c = c0 + dc, r = r0 + dr;
+        if (c < 0 || c >= g.gridSize || r < 0 || r >= g.gridSize) continue;
+        var p = g.worldToScreen(c, r);
+        var dx = sx - p.x, dy = sy - p.y;
+        var d = dx * dx + dy * dy;
+        if (d < bestD) { bestD = d; best = { col: c, row: r }; }
+      }
+    }
+    if (!best || Math.sqrt(bestD) > R) return null;
+    return best;
+  }
+
+  // pointer position in CSS pixels relative to the canvas
+  function pointerPos(evt) {
+    var rect = api.canvas.getBoundingClientRect();
+    return { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
   }
 
   function isClickable(c, r) {
@@ -245,4 +346,5 @@ window.InputHandler = (function () {
   };
 
   return api;
+  };
 })();

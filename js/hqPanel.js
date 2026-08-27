@@ -566,6 +566,13 @@ window.HqPanel = (function () {
     }, success ? 1200 : 1800);
   };
 
+  // Show confirmation dialog for compactor deployment
+  api.showCompactorConfirm = function (tileCount, callback) {
+    var msg = "Compact " + tileCount + " tile" + (tileCount > 1 ? "s" : "") + "?";
+    var confirmed = window.confirm(msg);
+    if (callback) callback(confirmed);
+  };
+
   api.buyDrone = function () {
     var gs = window.GameState;
     if (!gs) return;
