@@ -23,39 +23,19 @@ var ITEMS = [
       desc: "Site command center — unlocks site data.",
       cost: (window.GameState && window.GameState.hqCost) || 10000,
       icon:
-        '<svg viewBox="0 0 48 48" width="40" height="40" aria-hidden="true" style="display:block;background:transparent">' +
-        '<g stroke="#0F172A" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">' +
-        '<path d="M24 35 L36 41 L36 46 L24 40 Z" fill="#E2E8F0"/>' +
-        '<path d="M12 41 L24 35 L24 40 L12 46 Z" fill="#F8FAFC"/>' +
-        '<path d="M12 41 L24 35 L36 41 L24 47 Z" fill="#CBD5E1" stroke="#0F172A" stroke-width="2"/>' +
-        '</g>' +
-        '<g stroke="#0F172A" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">' +
-        '<path d="M24 35 L36 41 L36 43 L24 37 Z" fill="#2563EB"/>' +
-        '<path d="M12 41 L24 35 L24 37 L12 43 Z" fill="#2563EB"/>' +
-        '<path d="M12 41 L24 35 L36 41 L24 47 Z" fill="none" stroke="#0F172A" stroke-width="2"/>' +
-        '</g>' +
-        '<g stroke="#0F172A" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">' +
-        '<path d="M24 20.5 L33 25 L33 34 L24 29.5 L15 34 L15 25 Z" fill="#F8FAFC"/>' +
-        '<path d="M33 25 L33 34 L24 29.5 L24 20.5 Z" fill="#E2E8F0"/>' +
-        '<path d="M15 34 L24 29.5 L24 20.5 L15 25 Z" fill="#F8FAFC"/>' +
-        '<path d="M15 25 L24 20.5 L33 25 L24 29.5 Z" fill="#2563EB" stroke="#0F172A" stroke-width="1.8"/>' +
-        '<rect x="17.2" y="26" width="3.5" height="4.5" rx="0.5" fill="#FDE68A" stroke="#0F172A" stroke-width="1"/>' +
-        '<rect x="21.5" y="26" width="3.5" height="4.5" rx="0.5" fill="#FDE68A" stroke="#0F172A" stroke-width="1"/>' +
-        '<rect x="25.8" y="26" width="3.5" height="4.5" rx="0.5" fill="#FDE68A" stroke="#0F172A" stroke-width="1"/>' +
-        '<rect x="17.2" y="30.8" width="3.5" height="4.5" rx="0.5" fill="#FDE68A" stroke="#0F172A" stroke-width="1"/>' +
-        '<rect x="21.5" y="30.8" width="3.5" height="4.5" rx="0.5" fill="#FDE68A" stroke="#0F172A" stroke-width="1"/>' +
-        '<rect x="25.8" y="30.8" width="3.5" height="4.5" rx="0.5" fill="#FDE68A" stroke="#0F172A" stroke-width="1"/>' +
-        '</g>' +
-        '<g stroke="#0F172A" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">' +
-        '<path d="M18 17 L24 13.5 L30 17 L24 20.5 Z" fill="#1E293B"/>' +
-        '<path d="M18 17 L24 20.5 L24 22 L18 18.5 Z" fill="#0F172A"/>' +
-        '<path d="M24 20.5 L30 17 L30 18.5 L24 22 Z" fill="#1E293B"/>' +
-        '<text x="24" y="18.5" text-anchor="middle" font-family=&apos;Baloo 2&apos;,sans-serif font-size="4.5" font-weight="900" fill="#FDE68A">H</text>' +
-        '<rect x="21.5" y="8.5" width="2.2" height="6" rx="0.5" fill="#0F172A"/>' +
-        '<circle cx="22.6" cy="7.5" r="3" fill="#1E293B" stroke="#0F172A" stroke-width="1.2"/>' +
-        '<circle cx="22.6" cy="7.5" r="1.5" fill="#EF4444" stroke="none"/>' +
-        '<circle cx="21.9" cy="6.9" r="0.7" fill="white" opacity="0.85"/>' +
-        '</g>' +
+        '<svg viewBox="0 0 100 100" width="40" height="40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="display:block">' +
+        '<path d="M 18 70 L 50 86 L 50 66 L 18 50 Z" fill="#F1F5F9" stroke="#0F172A" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>' +
+        '<path d="M 50 86 L 82 70 L 82 50 L 50 66 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>' +
+        '<path d="M 50 34 L 82 50 L 50 66 L 18 50 Z" fill="#3B82F6" stroke="#0F172A" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>' +
+        '<path d="M 32 50 L 50 59 L 50 29 L 32 20 Z" fill="#E2E8F0" stroke="#0F172A" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>' +
+        '<path d="M 50 59 L 68 50 L 68 20 L 50 29 Z" fill="#F8FAFC" stroke="#0F172A" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>' +
+        '<path d="M 37 48.5 L 45 52.5 L 45 40.5 L 37 36.5 Z" fill="#FDE047"/>' +
+        '<path d="M 55 52.5 L 63 48.5 L 63 36.5 L 55 40.5 Z" fill="#FDE047"/>' +
+        '<path d="M 50 11 L 68 20 L 50 29 L 32 20 Z" fill="#2563EB" stroke="#0F172A" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>' +
+        '<path d="M 50 13 L 60 18 L 50 23 L 40 18 Z" fill="#334155" stroke="#0F172A" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>' +
+        '<text x="50" y="21.5" font-size="9" font-family="sans-serif" font-weight="900" text-anchor="middle" fill="#FDE047" style="transform:scale(1,0.5);transform-origin:50px 21px">H</text>' +
+        '<path d="M 35 22 L 35 12" stroke="#0F172A" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>' +
+        '<circle cx="35" cy="12" r="2.5" fill="#EF4444" stroke="#0F172A" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>' +
         '</svg>',
       module: function () { return window.HQBuild; },
     },
