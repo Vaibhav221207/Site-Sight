@@ -24,40 +24,37 @@ var ITEMS = [
       cost: (window.GameState && window.GameState.hqCost) || 10000,
       icon:
         '<svg viewBox="0 0 48 48" width="40" height="40" aria-hidden="true" style="display:block;background:transparent">' +
-        '<g stroke="#0F172A" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">' +
-        '<path d="M8 44 L24 36 L40 44 L24 48 Z" fill="#F8FAFC"/>' +
-        '<path d="M8 44 L24 48 L24 36 Z" fill="#E2E8F0"/>' +
-        '<path d="M40 44 L24 48 L24 36 Z" fill="#CBD5E1"/>' +
-        '<path d="M8 44 L24 36 L40 44 L24 48 Z" fill="none" stroke="#0F172A" stroke-width="2.4"/>' +
+        '<g stroke="#0F172A" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">' +
+        '<path d="M24 35 L36 41 L36 46 L24 40 Z" fill="#E2E8F0"/>' +
+        '<path d="M12 41 L24 35 L24 40 L12 46 Z" fill="#F8FAFC"/>' +
+        '<path d="M12 41 L24 35 L36 41 L24 47 Z" fill="#CBD5E1" stroke="#0F172A" stroke-width="2"/>' +
+        '</g>' +
+        '<g stroke="#0F172A" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">' +
+        '<path d="M24 35 L36 41 L36 43 L24 37 Z" fill="#2563EB"/>' +
+        '<path d="M12 41 L24 35 L24 37 L12 43 Z" fill="#2563EB"/>' +
+        '<path d="M12 41 L24 35 L36 41 L24 47 Z" fill="none" stroke="#0F172A" stroke-width="2"/>' +
         '</g>' +
         '<g stroke="#0F172A" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">' +
-        '<path d="M24 26 L34 31 L34 38 L24 33 Z" fill="#E2E8F0"/>' +
-        '<path d="M14 31 L24 26 L24 33 L14 38 Z" fill="#F8FAFC"/>' +
-        '<path d="M14 31 L24 26 L34 31 L24 36 Z" fill="#2563EB" stroke="#0F172A" stroke-width="1.6"/>' +
-        '</g>' +
-        '<g stroke="#0F172A" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">' +
-        '<path d="M24 20 L32 24 L32 30 L24 26 L16 30 L16 24 Z" fill="#F8FAFC"/>' +
-        '<path d="M32 24 L32 30 L24 26 L24 20 Z" fill="#E2E8F0"/>' +
-        '<path d="M16 30 L24 26 L24 20 L16 24 Z" fill="#F8FAFC"/>' +
-        '<path d="M16 24 L24 20 L32 24 L24 28 Z" fill="#2563EB" stroke="#0F172A" stroke-width="1.6"/>' +
-        '<rect x="18" y="22.8" width="2.4" height="3.2" rx="0.4" fill="#FDE68A" stroke="#0F172A" stroke-width="0.9"/>' +
-        '<rect x="21" y="22.8" width="2.4" height="3.2" rx="0.4" fill="#FDE68A" stroke="#0F172A" stroke-width="0.9"/>' +
-        '<rect x="24" y="22.8" width="2.4" height="3.2" rx="0.4" fill="#FDE68A" stroke="#0F172A" stroke-width="0.9"/>' +
-        '<rect x="27" y="22.8" width="2.4" height="3.2" rx="0.4" fill="#FDE68A" stroke="#0F172A" stroke-width="0.9"/>' +
-        '<rect x="18" y="26.4" width="2.4" height="3.2" rx="0.4" fill="#FDE68A" stroke="#0F172A" stroke-width="0.9"/>' +
-        '<rect x="21" y="26.4" width="2.4" height="3.2" rx="0.4" fill="#FDE68A" stroke="#0F172A" stroke-width="0.9"/>' +
-        '<rect x="24" y="26.4" width="2.4" height="3.2" rx="0.4" fill="#FDE68A" stroke="#0F172A" stroke-width="0.9"/>' +
-        '<rect x="27" y="26.4" width="2.4" height="3.2" rx="0.4" fill="#FDE68A" stroke="#0F172A" stroke-width="0.9"/>' +
+        '<path d="M24 20.5 L33 25 L33 34 L24 29.5 L15 34 L15 25 Z" fill="#F8FAFC"/>' +
+        '<path d="M33 25 L33 34 L24 29.5 L24 20.5 Z" fill="#E2E8F0"/>' +
+        '<path d="M15 34 L24 29.5 L24 20.5 L15 25 Z" fill="#F8FAFC"/>' +
+        '<path d="M15 25 L24 20.5 L33 25 L24 29.5 Z" fill="#2563EB" stroke="#0F172A" stroke-width="1.8"/>' +
+        '<rect x="17.2" y="26" width="3.5" height="4.5" rx="0.5" fill="#FDE68A" stroke="#0F172A" stroke-width="1"/>' +
+        '<rect x="21.5" y="26" width="3.5" height="4.5" rx="0.5" fill="#FDE68A" stroke="#0F172A" stroke-width="1"/>' +
+        '<rect x="25.8" y="26" width="3.5" height="4.5" rx="0.5" fill="#FDE68A" stroke="#0F172A" stroke-width="1"/>' +
+        '<rect x="17.2" y="30.8" width="3.5" height="4.5" rx="0.5" fill="#FDE68A" stroke="#0F172A" stroke-width="1"/>' +
+        '<rect x="21.5" y="30.8" width="3.5" height="4.5" rx="0.5" fill="#FDE68A" stroke="#0F172A" stroke-width="1"/>' +
+        '<rect x="25.8" y="30.8" width="3.5" height="4.5" rx="0.5" fill="#FDE68A" stroke="#0F172A" stroke-width="1"/>' +
         '</g>' +
         '<g stroke="#0F172A" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">' +
-        '<path d="M18 17 L24 14 L30 17 L24 20 Z" fill="#1E293B"/>' +
-        '<path d="M18 17 L24 20 L24 21.5 L18 18.5 Z" fill="#0F172A"/>' +
-        '<path d="M24 20 L30 17 L30 18.5 L24 21.5 Z" fill="#1E293B"/>' +
-        '<text x="24" y="18.8" text-anchor="middle" font-family=&apos;Baloo 2&apos;,sans-serif font-size="4.5" font-weight="900" fill="#FDE68A">H</text>' +
-        '<rect x="21.6" y="9.5" width="2" height="5.8" rx="0.5" fill="#0F172A"/>' +
-        '<circle cx="22.6" cy="8.5" r="3" fill="#1E293B" stroke="#0F172A" stroke-width="1.2"/>' +
-        '<path d="M23.8 7 A3 3 0 0 0 21 7 A2.2 2.2 0 0 1 23.8 7" fill="#EF4444" stroke="none"/>' +
-        '<circle cx="22" cy="7.8" r="0.8" fill="white" opacity="0.9"/>' +
+        '<path d="M18 17 L24 13.5 L30 17 L24 20.5 Z" fill="#1E293B"/>' +
+        '<path d="M18 17 L24 20.5 L24 22 L18 18.5 Z" fill="#0F172A"/>' +
+        '<path d="M24 20.5 L30 17 L30 18.5 L24 22 Z" fill="#1E293B"/>' +
+        '<text x="24" y="18.5" text-anchor="middle" font-family=&apos;Baloo 2&apos;,sans-serif font-size="4.5" font-weight="900" fill="#FDE68A">H</text>' +
+        '<rect x="21.5" y="8.5" width="2.2" height="6" rx="0.5" fill="#0F172A"/>' +
+        '<circle cx="22.6" cy="7.5" r="3" fill="#1E293B" stroke="#0F172A" stroke-width="1.2"/>' +
+        '<circle cx="22.6" cy="7.5" r="1.5" fill="#EF4444" stroke="none"/>' +
+        '<circle cx="21.9" cy="6.9" r="0.7" fill="white" opacity="0.85"/>' +
         '</g>' +
         '</svg>',
       module: function () { return window.HQBuild; },
