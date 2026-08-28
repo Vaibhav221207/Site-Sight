@@ -965,6 +965,8 @@ window.DroneDeploy = (function () {
   // Fast path: same anchor & camera -> the point is already current.
   function projectFrom(anchor, p) {
     var g = window.IsoGrid;
+    if (!anchor || !g || !p || anchor.iso == null) return p;
+    if (!g.camera || g.isoSize == null) return p;
     if (anchor.iso === g.isoSize && anchor.x === g.camera.x && anchor.y === g.camera.y) {
       return p;
     }
@@ -977,6 +979,8 @@ window.DroneDeploy = (function () {
 
   // same re-projection for the cached areaCorners object (TL/TR/BR/BL)
   function projectCorners(anchor, corners) {
+    if (!corners) return corners;
+    if (!anchor) return corners;
     return {
       TL: projectFrom(anchor, corners.TL),
       TR: projectFrom(anchor, corners.TR),
@@ -1031,7 +1035,7 @@ window.DroneDeploy = (function () {
           ctx.beginPath();
           ctx.moveTo(c.TL.x, c.TL.y); ctx.lineTo(c.TR.x, c.TR.y); ctx.lineTo(c.BR.x, c.BR.y); ctx.lineTo(c.BL.x, c.BL.y); ctx.closePath();
           ctx.moveTo(hpH.x, hyH - halfH); ctx.lineTo(hpH.x + isoH, hyH); ctx.lineTo(hpH.x, hyH + halfH); ctx.lineTo(hpH.x - isoH, hyH); ctx.closePath();
-          try { ctx.clip('evenodd'); } catch (e) { ctx.clip(); }
+          try { ctx.clip('evenodd'); } catch (e) { try { ctx.clip(); } catch (e2) {} }
           drawHeatmap(ctx, area, c, s.alpha, s.heat, s.heatPulse);
           if (s.drones && s.drones.length) {
             var apexDrone = s.drones[0];

@@ -53,6 +53,14 @@ window.MobileUI = (function () {
     build.textContent = "Build";
     rail.appendChild(build);
 
+    var stop = document.createElement("button");
+    stop.type = "button";
+    stop.id = "mu-stop";
+    stop.className = "mu-btn mu-btn--stop";
+    stop.textContent = "Stop";
+    stop.style.display = "none";
+    rail.appendChild(stop);
+
     ui.appendChild(rail);
     document.body.appendChild(ui);
 
@@ -61,6 +69,9 @@ window.MobileUI = (function () {
     build.addEventListener("click", function () {
       var btn = document.getElementById("hud-build-btn");
       if (btn) btn.click();
+    });
+    stop.addEventListener("click", function () {
+      if (window.CompactorTool) window.CompactorTool.cancel();
     });
   }
 

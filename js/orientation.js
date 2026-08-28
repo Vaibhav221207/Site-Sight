@@ -60,9 +60,13 @@ window.Orientation = (function () {
     // touch-only "Enter Site Sight" button: best-effort landscape lock.
     // Unsupported browsers (iOS Safari / non-fullscreen pages) just see the
     // button switch to a "Rotate manually" hint; never an uncaught error.
+    // file:// is not a secure context — orientation lock is unavailable there
+    // and would log an 'Unsafe attempt' error in the console.
+    var isFile = (location.protocol === 'file:');
     var enterBtn = document.getElementById("rotate-enter-btn");
     if (enterBtn) {
       enterBtn.addEventListener("click", function () {
+        if (isFile) { enterBtn.textContent = "Rotate manually"; return; }
         if (window.screen && window.screen.orientation &&
             typeof window.screen.orientation.lock === "function") {
           try {
@@ -82,7 +86,7 @@ window.Orientation = (function () {
     // best-effort landscape lock. Must fail silently on browsers that do not
     // support it (iOS Safari / non-fullscreen pages) — never an uncaught
     // error, never a broken page.
-    if (window.screen && window.screen.orientation &&
+    if (!isFile && window.screen && window.screen.orientation &&
         typeof window.screen.orientation.lock === "function") {
       try {
         var p = window.screen.orientation.lock("landscape");

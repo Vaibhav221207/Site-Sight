@@ -1538,6 +1538,13 @@ body.touch-ui .hud { display: none; }
   cursor: not-allowed;
 }
 
+.mu-btn--stop {
+  background: #C0392B;
+}
+.mu-btn--stop:hover {
+  background: #A03020;
+}
+
 /* "Enter Site Sight" button: touch-only (desktop never shows the overlay) */
 .rotate-enter {
   display: none;

@@ -33,6 +33,7 @@ window.Fullscreen = (function () {
   }
 
   function tryLockLandscape() {
+    if (location.protocol === 'file:') return; // not a secure context on file://
     if (window.screen && window.screen.orientation &&
         typeof window.screen.orientation.lock === "function") {
       try {

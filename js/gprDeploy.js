@@ -838,6 +838,8 @@ window.GprDeploy = (function () {
 
   function projectFrom(anchor, p) {
     var g = window.IsoGrid;
+    if (!anchor || !g || !p || anchor.iso == null) return p;
+    if (!g.camera || g.isoSize == null) return p;
     if (anchor.iso === g.isoSize && anchor.x === g.camera.x && anchor.y === g.camera.y) {
       return p;
     }
@@ -849,6 +851,8 @@ window.GprDeploy = (function () {
   }
 
   function projectCorners(anchor, corners) {
+    if (!corners) return corners;
+    if (!anchor) return corners;
     return {
       TL: projectFrom(anchor, corners.TL),
       TR: projectFrom(anchor, corners.TR),

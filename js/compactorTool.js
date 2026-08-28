@@ -36,9 +36,11 @@ window.CompactorTool = (function () {
       window.InputHandler.setPlacementMode(true);
       window.InputHandler.setCursor("crosshair");
     }
-    // Show stop button in HUD
+    // Show stop button in HUD (desktop + mobile rail)
     var stopBtn = document.getElementById("hud-stop-btn");
     if (stopBtn) stopBtn.style.display = "inline-flex";
+    var muStop = document.getElementById("mu-stop");
+    if (muStop) muStop.style.display = "inline-flex";
     if (window.HqPanel) window.HqPanel.showMsg("Drag to select trench / rock area for compaction (scanned hazard, not Excellent)", false);
     console.log("[Compactor] Placement mode entered — drag to select rectangular area");
   };
@@ -65,6 +67,8 @@ window.CompactorTool = (function () {
     }
     var stopBtn = document.getElementById("hud-stop-btn");
     if (stopBtn) stopBtn.style.display = "none";
+    var muStop2 = document.getElementById("mu-stop");
+    if (muStop2) muStop2.style.display = "none";
     if (api._anim) { api._anim.pause(); api._anim = null; }
   };
 
