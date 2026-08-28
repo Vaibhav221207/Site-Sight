@@ -23,15 +23,30 @@ var ITEMS = [
       desc: "Site command center — unlocks site data.",
       cost: (window.GameState && window.GameState.hqCost) || 10000,
       icon:
-        '<svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true">' +
-        '<path d="M20 2 L38 12.5 L20 23 L2 12.5 Z" fill="#8a97a0"/>' +
-        '<path d="M2 12.5 L20 23 L20 35 L2 24.5 Z" fill="#86847c"/>' +
-        '<path d="M38 12.5 L20 23 L20 35 L38 24.5 Z" fill="#5e5c56"/>' +
-        '<rect x="15.2" y="15.5" width="2.6" height="2.6" fill="#3f6f8f"/>' +
-        '<rect x="19.8" y="15.5" width="2.6" height="2.6" fill="#3f6f8f"/>' +
-        '<rect x="15.2" y="20.1" width="2.6" height="2.6" fill="#3f6f8f"/>' +
-        '<rect x="19.8" y="20.1" width="2.6" height="2.6" fill="#3f6f8f"/>' +
-        '<rect x="22.2" y="26" width="5.4" height="7.2" fill="#232321"/>' +
+        '<svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true" style="display:block">' +
+        '<rect x="2" y="2" width="36" height="36" rx="9" fill="#1E293B" stroke="#0F172A" stroke-width="1.8" stroke-linejoin="round"/>' +
+        '<g stroke="#0F172A" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round">' +
+        '<path d="M20 24.5 L30 30.2 L30 34.8 L20 29.1 Z" fill="#E2E8F0"/><path d="M10 30.2 L20 24.5 L20 29.1 L10 34.8 Z" fill="#F8FAFC"/>' +
+        '<path d="M10 30.2 L20 24.5 L30 30.2 L20 35.9 Z" fill="#2A3647" stroke="#0F172A" stroke-width="1.2"/>' +
+        '<path d="M10 30.2 L20 24.5 L20 29.1 L10 34.8 Z" fill="none"/><path d="M30 30.2 L30 34.8 L20 29.1 L20 24.5 Z" fill="none"/>' +
+        '<path d="M20 19.8 L30 25.5 L30 30.2 L20 24.5 Z" fill="#E2E8F0"/><path d="M10 25.5 L20 19.8 L20 24.5 L10 30.2 Z" fill="#F8FAFC"/>' +
+        '<path d="M10 25.5 L20 19.8 L30 25.5 L20 31.2 Z" fill="#2563EB" stroke="#0F172A" stroke-width="1.3"/>' +
+        '<rect x="12.2" y="26.8" width="5.8" height="4.2" rx="0.6" fill="#1E293B" stroke="#0F172A" stroke-width="0.9"/><rect x="22" y="26.8" width="5.8" height="4.2" rx="0.6" fill="#1E293B" stroke="#0F172A" stroke-width="0.9"/>' +
+        '<rect x="12.2" y="28.4" width="5.8" height="1.3" fill="#F97316" rx="0.3"/><rect x="22" y="28.4" width="5.8" height="1.3" fill="#F97316" rx="0.3"/>' +
+        '</g>' +
+        '<g stroke="#0F172A" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round">' +
+        '<path d="M20 9.2 L27.2 13.3 L27.2 22.5 L20 26.6 L12.8 22.5 L12.8 13.3 Z" fill="#F8FAFC"/>' +
+        '<path d="M27.2 13.3 L27.2 22.5 L20 26.6 L20 17.4 Z" fill="#E2E8F0"/>' +
+        '<path d="M12.8 22.5 L20 26.6 L20 17.4 L12.8 13.3 Z" fill="#F8FAFC"/>' +
+        '<path d="M12.8 13.3 L20 9.2 L27.2 13.3 L20 17.4 Z" fill="#2563EB"/>' +
+        '<rect x="14.4" y="15.1" width="3.4" height="4.2" rx="0.6" fill="#FDE68A" stroke="#0F172A" stroke-width="0.8"/><rect x="22.4" y="15.1" width="3.4" height="4.2" rx="0.6" fill="#BAE6FD" stroke="#0F172A" stroke-width="0.8"/>' +
+        '<rect x="14.4" y="19.8" width="3.4" height="4.2" rx="0.6" fill="#BAE6FD" stroke="#0F172A" stroke-width="0.8"/><rect x="22.4" y="19.8" width="3.4" height="4.2" rx="0.6" fill="#FDE68A" stroke="#0F172A" stroke-width="0.8"/>' +
+        '</g>' +
+        '<g stroke="#0F172A" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round">' +
+        '<path d="M15.2 6.8 L20 4 L24.8 6.8 L20 9.6 Z" fill="#1E293B"/><path d="M15.2 6.8 L20 9.6 L20 10.8 L15.2 8 Z" fill="#0F172A"/><path d="M20 9.6 L24.8 6.8 L24.8 8 L20 10.8 Z" fill="#1E293B"/>' +
+        '<g transform="translate(20,7.4) scale(1,0.48)"><text x="0" y="1.1" text-anchor="middle" font-family=&apos;Baloo 2&apos;,sans-serif font-size="5.2" font-weight="900" fill="#FDE68A">H</text></g>' +
+        '<rect x="17.6" y="1.6" width="1.7" height="4.2" rx="0.4" fill="#0F172A"/><circle cx="18.45" cy="1.5" r="1.9" fill="#EF4444" stroke="#0F172A" stroke-width="0.9"/><circle cx="17.7" cy="0.9" r="0.6" fill="white" opacity="0.92"/>' +
+        '</g>' +
         '</svg>',
       module: function () { return window.HQBuild; },
     },

@@ -566,11 +566,9 @@ window.HqPanel = (function () {
     }, success ? 1200 : 1800);
   };
 
-  // Show confirmation dialog for compactor deployment
+  // now direct — no native window.confirm (chunky toast in input.js instead)
   api.showCompactorConfirm = function (tileCount, callback) {
-    var msg = "Compact " + tileCount + " tile" + (tileCount > 1 ? "s" : "") + "?";
-    var confirmed = window.confirm(msg);
-    if (callback) callback(confirmed);
+    if (callback) callback(true);
   };
 
   api.buyDrone = function () {

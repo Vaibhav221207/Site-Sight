@@ -40,6 +40,8 @@ window.BlockRender = (function () {
     _dirty: false,
   };
 
+  // HQ beacon — subtle pulse (just a little)
+  var beaconPulse = { v: 0 };
   // river — simple flat water, single gentle global shimmer
   var RIVER_BASE = "#5B6FA8";
   var RIVER_LIGHT = "#7A90C8";
@@ -78,6 +80,7 @@ window.BlockRender = (function () {
     ORDER.sort(function (a, b) { return (a.c + a.r) - (b.c + b.r); });
 
     startShimmerAnim();
+    startBeaconPulse();
   };
 
   api.resize = function (w, h, dpr) {
@@ -352,37 +355,41 @@ window.BlockRender = (function () {
     layer.restore();
   }
 
-  // ---- ConTech HQ building -------------------------------------------
-  // The HQ tile draws a detailed building instead of a base block: a main
-  // block ten flat-block-heights tall (same footprint as drawBlock) with
-  // flat-shaded faces, corner edge lines, a 3x3 window grid on each wall,
-  // an entrance door with a badge on the east wall, a secondary module
-  // offset toward the dish (west) corner, roof details (vent pipes,
-  // satellite dish, antenna with guy-wires + beacon) and a ground shadow
-  // + service cable. All details are flat-shaded shapes — no gradients.
-  var HQ_H = BASE_H * 10;        // main block height (px)
-  var HQ_TOP = "#8a97a0";        // main block roof tone
-  var HQ_LEFT = "#86847c";       // west-facing wall
-  var HQ_RIGHT = "#5e5c56";      // east-facing wall
-  var HQ_EDGE = "#3a3a36";       // corner edge lines
-  var WIN_LEFT = "#3f6f8f";      // windows on the west wall
-  var WIN_RIGHT = "#2c4f66";     // windows on the east wall
-  var DOOR_TONE = "#232321";     // entrance door
-  var BADGE_OUTER = "#c9c9c2";   // entrance badge ring
+  // ---- City Builder HQ — Figma 1:0.5, chunky 3.5, toy ----
+  // Wide base (garages + orange stripe + blue awning), blue lower roof + AC cube,
+  // tall centered tower (2×3 windows, half lit), overhanging dark helipad with H, thick antenna + red beacon.
+  // Fits tile: base 1.32× iso wide, tower 0.68× iso, heights 3+7*BASE_H.
+  var HQ_H = BASE_H * 10;
+  var HQ_BASE_H = BASE_H * 3;
+  var HQ_TOWER_H = BASE_H * 7;
+  var HQ_TOP = "#2563EB";
+  var HQ_LEFT = "#F8FAFC";
+  var HQ_RIGHT = "#E2E8F0";
+  var HQ_EDGE = "#0F172A";
+  var WIN_LEFT = "#BAE6FD";
+  var WIN_RIGHT = "#7DD3FC";
+  var WIN_LIT = "#FDE68A";
+  var DOOR_TONE = "#1E293B";
+  var DOOR_ORANGE = "#F97316";
+  var DOOR_AWNING = "#2563EB";
+  var BADGE_OUTER = "#c9c9c2";
   var BADGE_STROKE = "#4a4a45";
   var BADGE_INNER = "#2c5d82";
-  var MOD_TOP = "#9fb0c4";       // secondary module roof
-  var MOD_LEFT = "#6f8296";      // module west wall
-  var MOD_RIGHT = "#4d5d6d";     // module east wall
-  var VENT_A = "#6f6f68";        // vent pipes (two tones for variety)
+  var MOD_TOP = "#F1F5F9";
+  var MOD_LEFT = "#CBD5E1";
+  var MOD_RIGHT = "#94A3B8";
+  var VENT_A = "#6f6f68";
   var VENT_B = "#5a5a54";
   var VENT_CAP_A = "#4a4a45";
   var VENT_CAP_B = "#3d3d3a";
-  var DISH_TONE = "#c9c9c2";     // satellite dish
+  var DISH_TONE = "#c9c9c2";
   var DISH_EDGE = "#8f8f89";
   var DISH_POST = "#4a4a45";
-  var ANT_TONE = "#3d3d3a";      // antenna / guy-wires
-  var BEACON = "#e0483a";        // antenna beacon
+  var ANT_TONE = "#0F172A";
+  var BEACON = "#EF4444";
+  var HELIPAD_TOP = "#1E293B";
+  var HELIPAD_SIDE = "#0F172A";
+  var HELIPAD_H = "#FDE68A";
 
   // local point on the main block's west wall: u runs west -> east along
   // the wall, v runs top -> bottom down the face
@@ -434,24 +441,29 @@ window.BlockRender = (function () {
     ctx.fill();
   }
 
-  // HQ placement animation — modern spring scale + fade
-  var hqPlace = { scale: 1, alpha: 1, active: false };
+  // HQ placement — land stays so no void; chunky pop with blueprint/dust (keeps original gray tower palette)
+  var hqPlace = { scale: 1, alpha: 1, active: false, blueprint: 0, dust: 0, dustR: 0 };
   api.triggerHQPlace = function (c, r) {
-    hqPlace.scale = 0.22;
-    hqPlace.alpha = 0;
+    hqPlace.scale = 0.88;
+    hqPlace.alpha = 1;
+    hqPlace.blueprint = 1;
+    hqPlace.dust = 0;
+    hqPlace.dustR = 0;
     hqPlace.active = true;
     if (typeof anime !== "undefined" && anime) {
       anime.remove(hqPlace);
+      anime({ targets: hqPlace, blueprint: 0, duration: 380, easing: "easeOutQuad" });
+      anime({ targets: hqPlace, dust: [0, 0.5, 0], dustR: [0, 1, 1.45], duration: 560, easing: "easeOutCubic" });
       anime({
         targets: hqPlace,
-        scale: 1,
-        alpha: 1,
+        scale: [0.88, 1.06, 1],
         duration: 520,
-        easing: "spring(1, 80, 12, 0)",
-        complete: function () { hqPlace.active = false; api.invalidate(); }
+        easing: "easeOutBack",
+        complete: function () { hqPlace.active = false; hqPlace.blueprint = 0; hqPlace.dust = 0; api.invalidate(); }
       });
+      setTimeout(function () { if (hqPlace.active) { hqPlace.scale = 1; hqPlace.alpha = 1; hqPlace.active = false; hqPlace.blueprint = 0; hqPlace.dust = 0; api.invalidate(); } }, 900);
     } else {
-      hqPlace.scale = 1; hqPlace.alpha = 1; hqPlace.active = false;
+      hqPlace.scale = 1; hqPlace.alpha = 1; hqPlace.blueprint = 0; hqPlace.dust = 0; hqPlace.active = false;
     }
     api.invalidate();
   };
@@ -464,213 +476,286 @@ window.BlockRender = (function () {
     var topY = cy - HQ_H;
     var isNewHQ = hqPlace.active && window.GameState && window.GameState.hqTile && window.GameState.hqTile.col === c && window.GameState.hqTile.row === r;
     if (isNewHQ) {
+      if (hqPlace.blueprint > 0.01) {
+        layer.save();
+        layer.globalAlpha = hqPlace.blueprint * 0.52;
+        layer.beginPath();
+        layer.moveTo(cx, cy - half);
+        layer.lineTo(cx + iso, cy);
+        layer.lineTo(cx, cy + half);
+        layer.lineTo(cx - iso, cy);
+        layer.closePath();
+        layer.fillStyle = "#7ED6FF";
+        layer.fill();
+        layer.strokeStyle = "#2B2320";
+        layer.lineWidth = 2.5;
+        layer.stroke();
+        layer.strokeStyle = "rgba(43,35,32,0.20)";
+        layer.lineWidth = 1;
+        layer.beginPath();
+        layer.moveTo(cx - iso*0.52, cy); layer.lineTo(cx + iso*0.52, cy);
+        layer.moveTo(cx, cy - half*0.62); layer.lineTo(cx, cy + half*0.62);
+        layer.stroke();
+        layer.strokeStyle = "rgba(255,255,255,0.45)";
+        layer.lineWidth = 1.5;
+        layer.beginPath();
+        layer.moveTo(cx - 6, cy); layer.lineTo(cx + 6, cy);
+        layer.moveTo(cx, cy - 6); layer.lineTo(cx, cy + 6);
+        layer.stroke();
+        layer.restore();
+      }
+      if (hqPlace.dust > 0.01) {
+        layer.save();
+        layer.globalAlpha = hqPlace.dust;
+        layer.strokeStyle = "#FFFBF0";
+        layer.lineWidth = 3;
+        layer.beginPath();
+        layer.ellipse(cx, cy + half*0.2, iso * 0.72 * hqPlace.dustR, half * 0.44 * hqPlace.dustR, 0, 0, Math.PI*2);
+        layer.stroke();
+        layer.fillStyle = "rgba(255,255,255,0.16)";
+        layer.beginPath();
+        layer.ellipse(cx, cy + half*0.2, iso * 0.42 * hqPlace.dustR, half * 0.26 * hqPlace.dustR, 0, 0, Math.PI*2);
+        layer.fill();
+        layer.restore();
+      }
       layer.save();
       layer.globalAlpha = hqPlace.alpha;
-      // scale around the building's base center so it appears to rise from the ground
       layer.translate(cx, cy + half * 0.2);
       layer.scale(hqPlace.scale, hqPlace.scale);
       layer.translate(-cx, -(cy + half * 0.2));
     }
 
-    // 1) ground: soft shadow under the footprint, then the service cable
+    // 1) loaf shadow + cable (chunky) — keep ground readable
     layer.beginPath();
-    layer.ellipse(cx, cy + half * 0.2, iso, half, 0, 0, Math.PI * 2);
-    layer.fillStyle = "rgba(0, 0, 0, 0.15)";
+    layer.ellipse(cx, cy + half * 0.22, iso * 1.02, half * 0.42, 0, 0, Math.PI * 2);
+    layer.fillStyle = "rgba(0,0,0,0.18)";
     layer.fill();
-
     layer.beginPath();
     layer.moveTo(cx, cy + half);
-    layer.quadraticCurveTo(
-      cx + iso * 0.35, cy + half + iso * 0.5,
-      cx + iso * 0.95, cy + half + iso * 0.55
-    );
+    layer.quadraticCurveTo(cx + iso*0.38, cy + half + iso*0.52, cx + iso*0.98, cy + half + iso*0.58);
     layer.strokeStyle = HQ_EDGE;
-    layer.lineWidth = 3;
+    layer.lineWidth = 3.5;
     layer.lineCap = "round";
     layer.stroke();
 
-    // 2) main block faces (flat shaded: top / west / east)
-    var n = { x: cx, y: topY - half };
-    var e = { x: cx + iso, y: topY };
-    var s = { x: cx, y: topY + half };
-    var w = { x: cx - iso, y: topY };
-    var wb = { x: cx - iso, y: cy };
-    var eb = { x: cx + iso, y: cy };
-    var sb = { x: cx, y: cy + half };
+    // ---- FIGMA CITY HQ: chunky two-tier — fits single tile, refined edges ----
+    // modestly larger for readability (10% up) but still inside tile: base 0.99×, tower 0.60×
+    var bHalf = iso * 0.99;
+    var tHalf = iso * 0.60;
+    var baseTopY = cy - HQ_BASE_H;
+    var towerTopY = baseTopY - HQ_TOWER_H;
+    // refine edges: ensure canvas anti-aliasing and round joins for all HQ draws
+    layer.lineJoin = "round"; layer.lineCap = "round"; layer.imageSmoothingEnabled = true; if (layer.imageSmoothingQuality) layer.imageSmoothingQuality = "high";
 
+    // base top diamond
+    var bn = {x:cx, y:baseTopY - bHalf/2};
+    var be = {x:cx + bHalf, y:baseTopY};
+    var bs = {x:cx, y:baseTopY + bHalf/2};
+    var bw = {x:cx - bHalf, y:baseTopY};
+    var bb = {x:cx, y:cy + half}; // bottom front
+    var bwb = {x:cx - bHalf, y:cy + half - bHalf/2};
+    var beb = {x:cx + bHalf, y:cy + half - bHalf/2};
+
+    // base left wall
     layer.beginPath();
-    layer.moveTo(w.x, w.y);
-    layer.lineTo(s.x, s.y);
-    layer.lineTo(sb.x, sb.y);
-    layer.lineTo(wb.x, wb.y);
+    layer.moveTo(bw.x, bw.y);
+    layer.lineTo(bs.x, bs.y);
+    layer.lineTo(bb.x, bb.y);
+    layer.lineTo(bwb.x, bwb.y);
     layer.closePath();
     layer.fillStyle = HQ_LEFT;
     layer.fill();
-
+    layer.strokeStyle = HQ_EDGE; layer.lineWidth = 3.5; layer.stroke();
+    // base right wall
     layer.beginPath();
-    layer.moveTo(s.x, s.y);
-    layer.lineTo(e.x, e.y);
-    layer.lineTo(eb.x, eb.y);
-    layer.lineTo(sb.x, sb.y);
+    layer.moveTo(bs.x, bs.y);
+    layer.lineTo(be.x, be.y);
+    layer.lineTo(beb.x, beb.y);
+    layer.lineTo(bb.x, bb.y);
     layer.closePath();
     layer.fillStyle = HQ_RIGHT;
     layer.fill();
-
+    layer.strokeStyle = HQ_EDGE; layer.lineWidth = 3.5; layer.stroke();
+    // base roof — vivid blue
     layer.beginPath();
-    layer.moveTo(n.x, n.y);
-    layer.lineTo(e.x, e.y);
-    layer.lineTo(s.x, s.y);
-    layer.lineTo(w.x, w.y);
+    layer.moveTo(bn.x, bn.y);
+    layer.lineTo(be.x, be.y);
+    layer.lineTo(bs.x, bs.y);
+    layer.lineTo(bw.x, bw.y);
     layer.closePath();
     layer.fillStyle = HQ_TOP;
     layer.fill();
+    layer.strokeStyle = HQ_EDGE; layer.lineWidth = 3.5; layer.stroke();
 
-    // 3) corner edge lines: west, east and shared (south) vertical edges
-    layer.strokeStyle = HQ_EDGE;
-    layer.lineWidth = 1.5;
-    layer.globalAlpha = 0.5;
+    // garages — simplified to door + single teal stripe (no separate awning band)
+    var gW = 0.42, gH = 0.56;
+    // left garage
+    drawWallQuad(layer, function(_cx,_ty,_is,_ha,H,u,v){ return leftWallPt(_cx, baseTopY, _is, _ha, HQ_BASE_H, u, v); }, cx, baseTopY, bHalf, bHalf/2, HQ_BASE_H, 0.34, 0.48, gW, gH, DOOR_TONE);
+    drawWallQuad(layer, function(_cx,_ty,_is,_ha,H,u,v){ return leftWallPt(_cx, baseTopY, _is, _ha, HQ_BASE_H, u, v); }, cx, baseTopY, bHalf, bHalf/2, HQ_BASE_H, 0.34, 0.50, gW, 0.14, DOOR_ORANGE);
+    // right garage
+    drawWallQuad(layer, function(_cx,_ty,_is,_ha,H,u,v){ return rightWallPt(_cx, baseTopY, _is, _ha, HQ_BASE_H, u, v); }, cx, baseTopY, bHalf, bHalf/2, HQ_BASE_H, 0.34, 0.48, gW, gH, DOOR_TONE);
+    drawWallQuad(layer, function(_cx,_ty,_is,_ha,H,u,v){ return rightWallPt(_cx, baseTopY, _is, _ha, HQ_BASE_H, u, v); }, cx, baseTopY, bHalf, bHalf/2, HQ_BASE_H, 0.34, 0.50, gW, 0.14, DOOR_ORANGE);
+
+    // AC — simplified to clean two-tone cube (no vent dot)
+    (function(){
+      var acU = 0.78, acV = 0.62, acS = 0.13;
+      var acH = 11;
+      var acBase = roofPt(cx, baseTopY, bHalf, bHalf/2, acU, acV);
+      var acTop = {x:acBase.x, y:acBase.y - acH};
+      var s = acS * bHalf;
+      layer.beginPath();
+      layer.moveTo(acTop.x, acTop.y - s/2);
+      layer.lineTo(acTop.x + s, acTop.y);
+      layer.lineTo(acTop.x, acTop.y + s/2);
+      layer.lineTo(acTop.x - s, acTop.y);
+      layer.closePath();
+      layer.fillStyle = MOD_TOP; layer.fill();
+      layer.strokeStyle = HQ_EDGE; layer.lineWidth = 2.5; layer.stroke();
+      layer.beginPath();
+      layer.moveTo(acTop.x - s, acTop.y);
+      layer.lineTo(acTop.x, acTop.y + s/2);
+      layer.lineTo(acTop.x, acBase.y + s/2);
+      layer.lineTo(acTop.x - s, acBase.y);
+      layer.closePath();
+      layer.fillStyle = MOD_LEFT; layer.fill();
+      layer.strokeStyle = HQ_EDGE; layer.lineWidth = 2.5; layer.stroke();
+      layer.beginPath();
+      layer.moveTo(acTop.x, acTop.y + s/2);
+      layer.lineTo(acTop.x + s, acTop.y);
+      layer.lineTo(acTop.x + s, acBase.y);
+      layer.lineTo(acTop.x, acBase.y + s/2);
+      layer.closePath();
+      layer.fillStyle = MOD_RIGHT; layer.fill();
+      layer.strokeStyle = HQ_EDGE; layer.lineWidth = 2.5; layer.stroke();
+    })();
+
+    // tower — centered on base roof
+    var tn = {x:cx, y:towerTopY - tHalf/2};
+    var te = {x:cx + tHalf, y:towerTopY};
+    var ts = {x:cx, y:towerTopY + tHalf/2};
+    var tw = {x:cx - tHalf, y:towerTopY};
+    var twb = {x:cx - tHalf, y:baseTopY};
+    var teb = {x:cx + tHalf, y:baseTopY};
+    var tsb = {x:cx, y:baseTopY + tHalf/2};
+    // left wall
     layer.beginPath();
-    layer.moveTo(w.x, w.y); layer.lineTo(wb.x, wb.y);
-    layer.moveTo(e.x, e.y); layer.lineTo(eb.x, eb.y);
-    layer.moveTo(s.x, s.y); layer.lineTo(sb.x, sb.y);
-    layer.stroke();
-    layer.globalAlpha = 1;
+    layer.moveTo(tw.x, tw.y);
+    layer.lineTo(ts.x, ts.y);
+    layer.lineTo(tsb.x, tsb.y);
+    layer.lineTo(twb.x, twb.y);
+    layer.closePath();
+    layer.fillStyle = HQ_LEFT;
+    layer.fill();
+    layer.strokeStyle = HQ_EDGE; layer.lineWidth = 3.5; layer.stroke();
+    // right wall
+    layer.beginPath();
+    layer.moveTo(ts.x, ts.y);
+    layer.lineTo(te.x, te.y);
+    layer.lineTo(teb.x, teb.y);
+    layer.lineTo(tsb.x, tsb.y);
+    layer.closePath();
+    layer.fillStyle = HQ_RIGHT;
+    layer.fill();
+    layer.strokeStyle = HQ_EDGE; layer.lineWidth = 3.5; layer.stroke();
+    // roof — blue
+    layer.beginPath();
+    layer.moveTo(tw.x, tw.y);
+    layer.lineTo(tn.x, tn.y);
+    layer.lineTo(te.x, te.y);
+    layer.lineTo(ts.x, ts.y);
+    layer.closePath();
+    layer.fillStyle = HQ_TOP;
+    layer.fill();
+    layer.strokeStyle = HQ_EDGE; layer.lineWidth = 3.5; layer.stroke();
 
-    // 4) windows: 3x3 grid on each wall (~8% face width, 12% block height)
-    //    so the slits stay visible at typical tile sizes
-    var wus = [0.2, 0.45, 0.7];
-    var wvs = [0.15, 0.35, 0.55];
-    for (var wi = 0; wi < wus.length; wi++) {
-      for (var wj = 0; wj < wvs.length; wj++) {
-        drawWallQuad(layer, leftWallPt, cx, topY, iso, half, HQ_H, wus[wi], wvs[wj], 0.08, 0.12, WIN_LEFT);
-        drawWallQuad(layer, rightWallPt, cx, topY, iso, half, HQ_H, wus[wi], wvs[wj], 0.08, 0.12, WIN_RIGHT);
-      }
+    // windows — simplified to ~half: 3 per face (was 6), slightly larger for read
+    var winCols = [0.50], winRows = [0.24, 0.50, 0.76];
+    // add second column for top/bottom only to keep 4 total? No — keep 3 clean.
+    // To get 3 per face, use 1 col × 3 rows, larger 0.22×0.17
+    for (var wj2=0; wj2<3; wj2++) {
+      var u = 0.50, v = winRows[wj2];
+      var litL = wj2 % 2 === 0;
+      var litR = wj2 % 2 === 1;
+      drawWallQuad(layer, function(_cx,_ty,_is,_ha,H,uu,vv){ return leftWallPt(_cx, towerTopY, _is, _ha, HQ_TOWER_H, uu, vv); }, cx, towerTopY, tHalf, tHalf/2, HQ_TOWER_H, u, v, 0.22, 0.17, litL? WIN_LIT : WIN_LEFT);
+      drawWallQuad(layer, function(_cx,_ty,_is,_ha,H,uu,vv){ return rightWallPt(_cx, towerTopY, _is, _ha, HQ_TOWER_H, uu, vv); }, cx, towerTopY, tHalf, tHalf/2, HQ_TOWER_H, u, v, 0.22, 0.17, litR? WIN_LIT : WIN_RIGHT);
     }
+    // keep one extra pair at top for balance (total 4 per face, still ~half of 6? No — spec says roughly half, 3 is half of 6)
+    // we keep the 3 as drawn above — clean, not cluttered
 
-    // 5) entrance door (east wall, upper half so the front tile never
-    //    occludes it) + badge above it
-    drawWallQuad(layer, rightWallPt, cx, topY, iso, half, HQ_H, 0.7, 0.65, 0.08, 0.2, DOOR_TONE);
-
-    var bd = rightWallPt(cx, topY, iso, half, HQ_H, 0.7, 0.47);
-    var br = iso * 0.045;
+    // helipad — overhanging dark diamond on tower roof — scaled to tower, not fixed
+    var hHalf = tHalf * 1.22;
+    var hpCX = cx, hpCY = towerTopY;
+    var hpThick = Math.max(5, Math.round(iso * 0.16));
+    // top
     layer.beginPath();
-    layer.arc(bd.x, bd.y, br, 0, Math.PI * 2);
-    layer.fillStyle = BADGE_OUTER;
-    layer.fill();
-    layer.strokeStyle = BADGE_STROKE;
-    layer.lineWidth = 1.5;
-    layer.stroke();
-    layer.beginPath();
-    layer.arc(bd.x, bd.y, br * 0.6, 0, Math.PI * 2);
-    layer.fillStyle = BADGE_INNER;
-    layer.fill();
-
-    // 6) secondary module: ~35% footprint, ~20% height, offset toward the
-    //    dish (west) corner; base follows the roof plane, top stays flat
-    var mu = 0.2, mv = 0.5;
-    var mhw = 0.175, mhh = 0.0875;
-    var MH = HQ_H * 0.2;
-    var mb = {
-      n: roofPt(cx, topY, iso, half, mu, mv - mhh),
-      e: roofPt(cx, topY, iso, half, mu + mhw, mv),
-      s: roofPt(cx, topY, iso, half, mu, mv + mhh),
-      w: roofPt(cx, topY, iso, half, mu - mhw, mv),
-    };
-    var mt = {
-      n: { x: mb.n.x, y: mb.n.y - MH },
-      e: { x: mb.e.x, y: mb.e.y - MH },
-      s: { x: mb.s.x, y: mb.s.y - MH },
-      w: { x: mb.w.x, y: mb.w.y - MH },
-    };
-
-    layer.beginPath();
-    layer.moveTo(mt.w.x, mt.w.y);
-    layer.lineTo(mt.s.x, mt.s.y);
-    layer.lineTo(mb.s.x, mb.s.y);
-    layer.lineTo(mb.w.x, mb.w.y);
+    layer.moveTo(hpCX, hpCY - hHalf/2);
+    layer.lineTo(hpCX + hHalf, hpCY);
+    layer.lineTo(hpCX, hpCY + hHalf/2);
+    layer.lineTo(hpCX - hHalf, hpCY);
     layer.closePath();
-    layer.fillStyle = MOD_LEFT;
+    layer.fillStyle = HELIPAD_TOP;
     layer.fill();
-
+    layer.strokeStyle = HQ_EDGE; layer.lineWidth = 3.5; layer.stroke();
+    // thickness — left
     layer.beginPath();
-    layer.moveTo(mt.s.x, mt.s.y);
-    layer.lineTo(mt.e.x, mt.e.y);
-    layer.lineTo(mb.e.x, mb.e.y);
-    layer.lineTo(mb.s.x, mb.s.y);
+    layer.moveTo(hpCX - hHalf, hpCY);
+    layer.lineTo(hpCX, hpCY + hHalf/2);
+    layer.lineTo(hpCX, hpCY + hHalf/2 + hpThick);
+    layer.lineTo(hpCX - hHalf, hpCY + hpThick);
     layer.closePath();
-    layer.fillStyle = MOD_RIGHT;
+    layer.fillStyle = HELIPAD_SIDE;
     layer.fill();
-
+    layer.strokeStyle = HQ_EDGE; layer.lineWidth = 3.5; layer.stroke();
+    // thickness — right
     layer.beginPath();
-    layer.moveTo(mt.n.x, mt.n.y);
-    layer.lineTo(mt.e.x, mt.e.y);
-    layer.lineTo(mt.s.x, mt.s.y);
-    layer.lineTo(mt.w.x, mt.w.y);
+    layer.moveTo(hpCX, hpCY + hHalf/2);
+    layer.lineTo(hpCX + hHalf, hpCY);
+    layer.lineTo(hpCX + hHalf, hpCY + hpThick);
+    layer.lineTo(hpCX, hpCY + hHalf/2 + hpThick);
     layer.closePath();
-    layer.fillStyle = MOD_TOP;
+    layer.fillStyle = "#1E293B";
     layer.fill();
+    layer.strokeStyle = HQ_EDGE; layer.lineWidth = 3.5; layer.stroke();
+    // H — scaled flat 1,0.5
+    layer.save();
+    layer.translate(hpCX, hpCY);
+    layer.scale(1, 0.5);
+    layer.font = "900 22px 'Baloo 2', sans-serif";
+    layer.textAlign = "center";
+    layer.textBaseline = "middle";
+    layer.fillStyle = HELIPAD_H;
+    layer.strokeStyle = HELIPAD_H;
+    layer.lineWidth = 0.6;
+    layer.fillText("H", 0, 5);
+    layer.restore();
 
-    // corner edge line on the module's shared (south) vertical edge
-    layer.strokeStyle = HQ_EDGE;
-    layer.lineWidth = 1.5;
-    layer.globalAlpha = 0.5;
+    // antenna — thick mast on helipad edge (left-back), red beacon with glow — all proportional
+    var antBase = {x: cx - hHalf*0.62, y: hpCY - hHalf*0.31};
+    var antH = Math.max(18, Math.round(iso * 0.62));
+    var antTop = {x: antBase.x, y: antBase.y - antH};
+    var antW = Math.max(5, Math.round(iso * 0.13));
+    var beaconR = Math.max(6, Math.round(iso * 0.17));
+    var glowR = beaconR + Math.max(4, Math.round(iso * 0.10));
+    // mast
+    layer.fillStyle = HQ_EDGE;
     layer.beginPath();
-    layer.moveTo(mt.s.x, mt.s.y);
-    layer.lineTo(mb.s.x, mb.s.y);
-    layer.stroke();
-    layer.globalAlpha = 1;
-
-    // 7) roof details: two vent pipes (body + cap on the north end)
-    drawRoofQuad(layer, cx, topY, iso, half, 0.405, 0.6, 0.05, 0.1, VENT_A);
-    drawRoofQuad(layer, cx, topY, iso, half, 0.405, 0.565, 0.05, 0.03, VENT_CAP_A);
-    drawRoofQuad(layer, cx, topY, iso, half, 0.455, 0.6, 0.05, 0.1, VENT_B);
-    drawRoofQuad(layer, cx, topY, iso, half, 0.455, 0.565, 0.05, 0.03, VENT_CAP_B);
-
-    // 8) satellite dish mounted on the module roof (post + dish ellipse)
-    var dp = roofPt(cx, topY, iso, half, mu, mv);
-    var dBase = { x: dp.x, y: dp.y - MH };
-    var dTop = { x: dp.x, y: dBase.y - iso * 0.14 };
-    layer.beginPath();
-    layer.moveTo(dBase.x, dBase.y);
-    layer.lineTo(dTop.x, dTop.y);
-    layer.strokeStyle = DISH_POST;
-    layer.lineWidth = 2;
-    layer.stroke();
-    layer.beginPath();
-    layer.ellipse(dTop.x, dTop.y, iso * 0.1, iso * 0.05, 0, 0, Math.PI * 2);
-    layer.fillStyle = DISH_TONE;
+    layer.rect(antBase.x - antW/2, antTop.y, antW, antBase.y - antTop.y);
     layer.fill();
-    layer.strokeStyle = DISH_EDGE;
-    layer.lineWidth = 1;
-    layer.stroke();
-
-    // 9) central antenna + dashed guy-wires + red beacon
-    var ap = roofPt(cx, topY, iso, half, 0.5, 0.35);
-    var at = { x: ap.x, y: ap.y - iso * 0.22 };
+    layer.strokeStyle = HQ_EDGE; layer.lineWidth = 3.5; layer.strokeRect(antBase.x - antW/2, antTop.y, antW, antBase.y - antTop.y);
+    // glow
     layer.beginPath();
-    layer.moveTo(ap.x, ap.y);
-    layer.lineTo(at.x, at.y);
-    layer.strokeStyle = ANT_TONE;
-    layer.lineWidth = 2;
-    layer.stroke();
-
-    layer.strokeStyle = ANT_TONE;
-    layer.lineWidth = 1;
-    layer.globalAlpha = 0.5;
-    layer.setLineDash([4, 3]);
+    layer.arc(antTop.x, antTop.y, glowR, 0, Math.PI*2);
+    layer.fillStyle = "rgba(239,68,68,0.22)";
+    layer.fill();
+    // beacon
     layer.beginPath();
-    layer.moveTo(at.x, at.y);
-    layer.lineTo(cx, topY - half);
-    layer.moveTo(at.x, at.y);
-    layer.lineTo(cx + iso, topY);
-    layer.stroke();
-    layer.setLineDash([]);
-    layer.globalAlpha = 1;
-
-    layer.beginPath();
-    layer.arc(at.x, at.y, iso * 0.045, 0, Math.PI * 2);
+    layer.arc(antTop.x, antTop.y, beaconR, 0, Math.PI*2);
     layer.fillStyle = BEACON;
     layer.fill();
+    layer.strokeStyle = HQ_EDGE; layer.lineWidth = 3.5; layer.stroke();
+    layer.beginPath();
+    layer.arc(antTop.x - antW*0.33, antTop.y - beaconR*0.25, Math.max(1.5, beaconR*0.25), 0, Math.PI*2);
+    layer.fillStyle = "#FFFBF0"; layer.fill();
     if (isNewHQ) layer.restore();
   }
 
@@ -728,7 +813,9 @@ window.BlockRender = (function () {
         continue;
       }
       if (isHQ) {
-        // HQ tiles skip the base block and draw the detailed building instead
+        // keep green land under HQ so the tile never flashes a black void
+        var isSelHQ = api.selected && api.selected.col === t.c && api.selected.row === t.r;
+        drawBlock(layer, t.c, t.r, totalHeight(t.c, t.r), "#7EB24A", isSelHQ);
         drawHQBuilding(layer, t.c, t.r);
         continue;
       }
@@ -793,12 +880,22 @@ window.BlockRender = (function () {
     }
   }
 
+  // HQ beacon pulse — tiny, just a little (driven by beaconPulse.v)
+  var beaconAnim = null;
   // ---- river shimmer / blocky ripple animation (driven by anime.js when available) -----
   var shimmerAnim = null;
   var rippleAnim = null;
   var glowAnim = null;
   var riverShimmerAnim = null;
   var riverGlow = 0.5; // 0..1 pulsing brightness, modulates highlight alpha
+
+  function startBeaconPulse(){
+    if(typeof anime!=="undefined" && anime && !beaconAnim){
+      beaconAnim = anime({
+        targets: beaconPulse, v:1, duration: 900, direction:"alternate", loop:true, easing:"easeInOutSine"
+      });
+    }
+  }
 
   function startShimmerAnim() {
     if (typeof anime === "undefined" || !anime || shimmerAnim) return;
@@ -866,11 +963,58 @@ window.BlockRender = (function () {
     if (!riverShimmerAnim) {
       riverShimmer.v = (Math.sin(Date.now() * 0.002) + 1) * 0.5;
     }
+    if (!beaconAnim) {
+      beaconPulse.v = (Math.sin(Date.now() * 0.004) + 1) * 0.5; // ~0.8s cycle, just a little
+    }
     if (api._dirty) {
       api.redrawStatic();
       api._dirty = false;
     }
   };
+
+  // HQ beacon — tiny pulse drawn per-frame over the static HQ (so it animates just a little)
+  function drawBeaconPulse(ctx){
+    if(!window.GameState || !window.GameState.hqTile || !api.terrain || !api.terrain.isHQ) return;
+    var hq = window.GameState.hqTile;
+    if(!api.terrain.isHQ(hq.col, hq.row)) return;
+    var g = api.grid; if(!g || !g.isoSize) return;
+    var iso = g.isoSize;
+    // recompute antenna top exactly as in drawHQBuilding (proportional)
+    var p = g.worldToScreen(hq.col, hq.row);
+    var cx = p.x, cy = p.y;
+    var baseTopY = cy - HQ_BASE_H;
+    var tHalf = iso * 0.60;
+    var towerTopY = baseTopY - HQ_TOWER_H;
+    var hHalf = tHalf * 1.22;
+    var hpCY = towerTopY;
+    var antBaseX = cx - hHalf*0.62;
+    var antBaseY = hpCY - hHalf*0.31;
+    var antH = Math.max(18, Math.round(iso * 0.62));
+    var antTopY = antBaseY - antH;
+    var antW = Math.max(5, Math.round(iso * 0.13));
+    var beaconR = Math.max(6, Math.round(iso * 0.17));
+    var glowR = beaconR + Math.max(4, Math.round(iso * 0.10));
+    var k = beaconPulse.v; // 0..1
+    var pulse = 0.88 + 0.14 * k; // 0.88..1.02 scale — just a little
+    var glowAlpha = 0.16 + 0.14 * k; // 0.16..0.30
+    var beaconAlpha = 0.92 + 0.08 * k;
+    // glow
+    ctx.save();
+    ctx.globalAlpha = glowAlpha;
+    ctx.beginPath(); ctx.arc(antBaseX, antTopY, glowR * (0.96 + 0.18*k), 0, Math.PI*2);
+    ctx.fillStyle = "rgba(239,68,68,1)"; ctx.fill();
+    ctx.restore();
+    // beacon body — subtle scale
+    ctx.save();
+    ctx.globalAlpha = beaconAlpha;
+    ctx.translate(antBaseX, antTopY); ctx.scale(pulse, pulse); ctx.translate(-antBaseX, -antTopY);
+    ctx.beginPath(); ctx.arc(antBaseX, antTopY, beaconR, 0, Math.PI*2);
+    ctx.fillStyle = BEACON; ctx.fill();
+    ctx.strokeStyle = HQ_EDGE; ctx.lineWidth = 3.5; ctx.stroke();
+    ctx.beginPath(); ctx.arc(antBaseX - antW*0.33, antTopY - beaconR*0.25, Math.max(1.5, beaconR*0.25), 0, Math.PI*2);
+    ctx.fillStyle = "#FFFBF0"; ctx.fill();
+    ctx.restore();
+  }
 
   // per-frame render: clear the whole canvas first (device-pixel exact under
   // the dpr transform), then draw the cached scene under 'copy' compositing so
@@ -886,6 +1030,7 @@ window.BlockRender = (function () {
     ctx.drawImage(api.staticLayer, 0, 0, api.grid.canvasW, api.grid.canvasH);
     ctx.globalCompositeOperation = "source-over";
     drawShimmer(ctx);
+    drawBeaconPulse(ctx);
     // placement preview + deployed drone marker (drawn on top, per-frame so
     // the drop-in animation and the cursor-following preview stay smooth)
     if (window.DroneDeploy) window.DroneDeploy.renderMain(ctx, api.grid);

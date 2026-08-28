@@ -7,7 +7,8 @@
  *   - hills are scattered rock clusters hugging the NORTH, WEST and SOUTH
  *     grid edges (framing the site on most sides)
  *   - the river hugs the EAST grid edge (2 cells wide, flowing south)
- *   - the trench is a diagonal slash in the interior (lower-left area)
+ *   - the trench is a diagonal slash in the interior (lower-left area);
+ *     it compacts to flat land after the Dynamic Compactor runs
  *   - everything else is flat land
  *
  * blockRender.js consumes this data: hill tiles are NOT drawn as blocks —
@@ -154,7 +155,9 @@ window.Terrain = (function () {
       ],
     });
 
-    // trench: diagonal slash across the lower-left interior (only over flat land)
+    // trench: diagonal slash in the lower-left interior (only over flat land).
+    // Starts as a violet pit; after the Dynamic Compactor finishes on those
+    // tiles they are converted to normal green land (pop-able, buildable).
     for (var r = 0; r < GRID; r++) {
       for (var c = 0; c < GRID; c++) {
         var along = c - r;
@@ -171,24 +174,31 @@ window.Terrain = (function () {
   var map = gen.map;
 
   var api = {
-    // hill cluster footprints (tile lists) + rock/boulder shapes for the
-    // scattered-formation overlay rendering
     hillClusters: gen.clusters,
     typeAt: function (c, r) { return NAMES[map[r][c]]; },
     isRiver: function (c, r) { return map[r][c] === T.RIVER; },
     isHill: function (c, r) { return map[r][c] === T.HILL; },
+    isTrench: function (c, r) { return map[r][c] === T.TRENCH; },
     elevationAt: function (c, r) { return ELEVATION[NAMES[map[r][c]]]; },
     colorAt: function (c, r) { return PALETTE[NAMES[map[r][c]]]; },
-    // the color of the flat land tile drawn UNDERNEATH a tile. Hill tiles keep
-    // their normal flat land base (the peak shapes are drawn on top of it), so
-    // the grid always renders complete with no gaps.
     baseColorAt: function (c, r) {
       return map[r][c] === T.HILL ? PALETTE.land : PALETTE[NAMES[map[r][c]]];
     },
-    // -- HQ support ---------------------------------------------------
     isHQ: function (c, r) { return map[r][c] === T.HQ; },
     setHQ: function (c, r) { map[r][c] = T.HQ; },
-    // render color for the HQ building (different from land color)
+    // called by the Dynamic Compactor when a trench tile is filled — turns
+    // that tile into normal flat land (pop-able, 4px base, easily replaceable)
+    fillTrench: function (c, r) {
+      if (c < 0 || c >= GRID || r < 0 || r >= GRID) return false;
+      if (map[r][c] !== T.TRENCH) return false;
+      map[r][c] = T.LAND;
+      return true;
+    },
+    fillTrenchArea: function (tiles) {
+      var n = 0;
+      for (var i = 0; i < tiles.length; i++) if (api.fillTrench(tiles[i].col, tiles[i].row)) n++;
+      return n;
+    },
     hqColor: "#4fc3f7",
   };
 

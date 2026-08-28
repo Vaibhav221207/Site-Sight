@@ -147,7 +147,6 @@ window.TilePanel = (function () {
           '<span class="panel-data-label">' + r.label + '</span>' + valueHtml +
         '</div>';
       }).join("");
-      // anime.js: stagger the data rows + grade in for a lively UI/UX entrance
       if (typeof anime !== "undefined" && anime) {
         anime.set(bodyEl.querySelectorAll(".panel-data-row"), { opacity: 0, translateX: -10 });
         anime({
@@ -158,6 +157,9 @@ window.TilePanel = (function () {
           duration: 320,
           easing: "easeOutCubic",
         });
+      } else {
+        var _rows = bodyEl.querySelectorAll(".panel-data-row");
+        for (var i = 0; i < _rows.length; i++) { _rows[i].style.opacity = "1"; _rows[i].style.transform = "translateX(0)"; }
       }
     }
   };
@@ -166,8 +168,6 @@ window.TilePanel = (function () {
     return api.currentTile && api.currentTile.col === col && api.currentTile.row === row && api.isHQ === (window.Terrain && window.Terrain.isHQ(col, row));
   };
 
-// slide the panel in to the right of the viewport (CSS transition)
-  // On mobile: fade in at bottom-left (no slide across the map).
   api.show = function (col, row) {
     if (!api.panel) return;
     api._clearHideEnd();
@@ -176,7 +176,6 @@ window.TilePanel = (function () {
     api.setContent(col, row, isHQ);
 
     if (window.MobileUI && window.MobileUI.enabled) {
-      // mobile: fade in at bottom-left, no slide
       api.panel.style.transition = "opacity 0.1s ease-out";
       api.panel.style.opacity = "0";
       api.panel.style.visibility = "visible";
@@ -187,9 +186,9 @@ window.TilePanel = (function () {
         if (api.isOpen) api.hide();
       }, 3000);
     } else {
-      // desktop: slide in from right
       api._setPos(api._offscreenX(), false);
       api.panel.style.visibility = "visible";
+      api.panel.style.opacity = "1";
       void api.panel.offsetWidth;
       api._setPos(0, true, SHOW_DUR, "ease-out");
       api.isOpen = true;

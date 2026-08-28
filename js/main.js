@@ -63,27 +63,59 @@ window.Main = (function () {
     window.BlockRender.invalidate();
   }
 
+  var _renderErrCount = 0;
   function loop() {
     try {
       window.BlockRender.tick();
       render();
+      if (_renderErrCount > 0) {
+        // recovered — hide the transient bar after one clean frame
+        var dbg2 = document.getElementById("debug-overlay");
+        if (dbg2 && dbg2.textContent.indexOf("RENDER ERR:") === 0) {
+          dbg2.style.display = "none";
+          dbg2.textContent = "";
+        }
+        _renderErrCount = 0;
+        loop._warned = false;
+      }
     } catch (err) {
-      // A single bad frame must NEVER kill the rAF loop (that would freeze
-      // every animation on the map). Log once and keep going.
-      if (!loop._warned) {
+      _renderErrCount++;
+      // only surface if it persists for 2+ frames (avoids flicker from one-off throws during init)
+      if (_renderErrCount >= 2 && !loop._warned) {
         loop._warned = true;
         console.error("[Main] render frame error (suppressed to keep loop alive):", err);
+        var dbg = document.getElementById("debug-overlay");
+        if (dbg) {
+          var full = err && err.message ? err.message : String(err);
+          // keep it short but keep isoSize intact (was truncating to "iso")
+          if (full.length > 90) full = full.slice(0, 87) + "...";
+          dbg.style.display = "block"; dbg.style.background = "rgba(200,30,30,0.95)";
+          dbg.textContent = "RENDER ERR: " + full + " | canvas " + (api.canvas ? api.canvas.width + "x" + api.canvas.height : "no-canvas");
+        }
+      } else {
+        console.warn("[Main] transient render tick suppressed:", err && err.message ? err.message : err);
       }
     }
     rafId = requestAnimationFrame(loop);
   }
 
   api.init = function () {
-    api.canvas = document.getElementById("game-canvas");
-    api.ctx = api.canvas.getContext("2d");
-    api.grid = window.IsoGrid;
+    try {
+      api.canvas = document.getElementById("game-canvas");
+      api.ctx = api.canvas.getContext("2d");
+      if (!api.ctx) throw new Error("getContext 2d returned null");
+      api.grid = window.IsoGrid;
+      if (!api.grid) throw new Error("IsoGrid missing");
+      if (!window.Terrain) throw new Error("Terrain missing");
+      if (!window.BlockRender) throw new Error("BlockRender missing");
 
-    window.BlockRender.init(api.ctx, api.grid, window.Terrain);
+      window.BlockRender.init(api.ctx, api.grid, window.Terrain);
+    } catch (err) {
+      console.error("[Main.init] fatal:", err);
+      var dbg = document.getElementById("debug-overlay");
+      if (dbg) { dbg.style.display = "block"; dbg.style.background = "rgba(200,30,30,0.95)"; dbg.textContent = "INIT ERR: " + err.message; }
+      throw err;
+    }
 
     // initialize gameState cash display
     window.GameState.cash = 50000;
@@ -122,13 +154,47 @@ window.Main = (function () {
     if (window.visualViewport && typeof window.visualViewport.addEventListener === "function") {
       window.visualViewport.addEventListener("resize", onResize);
     }
-    window.InputHandler.init(api.canvas, api.grid, onTileClicked, onPan, window.Terrain);
-    window.TilePanel.init();
-    window.HqPanel.init();
-    window.BuildMenu.init();
+    // each module init is isolated so one broken module cannot prevent canvas resize/loop
+    function safeInit(name, fn) {
+      try { fn(); } catch (err) {
+        console.error("[Main.init] " + name + " failed:", err);
+        window._siteSightErrors = window._siteSightErrors || [];
+        window._siteSightErrors.push(name + ": " + (err.message || err));
+        var dbg = document.getElementById("debug-overlay");
+        if (dbg) { dbg.style.display = "block"; dbg.style.background = "rgba(200,30,30,0.95)"; dbg.textContent = "ERR: " + window._siteSightErrors.join(" | "); }
+      }
+    }
+    safeInit("InputHandler", function () { window.InputHandler.init(api.canvas, api.grid, onTileClicked, onPan, window.Terrain); });
+    safeInit("TilePanel", function () { window.TilePanel.init(); });
+    safeInit("HqPanel", function () { window.HqPanel.init(); });
+    safeInit("BuildMenu", function () { window.BuildMenu.init(); });
+    safeInit("MobileUI", function () { if (window.MobileUI && window.MobileUI.init) window.MobileUI.init(); });
 
-    onResize();
-    loop();
+    try { onResize(); } catch (err) {
+      console.error("[Main.init] onResize failed:", err);
+      window._siteSightErrors = window._siteSightErrors || [];
+      window._siteSightErrors.push("onResize: " + (err.message || err));
+    }
+    try { loop(); } catch (err) { console.error("[Main.init] loop failed:", err); }
+    // surface diagnostics to debug-overlay (hidden unless broken, but logged)
+    setTimeout(function () {
+      try {
+        var c = api.canvas;
+        var info = "canvas " + c.width + "x" + c.height + " css " + c.clientWidth + "x" + c.clientHeight +
+          " | iso " + Math.round(api.grid.isoSize) + " | layer " + (window.BlockRender.staticLayer ? window.BlockRender.staticLayer.width + "x" + window.BlockRender.staticLayer.height : "none") +
+          " | dpr " + (window.devicePixelRatio || 1);
+        console.log("[Main] post-init " + info);
+        if (window._siteSightDebugShow) {
+          var el = document.getElementById("debug-overlay");
+          var bad = !c.width || !window.BlockRender.staticLayer || !window.BlockRender.staticLayer.width;
+          if (bad || (window._siteSightErrors && window._siteSightErrors.length)) {
+            window._siteSightDebugShow(info, !!bad);
+          } else if (el) {
+            el.textContent = info; el.dataset.info = info;
+          }
+        }
+      } catch (e) { console.error("[Main] diag fail", e); }
+    }, 600);
   };
 
   return api;
