@@ -74,6 +74,25 @@ window.GprDeploy = (function () {
     onZoneStart: null,
   };
 
+  // -- HQ exclusion (scan grids must never cover HQ) ---------------------
+
+  function isHqTile(col, row) {
+    if (window.Terrain && window.Terrain.isHQ && window.Terrain.isHQ(col, row)) return true;
+    var hq = window.GameState && window.GameState.hqTile;
+    if (hq && hq.col === col && hq.row === row) return true;
+    return false;
+  }
+
+  function hqInArea(area) {
+    if (!area) return null;
+    var hq = window.GameState && window.GameState.hqTile;
+    if (hq && hq.col >= area.cMin && hq.col <= area.cMax && hq.row >= area.rMin && hq.row <= area.rMax) return hq;
+    if (window.Terrain && window.Terrain.isHQ) {
+      for (var r = area.rMin; r <= area.rMax; r++) for (var c = area.cMin; c <= area.cMax; c++) if (window.Terrain.isHQ(c, r)) return { col: c, row: r };
+    }
+    return null;
+  }
+
   // -- grid helpers -------------------------------------------------------
 
   function groundTopY(c, r) {
@@ -122,6 +141,7 @@ window.GprDeploy = (function () {
     if (!gs || !gs.isTileSubsurfaceScanned) return false;
     for (var i = 0; i < area.tiles.length; i++) {
       var t = area.tiles[i];
+      if (isHqTile(t.col, t.row)) continue;
       if (!gs.isTileSubsurfaceScanned(t.col, t.row)) return false;
     }
     return true;
@@ -699,6 +719,7 @@ window.GprDeploy = (function () {
     ctx.save();
     for (var i = 0; i < area.tiles.length; i++) {
       var t = area.tiles[i];
+      if (isHqTile(t.col, t.row)) continue;
       var colFrac = (t.col - area.cMin) / cspan;
       // tileScreen/groundTopY already use the CURRENT camera, so the diamonds
       // stay glued to their land tiles even while the view pans (do NOT pass
@@ -855,11 +876,30 @@ window.GprDeploy = (function () {
       s.maxSweep = Math.max(s.maxSweep || 0, s.sweep);
       if (area) {
         var c = projectCorners(anchor, s.corners);
-        // footprint-confined ground scan (no expanding rings off the land)
-        drawGroundGlow(ctx, area, c, s.alpha, s.ground);
-        drawGprTileRead(ctx, area, s.alpha, s.maxSweep, s.sweep);
-        drawGprScanline(ctx, c, s.alpha, s.sweep);
-        drawGprDepthTicks(ctx, c, s.alpha, s.sweep);
+        var hq = hqInArea(area);
+        if (hq) {
+          var isoH = (window.IsoGrid && window.IsoGrid.isoSize) || 32;
+          var halfH = isoH / 2;
+          var hpH = tileScreen(hq.col, hq.row);
+          var hyH = groundTopY(hq.col, hq.row);
+          ctx.save();
+          ctx.beginPath();
+          ctx.moveTo(c.TL.x, c.TL.y); ctx.lineTo(c.TR.x, c.TR.y); ctx.lineTo(c.BR.x, c.BR.y); ctx.lineTo(c.BL.x, c.BL.y); ctx.closePath();
+          ctx.moveTo(hpH.x, hyH - halfH); ctx.lineTo(hpH.x + isoH, hyH); ctx.lineTo(hpH.x, hyH + halfH); ctx.lineTo(hpH.x - isoH, hyH); ctx.closePath();
+          try { ctx.clip('evenodd'); } catch (e) { ctx.clip(); }
+          // footprint-confined ground scan (no expanding rings off the land)
+          drawGroundGlow(ctx, area, c, s.alpha, s.ground);
+          drawGprTileRead(ctx, area, s.alpha, s.maxSweep, s.sweep);
+          drawGprScanline(ctx, c, s.alpha, s.sweep);
+          drawGprDepthTicks(ctx, c, s.alpha, s.sweep);
+          ctx.restore();
+        } else {
+          // footprint-confined ground scan (no expanding rings off the land)
+          drawGroundGlow(ctx, area, c, s.alpha, s.ground);
+          drawGprTileRead(ctx, area, s.alpha, s.maxSweep, s.sweep);
+          drawGprScanline(ctx, c, s.alpha, s.sweep);
+          drawGprDepthTicks(ctx, c, s.alpha, s.sweep);
+        }
         drawAreaOutline(ctx, area, [], OUTLINE_COLOR, 1, 6, 2.5);
       }
       // the rover drives the scan-line, moving west->east along a fixed row.

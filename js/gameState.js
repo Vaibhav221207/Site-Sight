@@ -61,8 +61,18 @@ window.GameState = (function () {
     tileData: {},
   };
 
+  // HQ tiles are never part of a scan (visual + data). The scanning
+  // grid must never overlap the HQ building for any terrain/HQ position.
+  function isHqTile(col, row) {
+    if (window.Terrain && window.Terrain.isHQ && window.Terrain.isHQ(col, row)) return true;
+    var hq = api.hqTile;
+    if (hq && hq.col === col && hq.row === row) return true;
+    return false;
+  }
+
   // has this tile already been scanned (aerial) by a completed deployment?
   api.isTileScanned = function (col, row) {
+    if (isHqTile(col, row)) return true; // HQ never needs scanning; treat as already scanned so chunks skip it
     return !!api.scanned[col + "," + row];
   };
 
@@ -70,12 +80,15 @@ window.GameState = (function () {
   api.markAreaScanned = function (tiles) {
     if (!tiles) return;
     for (var i = 0; i < tiles.length; i++) {
-      api.scanned[tiles[i].col + "," + tiles[i].row] = true;
+      var c = tiles[i].col, r = tiles[i].row;
+      if (isHqTile(c, r)) continue;
+      api.scanned[c + "," + r] = true;
     }
   };
 
   // has this tile already had its subsurface surveyed by a GPR deployment?
   api.isTileSubsurfaceScanned = function (col, row) {
+    if (isHqTile(col, row)) return true;
     return !!api.subsurfaceScanned[col + "," + row];
   };
 
@@ -83,7 +96,9 @@ window.GameState = (function () {
   api.markAreaSubsurfaceScanned = function (tiles) {
     if (!tiles) return;
     for (var i = 0; i < tiles.length; i++) {
-      api.subsurfaceScanned[tiles[i].col + "," + tiles[i].row] = true;
+      var c = tiles[i].col, r = tiles[i].row;
+      if (isHqTile(c, r)) continue;
+      api.subsurfaceScanned[c + "," + r] = true;
     }
   };
 
@@ -213,14 +228,18 @@ window.GameState = (function () {
   api.markAreaDroneData = function (tiles) {
     if (!tiles) return;
     for (var i = 0; i < tiles.length; i++) {
-      api.markDroneScanned(tiles[i].col, tiles[i].row);
+      var c = tiles[i].col, r = tiles[i].row;
+      if (isHqTile(c, r)) continue;
+      api.markDroneScanned(c, r);
     }
   };
 
   api.markAreaGprData = function (tiles) {
     if (!tiles) return;
     for (var i = 0; i < tiles.length; i++) {
-      api.markGprScanned(tiles[i].col, tiles[i].row);
+      var c = tiles[i].col, r = tiles[i].row;
+      if (isHqTile(c, r)) continue;
+      api.markGprScanned(c, r);
     }
   };
 

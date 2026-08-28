@@ -106,6 +106,26 @@ window.DroneDeploy = (function () {
     onZoneStart: null,  // optional test hook: (chunkIndex, zonesRunning) when a zone launches
   };
 
+  // -- HQ exclusion (scan grids must never cover HQ) ---------------------
+
+  function isHqTile(col, row) {
+    if (window.Terrain && window.Terrain.isHQ && window.Terrain.isHQ(col, row)) return true;
+    var hq = window.GameState && window.GameState.hqTile;
+    if (hq && hq.col === col && hq.row === row) return true;
+    return false;
+  }
+
+  function hqInArea(area) {
+    if (!area) return null;
+    var hq = window.GameState && window.GameState.hqTile;
+    if (hq && hq.col >= area.cMin && hq.col <= area.cMax && hq.row >= area.rMin && hq.row <= area.rMax) return hq;
+    // future-proof: scan terrain for any HQ inside the area
+    if (window.Terrain && window.Terrain.isHQ) {
+      for (var r = area.rMin; r <= area.rMax; r++) for (var c = area.cMin; c <= area.cMax; c++) if (window.Terrain.isHQ(c, r)) return { col: c, row: r };
+    }
+    return null;
+  }
+
   // -- grid helpers -------------------------------------------------------
 
   function groundTopY(c, r) {
@@ -162,11 +182,14 @@ window.DroneDeploy = (function () {
   }
 
   // is every tile of this chunk already permanently scanned? (skip rule)
+  // HQ tiles are never scanned and are ignored here so a chunk containing HQ
+  // can still count as fully scanned once all non-HQ tiles are done.
   function chunkFullyScanned(area) {
     var gs = window.GameState;
     if (!gs || !gs.isTileScanned) return false;
     for (var i = 0; i < area.tiles.length; i++) {
       var t = area.tiles[i];
+      if (isHqTile(t.col, t.row)) continue;
       if (!gs.isTileScanned(t.col, t.row)) return false;
     }
     return true;
@@ -996,13 +1019,36 @@ window.DroneDeploy = (function () {
       var s = zone.scan;
       if (area) {
         var c = projectCorners(anchor, s.corners);
-        drawHeatmap(ctx, area, c, s.alpha, s.heat, s.heatPulse);
-        if (s.drones && s.drones.length) {
-          var apexDrone = s.drones[0];
-          var apex = projectFrom(anchor, apexDrone);
-          drawCone(ctx, area, c, { x: apex.x, y: apex.y - (s.bob || 0) * BOB_AMP }, s.alpha, s.pulse);
+        var hq = hqInArea(area);
+        if (hq) {
+          // punch an HQ-shaped hole so the heatmap / cone / sweep never
+          // paint over the HQ building (future-proof for any HQ tile)
+          var isoH = (window.IsoGrid && window.IsoGrid.isoSize) || 32;
+          var halfH = isoH / 2;
+          var hpH = tileScreen(hq.col, hq.row);
+          var hyH = groundTopY(hq.col, hq.row);
+          ctx.save();
+          ctx.beginPath();
+          ctx.moveTo(c.TL.x, c.TL.y); ctx.lineTo(c.TR.x, c.TR.y); ctx.lineTo(c.BR.x, c.BR.y); ctx.lineTo(c.BL.x, c.BL.y); ctx.closePath();
+          ctx.moveTo(hpH.x, hyH - halfH); ctx.lineTo(hpH.x + isoH, hyH); ctx.lineTo(hpH.x, hyH + halfH); ctx.lineTo(hpH.x - isoH, hyH); ctx.closePath();
+          try { ctx.clip('evenodd'); } catch (e) { ctx.clip(); }
+          drawHeatmap(ctx, area, c, s.alpha, s.heat, s.heatPulse);
+          if (s.drones && s.drones.length) {
+            var apexDrone = s.drones[0];
+            var apex = projectFrom(anchor, apexDrone);
+            drawCone(ctx, area, c, { x: apex.x, y: apex.y - (s.bob || 0) * BOB_AMP }, s.alpha, s.pulse);
+          }
+          drawSweep(ctx, c, s.alpha, s.sweep);
+          ctx.restore();
+        } else {
+          drawHeatmap(ctx, area, c, s.alpha, s.heat, s.heatPulse);
+          if (s.drones && s.drones.length) {
+            var apexDrone = s.drones[0];
+            var apex = projectFrom(anchor, apexDrone);
+            drawCone(ctx, area, c, { x: apex.x, y: apex.y - (s.bob || 0) * BOB_AMP }, s.alpha, s.pulse);
+          }
+          drawSweep(ctx, c, s.alpha, s.sweep);
         }
-        drawSweep(ctx, c, s.alpha, s.sweep);
         drawAreaOutline(ctx, area, [], OUTLINE_COLOR, 1, 6, 2.5);
       }
       for (var si = 0; si < s.drones.length; si++) {
