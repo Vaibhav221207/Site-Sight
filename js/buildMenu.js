@@ -25,30 +25,39 @@ var ITEMS = [
       icon:
         '<svg viewBox="0 0 48 48" width="40" height="40" aria-hidden="true" style="display:block;background:transparent">' +
         '<g stroke="#0F172A" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">' +
-        '<path d="M24 33 L36 39 L36 45 L24 39 Z" fill="#E2E8F0"/>' +
-        '<path d="M12 39 L24 33 L24 39 L12 45 Z" fill="#F8FAFC"/>' +
-        '<path d="M12 39 L24 33 L36 39 L24 45 Z" fill="#2563EB" stroke="#0F172A" stroke-width="1.8"/>' +
+        '<path d="M8 44 L24 36 L40 44 L24 48 Z" fill="#F8FAFC"/>' +
+        '<path d="M8 44 L24 48 L24 36 Z" fill="#E2E8F0"/>' +
+        '<path d="M40 44 L24 48 L24 36 Z" fill="#CBD5E1"/>' +
+        '<path d="M8 44 L24 36 L40 44 L24 48 Z" fill="none" stroke="#0F172A" stroke-width="2.4"/>' +
         '</g>' +
         '<g stroke="#0F172A" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">' +
-        '<path d="M24 20.5 L32.5 24.8 L32.5 35 L24 39.3 L15.5 35 L15.5 24.8 Z" fill="#F8FAFC"/>' +
-        '<path d="M32.5 24.8 L32.5 35 L24 39.3 L24 29 Z" fill="#E2E8F0"/>' +
-        '<path d="M15.5 35 L24 39.3 L24 29 L15.5 24.8 Z" fill="#F8FAFC"/>' +
-        '<path d="M15.5 24.8 L24 20.5 L32.5 24.8 L24 29 Z" fill="#2563EB" stroke="#0F172A" stroke-width="1.8"/>' +
-        '<rect x="17.2" y="27.5" width="3.2" height="4.8" rx="0.5" fill="#FDE68A" stroke="#0F172A" stroke-width="1.1"/>' +
-        '<rect x="22" y="27.5" width="3.2" height="4.8" rx="0.5" fill="#FDE68A" stroke="#0F172A" stroke-width="1.1"/>' +
-        '<rect x="27.5" y="27.5" width="3.2" height="4.8" rx="0.5" fill="#FDE68A" stroke="#0F172A" stroke-width="1.1"/>' +
-        '<rect x="17.2" y="32.5" width="3.2" height="4.8" rx="0.5" fill="#FDE68A" stroke="#0F172A" stroke-width="1.1"/>' +
-        '<rect x="22" y="32.5" width="3.2" height="4.8" rx="0.5" fill="#FDE68A" stroke="#0F172A" stroke-width="1.1"/>' +
-        '<rect x="27.5" y="32.5" width="3.2" height="4.8" rx="0.5" fill="#FDE68A" stroke="#0F172A" stroke-width="1.1"/>' +
+        '<path d="M24 26 L34 31 L34 38 L24 33 Z" fill="#E2E8F0"/>' +
+        '<path d="M14 31 L24 26 L24 33 L14 38 Z" fill="#F8FAFC"/>' +
+        '<path d="M14 31 L24 26 L34 31 L24 36 Z" fill="#2563EB" stroke="#0F172A" stroke-width="1.6"/>' +
+        '</g>' +
+        '<g stroke="#0F172A" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">' +
+        '<path d="M24 20 L32 24 L32 30 L24 26 L16 30 L16 24 Z" fill="#F8FAFC"/>' +
+        '<path d="M32 24 L32 30 L24 26 L24 20 Z" fill="#E2E8F0"/>' +
+        '<path d="M16 30 L24 26 L24 20 L16 24 Z" fill="#F8FAFC"/>' +
+        '<path d="M16 24 L24 20 L32 24 L24 28 Z" fill="#2563EB" stroke="#0F172A" stroke-width="1.6"/>' +
+        '<rect x="18" y="22.8" width="2.4" height="3.2" rx="0.4" fill="#FDE68A" stroke="#0F172A" stroke-width="0.9"/>' +
+        '<rect x="21" y="22.8" width="2.4" height="3.2" rx="0.4" fill="#FDE68A" stroke="#0F172A" stroke-width="0.9"/>' +
+        '<rect x="24" y="22.8" width="2.4" height="3.2" rx="0.4" fill="#FDE68A" stroke="#0F172A" stroke-width="0.9"/>' +
+        '<rect x="27" y="22.8" width="2.4" height="3.2" rx="0.4" fill="#FDE68A" stroke="#0F172A" stroke-width="0.9"/>' +
+        '<rect x="18" y="26.4" width="2.4" height="3.2" rx="0.4" fill="#FDE68A" stroke="#0F172A" stroke-width="0.9"/>' +
+        '<rect x="21" y="26.4" width="2.4" height="3.2" rx="0.4" fill="#FDE68A" stroke="#0F172A" stroke-width="0.9"/>' +
+        '<rect x="24" y="26.4" width="2.4" height="3.2" rx="0.4" fill="#FDE68A" stroke="#0F172A" stroke-width="0.9"/>' +
+        '<rect x="27" y="26.4" width="2.4" height="3.2" rx="0.4" fill="#FDE68A" stroke="#0F172A" stroke-width="0.9"/>' +
         '</g>' +
         '<g stroke="#0F172A" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">' +
-        '<path d="M17.5 17.5 L24 14 L30.5 17.5 L24 21 Z" fill="#1E293B"/>' +
-        '<path d="M17.5 17.5 L24 21 L24 22.8 L17.5 19.3 Z" fill="#0F172A"/>' +
-        '<path d="M24 21 L30.5 17.5 L30.5 19.3 L24 22.8 Z" fill="#1E293B"/>' +
-        '<text x="24" y="19.5" text-anchor="middle" font-family=&apos;Baloo 2&apos;,sans-serif font-size="5" font-weight="900" fill="#FDE68A">H</text>' +
-        '<rect x="20" y="10" width="2.4" height="5.5" rx="0.6" fill="#0F172A"/>' +
-        '<circle cx="21.2" cy="9.5" r="2.6" fill="#EF4444" stroke="#0F172A" stroke-width="1.1"/>' +
-        '<circle cx="20.3" cy="8.6" r="0.9" fill="white" opacity="0.92"/>' +
+        '<path d="M18 17 L24 14 L30 17 L24 20 Z" fill="#1E293B"/>' +
+        '<path d="M18 17 L24 20 L24 21.5 L18 18.5 Z" fill="#0F172A"/>' +
+        '<path d="M24 20 L30 17 L30 18.5 L24 21.5 Z" fill="#1E293B"/>' +
+        '<text x="24" y="18.8" text-anchor="middle" font-family=&apos;Baloo 2&apos;,sans-serif font-size="4.5" font-weight="900" fill="#FDE68A">H</text>' +
+        '<rect x="21.6" y="9.5" width="2" height="5.8" rx="0.5" fill="#0F172A"/>' +
+        '<circle cx="22.6" cy="8.5" r="3" fill="#1E293B" stroke="#0F172A" stroke-width="1.2"/>' +
+        '<path d="M23.8 7 A3 3 0 0 0 21 7 A2.2 2.2 0 0 1 23.8 7" fill="#EF4444" stroke="none"/>' +
+        '<circle cx="22" cy="7.8" r="0.8" fill="white" opacity="0.9"/>' +
         '</g>' +
         '</svg>',
       module: function () { return window.HQBuild; },
