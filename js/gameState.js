@@ -103,10 +103,12 @@ window.GameState = (function () {
     return options[options.length - 1].value;
   }
 
-  // the trench is the game's "problem site" — surface stability is always Poor.
-  function isTrenchTile(col, row) {
-    return !!(window.Terrain && window.Terrain.typeAt &&
-      window.Terrain.typeAt(col, row) === "trench");
+  // trench AND rock are "hazard" sites — surface stability is always Poor and
+  // they read as Unsuitable, and the Dynamic Compactor can clear them to land.
+  function isHazardTile(col, row) {
+    if (!window.Terrain || !window.Terrain.typeAt) return false;
+    var t = window.Terrain.typeAt(col, row);
+    return t === "trench" || t === "rock";
   }
 
   // get (and lazily create) the data record for a tile. Record shape:
@@ -166,7 +168,7 @@ window.GameState = (function () {
   api.markDroneScanned = function (col, row) {
     var d = api.getTileData(col, row);
     d.droneScanned = true;
-    d.surfaceStability = isTrenchTile(col, row)
+    d.surfaceStability = isHazardTile(col, row)
       ? "Poor"
       : weightedPick([
           { value: "Poor", w: 15 },
@@ -184,7 +186,7 @@ window.GameState = (function () {
   api.markGprScanned = function (col, row) {
     var d = api.getTileData(col, row);
     d.gprScanned = true;
-    var trench = isTrenchTile(col, row);
+    var trench = isHazardTile(col, row);
     d.soilType = weightedPick([
       { value: "Sandy", w: 25 },
       { value: "Clay", w: 30 },

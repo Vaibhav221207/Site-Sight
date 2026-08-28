@@ -130,7 +130,7 @@ window.DataMap = (function () {
 
     // rock clusters: light gray dots with a strong dark outline — readable on
     // Industrial brown as well as on light fills
-    var clusters = t.hillClusters || [];
+    var clusters = t.rockClusters || [];
     for (var ci = 0; ci < clusters.length; ci++) {
       var rocks = (clusters[ci].rocks || []).slice();
       for (var ri = 0; ri < rocks.length; ri++) {

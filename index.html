@@ -4,14 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <title>Site Sight</title>
-  <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="css/style.css" />
   <!-- Baloo 2 — rounded playful UI font -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700&display=swap" rel="stylesheet" />
-  <!-- Anime.js (CDN, required for popup micro-interactions) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+  <!-- Anime.js — vendored locally (was CDN; prevents Edge Tracking-Prevention storage warnings) -->
+  <script src="js/vendor/anime.min.js"></script>
   <script>
     // live debug: surface any JS error + canvas diagnostics on screen so
     // file:// caching / CDN failures are visible in a screenshot
@@ -49,7 +48,7 @@
           var info='canvas '+(c?c.width+'x'+c.height:'missing')+' css '+ (c?c.clientWidth+'x'+c.clientHeight:'-');
           info+=' | IsoGrid '+(window.IsoGrid?('iso '+Math.round(window.IsoGrid.isoSize)+' cam '+Math.round(window.IsoGrid.camera.x)+','+Math.round(window.IsoGrid.camera.y)):'missing');
           info+=' | BlockRender '+(window.BlockRender?'ok'+(window.BlockRender.staticLayer?' layer '+window.BlockRender.staticLayer.width+'x'+window.BlockRender.staticLayer.height:' no-layer'):'missing');
-          info+=' | Terrain '+(window.Terrain?'ok':'missing');
+          info+=' | Terrain '+(window.Terrain?'ok seed '+(window.Terrain.seed||'?'):'missing');
           info+=' | anime '+(typeof anime!=='undefined'?'ok':'missing');
           info+=' | InputHandler '+(window.InputHandler?'ok':'MISS')+' TilePanel '+(window.TilePanel?'ok':'MISS')+' HqPanel '+(window.HqPanel?'ok':'MISS')+' BuildMenu '+(window.BuildMenu?'ok':'MISS');
           if(window._siteSightErrors.length) info='ERR: '+window._siteSightErrors.join(' | ')+' | '+info;

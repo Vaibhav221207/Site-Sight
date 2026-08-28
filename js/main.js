@@ -80,20 +80,18 @@ window.Main = (function () {
       }
     } catch (err) {
       _renderErrCount++;
-      // only surface if it persists for 2+ frames (avoids flicker from one-off throws during init)
+      // Only surface the first persistent error; after that stay silent so
+      // the console is never flooded (the loop keeps running regardless).
       if (_renderErrCount >= 2 && !loop._warned) {
         loop._warned = true;
         console.error("[Main] render frame error (suppressed to keep loop alive):", err);
         var dbg = document.getElementById("debug-overlay");
         if (dbg) {
           var full = err && err.message ? err.message : String(err);
-          // keep it short but keep isoSize intact (was truncating to "iso")
           if (full.length > 90) full = full.slice(0, 87) + "...";
           dbg.style.display = "block"; dbg.style.background = "rgba(200,30,30,0.95)";
           dbg.textContent = "RENDER ERR: " + full + " | canvas " + (api.canvas ? api.canvas.width + "x" + api.canvas.height : "no-canvas");
         }
-      } else {
-        console.warn("[Main] transient render tick suppressed:", err && err.message ? err.message : err);
       }
     }
     rafId = requestAnimationFrame(loop);

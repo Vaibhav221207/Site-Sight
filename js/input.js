@@ -228,9 +228,9 @@ window.InputHandler = (function () {
     if (api._droneMode) {
       return !!(window.DroneDeploy && window.DroneDeploy.isValid(c, r));
     }
-    // normal inspect mode: hills & rivers are non-interactive scenery
+    // normal inspect mode: rock & river tiles are non-interactive scenery
     var type = api.terrain.typeAt(c, r);
-    if (type === "hill" || type === "river") return false;
+    if (type === "rock" || type === "river") return false;
     return true;
   }
 

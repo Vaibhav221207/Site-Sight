@@ -63,7 +63,7 @@ window.LandData = (function () {
     var e = getElevation(c, r);
     if (t === "river") return pickWeighted(c, r, [["silt", 0.5], ["clay", 0.3], ["sand", 0.2]], 1);
     if (t === "trench") return pickWeighted(c, r, [["clay", 0.6], ["loam", 0.3], ["sand", 0.1]], 2);
-    if (t === "hill") return pickWeighted(c, r, [["bedrock", 0.5], ["gravel", 0.3], ["loam", 0.2]], 3);
+    if (t === "rock") return pickWeighted(c, r, [["bedrock", 0.5], ["gravel", 0.3], ["loam", 0.2]], 3);
     // land
     if (e >= 4) return pickWeighted(c, r, [["gravel", 0.4], ["loam", 0.3], ["bedrock", 0.3]], 4);
     if (e >= 2) return pickWeighted(c, r, [["loam", 0.5], ["clay", 0.3], ["sand", 0.2]], 5);
@@ -91,7 +91,7 @@ window.LandData = (function () {
   function genStability(c, r) {
     var t = getTerrain(c, r);
     if (t === "trench") return randInt(15, 40, 11);
-    if (t === "hill") return randInt(70, 95, 12);
+    if (t === "rock") return randInt(15, 40, 12);
     if (t === "river") return randInt(30, 60, 13);
     var base = 55 + randInt(-15, 15, 14);
     if (getElevation(c, r) >= 4) base += 10;
@@ -100,7 +100,7 @@ window.LandData = (function () {
 
   function genMineral(c, r) {
     var t = getTerrain(c, r);
-    if (t === "hill") {
+    if (t === "rock") {
       var r = rand01(c, r, 15);
       if (r < 0.12) return "gold";
       if (r < 0.35) return "copper";
@@ -119,7 +119,7 @@ window.LandData = (function () {
     var t = getTerrain(c, r);
     if (t === "river") return "dense";
     if (t === "trench") return "sparse";
-    if (t === "hill") return rand01(c, r, 18) < 0.5 ? "moderate" : "sparse";
+    if (t === "rock") return rand01(c, r, 18) < 0.5 ? "moderate" : "sparse";
     return rand01(c, r, 19) < 0.6 ? "moderate" : "sparse";
   }
 
@@ -178,7 +178,7 @@ window.LandData = (function () {
 
   function getSummary() {
     var tiles = getAllTiles();
-    var counts = { land: 0, hill: 0, river: 0, trench: 0, hq: 0 };
+    var counts = { land: 0, rock: 0, river: 0, trench: 0, hq: 0 };
     var scanned = 0;
     var subsurface = 0;
     var mineralCounts = { iron: 0, copper: 0, gold: 0 };
@@ -262,7 +262,7 @@ window.LandData = (function () {
 
   var TERRAIN_COLORS = {
     land: "#4a5a3a",
-    hill: "#7a6a4a",
+    rock: "#8a8a82",
     river: "#1a5a8a",
     trench: "#2a1a3a",
     hq: "#ffcc00"

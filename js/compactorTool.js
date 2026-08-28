@@ -39,7 +39,7 @@ window.CompactorTool = (function () {
     // Show stop button in HUD
     var stopBtn = document.getElementById("hud-stop-btn");
     if (stopBtn) stopBtn.style.display = "inline-flex";
-    if (window.HqPanel) window.HqPanel.showMsg("Drag to select trench area for compaction (scanned trench, not Excellent)", false);
+    if (window.HqPanel) window.HqPanel.showMsg("Drag to select trench / rock area for compaction (scanned hazard, not Excellent)", false);
     console.log("[Compactor] Placement mode entered — drag to select rectangular area");
   };
 
@@ -68,9 +68,12 @@ window.CompactorTool = (function () {
     if (api._anim) { api._anim.pause(); api._anim = null; }
   };
 
-  // validation: trench-only — scanned trench tiles that are not Excellent
+  // validation: trench OR rock — scanned hazard tiles that are not Excellent
   api.isValidTile = function (col, row) {
-    if (!window.Terrain || !window.Terrain.isTrench || !window.Terrain.isTrench(col, row)) return false;
+    if (!window.Terrain) return false;
+    var isHaz = (window.Terrain.isTrench && window.Terrain.isTrench(col, row)) ||
+                (window.Terrain.isRock && window.Terrain.isRock(col, row));
+    if (!isHaz) return false;
     var data = window.GameState && window.GameState.getTileData
       ? window.GameState.getTileData(col, row) : null;
     if (!data || !data.droneScanned) return false;
@@ -107,7 +110,7 @@ window.CompactorTool = (function () {
       var data = window.GameState && window.GameState.getTileData
         ? window.GameState.getTileData(col, row) : null;
       var reason = "Invalid target";
-      if (window.Terrain && window.Terrain.isTrench && !window.Terrain.isTrench(col, row)) reason = "Only trench tiles can be compacted";
+      if (window.Terrain && !(window.Terrain.isTrench(col, row) || window.Terrain.isRock(col, row))) reason = "Only trench / rock tiles can be compacted";
       else if (!data || !data.droneScanned) reason = "Trench not scanned — scan with Drone first";
       else if (data.surfaceStability === "Excellent") reason = "Trench already Excellent";
       if (window.HqPanel) window.HqPanel.showMsg(reason, false);
@@ -131,12 +134,12 @@ window.CompactorTool = (function () {
   // New drag-select attempt - called when user confirms selection
   api.confirmSelection = function (selection, onSuccess) {
     if (!api.isValidSelection(selection)) {
-      if (window.HqPanel) window.HqPanel.showMsg("No trench tiles in selection", false);
+      if (window.HqPanel) window.HqPanel.showMsg("No trench / rock tiles in selection", false);
       return false;
     }
     var validTiles = api.getValidTilesInSelection(selection);
     if (validTiles.length === 0) {
-      if (window.HqPanel) window.HqPanel.showMsg("No trench tiles in selection", false);
+      if (window.HqPanel) window.HqPanel.showMsg("No trench / rock tiles in selection", false);
       return false;
     }
 
@@ -276,13 +279,7 @@ window.CompactorTool = (function () {
     function showPayoffAndExit() {
       var gs = window.GameState;
       var validTiles = api.getValidTilesInSelection(api._selection);
-      // remember which of those were trench before we overwrite the map
-      var trenchBefore = [];
-      for (var tb = 0; tb < validTiles.length; tb++) {
-        if (window.Terrain && window.Terrain.isTrench && window.Terrain.isTrench(validTiles[tb].col, validTiles[tb].row)) {
-          trenchBefore.push(validTiles[tb]);
-        }
-      }
+      // every selected valid tile is a hazard (trench or rock) to be compacted
       var updatedCount = 0;
       if (gs && gs.tileData) {
         var tiers2 = ["Poor", "Fair", "Good", "Excellent"];
@@ -299,14 +296,14 @@ window.CompactorTool = (function () {
           }
         }
       }
-      // turn any trench tiles that were compacted into normal flat land
+      // turn any hazard tiles that were compacted into normal flat land
       var trenchConverted = 0;
-      if (trenchBefore.length && window.Terrain && window.Terrain.fillTrenchArea) {
-        trenchConverted = window.Terrain.fillTrenchArea(trenchBefore);
+      if (validTiles.length && window.Terrain && window.Terrain.fillTrenchArea) {
+        trenchConverted = window.Terrain.fillTrenchArea(validTiles);
         if (trenchConverted > 0 && window.BlockRender) {
           window.BlockRender.invalidate();
           // pop each newly-filled tile so the replacement reads instantly
-          if (window.BlockRender.popTiles) window.BlockRender.popTiles(trenchBefore);
+          if (window.BlockRender.popTiles) window.BlockRender.popTiles(validTiles);
         }
       }
 
@@ -325,7 +322,9 @@ window.CompactorTool = (function () {
         easing: "easeOutQuad",
       });
 
-      // RIG EXIT
+      // RIG EXIT — re-arm instead of fully cancelling: keep the tool in placement
+      // mode so the player can keep compacting until the site is clear. Only the
+      // "Stop" button (api.cancel) fully exits. A small side hint reminds them.
       anime({
         targets: st.rig,
         scale: 0.2,
@@ -333,7 +332,28 @@ window.CompactorTool = (function () {
         duration: 420,
         easing: "easeInCubic",
         complete: function () {
-          api.cancel();
+          var S = api._state;
+          S.rig = { scale: 0, alpha: 0, y: 0 };
+          S.tamper = { y: 0, alpha: 1 };
+          S.camera = { x: 0, y: 0 };
+          S.particles = [];
+          S.flash = { radius: 0, alpha: 0 };
+          S.payoff = { alpha: 0, y: 0, oldVal: "", newVal: "" };
+          S.cycle = 0;
+          api.isActive = true;
+          api._target = null;
+          api._selection = null;
+          api._selectionConfirmed = false;
+          api._selectionStart = null;
+          api._selectionEnd = null;
+          if (window.InputHandler) {
+            window.InputHandler.setPlacementMode(true);
+            window.InputHandler.setCursor("crosshair");
+          }
+          var stopBtn = document.getElementById("hud-stop-btn");
+          if (stopBtn) stopBtn.style.display = "inline-flex";
+          if (window.HqPanel) window.HqPanel.showMsg(
+            "Compacted " + trenchConverted + " tile(s) — drag another area or press Stop to finish", false);
           if (typeof onComplete === "function") onComplete(true);
         },
       });
@@ -483,9 +503,9 @@ window.CompactorTool = (function () {
     if (nTiles > 0) {
       var bx = cxSum / nTiles;
       var by = (cySum / nTiles) - iso - 18;
-      var label = validCount + " trench";
+      var label = validCount + " hazard";
       if (total !== validCount) label += " / " + total + " tiles";
-      else label = total + (total===1?" trench tile":" trench tiles");
+      else label = total + (total===1?" hazard tile":" hazard tiles");
       // selection dimensions e.g. "3×4"
       var dims = (ec - sc + 1) + "\u00D7" + (er - sr + 1);
       ctx.save();

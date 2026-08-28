@@ -196,6 +196,16 @@ window.BlockRender = (function () {
   function drawRock(layer, cluster, rk) {
     var g = api.grid;
     var iso = g.isoSize;
+    // never draw a boulder on top of river / trench / HQ — keep features on
+    // their own tiles (the tile separation in terrain.js handles the ground,
+    // this keeps stray satellite rocks from visually spilling onto them)
+    var G = g.gridSize;
+    var tc = Math.round(cluster.cx + rk.dc), tr = Math.round(cluster.cy + rk.dr);
+    if (tc < 0 || tc >= G || tr < 0 || tr >= G) return;
+    if (api.terrain) {
+      var tt = api.terrain.typeAt(tc, tr);
+      if (tt === "river" || tt === "trench" || tt === "hq") return;
+    }
     var p = g.worldToScreen(cluster.cx + rk.dc, cluster.cy + rk.dr);
     var bx = p.x;
     var by = p.y - BASE_H;          // ground plane: the top face of the tile below
@@ -780,7 +790,7 @@ window.BlockRender = (function () {
     // map each hill cluster to its front-most tile so the whole rock/boulder
     // formation is drawn at exactly that depth position (behind the tiles in
     // front of it)
-    var clusters = api.terrain.hillClusters || [];
+    var clusters = api.terrain.rockClusters || [];
     var frontKey = {};
     for (var ci = 0; ci < clusters.length; ci++) {
       var cl = clusters[ci];
@@ -804,7 +814,7 @@ window.BlockRender = (function () {
       var t = ORDER[i];
       var k = t.c + "," + t.r;
 
-      // ---- terrain block overlays (hills, HQ, other) -------------------
+      // ---- terrain block overlays (rock, HQ, other) -------------------
       var isHQ = api.terrain.isHQ(t.c, t.r);
       var isTrench = api.terrain.typeAt(t.c, t.r) === "trench";
       if (isTrench) {
@@ -819,7 +829,7 @@ window.BlockRender = (function () {
         drawHQBuilding(layer, t.c, t.r);
         continue;
       }
-      var isHill = api.terrain.isHill(t.c, t.r);
+      var isRock = api.terrain.isRock(t.c, t.r);
       var isSel = api.selected && api.selected.col === t.c && api.selected.row === t.r;
 
       drawBlock(
@@ -827,13 +837,13 @@ window.BlockRender = (function () {
         t.c,
         t.r,
         totalHeight(t.c, t.r),
-        isHill ? api.terrain.baseColorAt(t.c, t.r) : api.terrain.colorAt(t.c, t.r),
+        isRock ? api.terrain.baseColorAt(t.c, t.r) : api.terrain.colorAt(t.c, t.r),
         isSel
       );
 
-      // hill boulders are a visual overlay on the flat land, drawn once at the
+      // rock boulders are a visual overlay on the flat land, drawn once at the
       // cluster's front-most tile so depth occlusion stays correct
-      if (isHill) {
+      if (isRock) {
         var ci = frontKey[k];
         if (ci !== undefined && drawnCluster[ci] !== true) {
           drawRocks(layer, clusters[ci]);

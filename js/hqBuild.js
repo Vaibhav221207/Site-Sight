@@ -44,7 +44,7 @@ window.HQBuild = (function () {
     var terrain = window.Terrain;
     var type = terrain.typeAt(col, row);
 
-    if (type === "hill" || type === "river" || type === "trench") {
+    if (type === "rock" || type === "river" || type === "trench") {
       return false;
     }
 
