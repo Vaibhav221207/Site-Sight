@@ -49,8 +49,18 @@ window.Main = (function () {
     if (window.MobileUI && window.MobileUI.update) window.MobileUI.update();
   };
 
-  // click: pop the block up/down AND toggle the info panel (as before)
+  // click: pop the block up/down AND toggle the info panel.
+  // HQ tiles never show the small tile popup — they open the full HQ terminal.
   function onTileClicked(col, row) {
+    var isHQ = (window.Terrain && window.Terrain.isHQ && window.Terrain.isHQ(col, row)) ||
+               (window.GameState && window.GameState.hqTile && window.GameState.hqTile.col === col && window.GameState.hqTile.row === row);
+    if (isHQ && window.HqPanel) {
+      window.BlockRender.setSelected(col, row);
+      if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
+      window.HqPanel.open();
+      render();
+      return;
+    }
     window.BlockRender.setSelected(col, row);
     window.TilePanel.toggle(col, row);
     render();

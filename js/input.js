@@ -288,8 +288,10 @@ window.InputHandler = (function () {
         // stay in placement mode so the player can pick another tile
       }
     } else if (typeof api._userOnTileClick === "function") {
-      var isHQ = window.Terrain && window.Terrain.isHQ(col, row);
+      var isHQ = (window.Terrain && window.Terrain.isHQ && window.Terrain.isHQ(col, row)) ||
+                 (window.GameState && window.GameState.hqTile && window.GameState.hqTile.col === col && window.GameState.hqTile.row === row);
       if (isHQ && window.HqPanel) {
+        if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
         window.BlockRender.setSelected(col, row);
         window.HqPanel.open();
         if (typeof api.onPan === "function") api.onPan();

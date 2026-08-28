@@ -654,6 +654,7 @@ window.HqPanel = (function () {
 
    api.open = function () {
     if (api.isOpen) return;
+    if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
     api.isOpen = true;
     api.overlayEl.style.visibility = "visible";
     api.overlayEl.style.pointerEvents = "auto";

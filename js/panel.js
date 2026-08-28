@@ -170,10 +170,20 @@ window.TilePanel = (function () {
 
   api.show = function (col, row) {
     if (!api.panel) return;
+    // HQ tiles have their own full-screen terminal — never show the small tile popup for them.
+    var isHQ = (window.Terrain && window.Terrain.isHQ && window.Terrain.isHQ(col, row)) ||
+               (window.GameState && window.GameState.hqTile && window.GameState.hqTile.col === col && window.GameState.hqTile.row === row);
+    if (isHQ) {
+      if (window.HqPanel) {
+        if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
+        window.BlockRender && window.BlockRender.setSelected && window.BlockRender.setSelected(col, row);
+        window.HqPanel.open();
+      }
+      return;
+    }
     api._clearHideEnd();
     clearTimeout(api._autoCloseTimer);
-    var isHQ = window.Terrain && window.Terrain.isHQ(col, row);
-    api.setContent(col, row, isHQ);
+    api.setContent(col, row, false);
 
     if (window.MobileUI && window.MobileUI.enabled) {
       api.panel.style.transition = "opacity 0.1s ease-out";
