@@ -95,6 +95,12 @@ window.GprDeploy = (function () {
 
   // -- grid helpers -------------------------------------------------------
 
+  function flatTopY(c, r) {
+    var g = window.IsoGrid;
+    var p = g.worldToScreen(c, r);
+    return p.y - BASE_H;
+  }
+
   function groundTopY(c, r) {
     var g = window.IsoGrid;
     var p = g.worldToScreen(c, r);
@@ -646,10 +652,10 @@ window.GprDeploy = (function () {
     var cBR = g.worldToScreen(area.cMax, area.rMax);
     var cBL = g.worldToScreen(area.cMin, area.rMax);
     return {
-      TL: { x: cTL.x, y: groundTopY(area.cMin, area.rMin) - half },
-      TR: { x: cTR.x + iso, y: groundTopY(area.cMax, area.rMin) },
-      BR: { x: cBR.x, y: groundTopY(area.cMax, area.rMax) + half },
-      BL: { x: cBL.x - iso, y: groundTopY(area.cMin, area.rMax) },
+      TL: { x: cTL.x, y: flatTopY(area.cMin, area.rMin) - half },
+      TR: { x: cTR.x + iso, y: flatTopY(area.cMax, area.rMin) },
+      BR: { x: cBR.x, y: flatTopY(area.cMax, area.rMax) + half },
+      BL: { x: cBL.x - iso, y: flatTopY(area.cMin, area.rMax) },
     };
   }
 

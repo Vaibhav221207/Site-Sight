@@ -128,6 +128,12 @@ window.DroneDeploy = (function () {
 
   // -- grid helpers -------------------------------------------------------
 
+  function flatTopY(c, r) {
+    var g = window.IsoGrid;
+    var p = g.worldToScreen(c, r);
+    return p.y - BASE_H; // flat plane for scan quads so grid lines align on all viewports
+  }
+
   function groundTopY(c, r) {
     var g = window.IsoGrid;
     var p = g.worldToScreen(c, r);
@@ -796,10 +802,10 @@ window.DroneDeploy = (function () {
     var cBR = g.worldToScreen(area.cMax, area.rMax);
     var cBL = g.worldToScreen(area.cMin, area.rMax);
     return {
-      TL: { x: cTL.x, y: groundTopY(area.cMin, area.rMin) - half }, // north
-      TR: { x: cTR.x + iso, y: groundTopY(area.cMax, area.rMin) },  // east
-      BR: { x: cBR.x, y: groundTopY(area.cMax, area.rMax) + half }, // south
-      BL: { x: cBL.x - iso, y: groundTopY(area.cMin, area.rMax) },  // west
+      TL: { x: cTL.x, y: flatTopY(area.cMin, area.rMin) - half }, // north
+      TR: { x: cTR.x + iso, y: flatTopY(area.cMax, area.rMin) },  // east
+      BR: { x: cBR.x, y: flatTopY(area.cMax, area.rMax) + half }, // south
+      BL: { x: cBL.x - iso, y: flatTopY(area.cMin, area.rMax) },  // west
     };
   }
 
