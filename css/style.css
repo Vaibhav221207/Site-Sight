@@ -1259,39 +1259,39 @@ body.touch-ui .hq-fs-nav-item {
   }
 
   .hq-data-layout {
-    gap: 10px;
+    gap: 8px;
   }
 
   .hq-data-details {
-    padding: 8px 10px;
+    padding: 6px 8px;
   }
 
   .hq-data-section-header {
-    font-size: 10px;
+    font-size: 9px;
   }
 
   .hq-data-categories {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 4px;
+    gap: 3px;
   }
 
   .hq-data-cat-row {
-    padding: 5px 8px;
-    font-size: 10px;
-    gap: 6px;
+    padding: 4px 6px;
+    font-size: 9px;
+    gap: 4px;
   }
 
   .hq-data-cat-swatch {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
   }
 
   .hq-data-cat-label {
-    font-size: 9px;
+    font-size: 8px;
   }
 
   .hq-data-cat-count {
-    font-size: 10px;
+    font-size: 9px;
   }
 }
 
@@ -1318,15 +1318,15 @@ body.touch-ui .hq-fs-nav-item {
   .hud-left .value { font-size: 18px; }
   .hud-btn { padding: 6px 16px; font-size: 12px; }
 
-  /* HQ terminal full-screen sheet: touch devices ONLY (landscape phones).
-     body.touch-ui is set by js/mobileUI.js at boot. Desktop and non-touch
-     windows — even short/narrow ones — keep the floating chunky card with
-     its hard offset shadow + 16px radius (base #hq-panel rules). */
-  body.touch-ui #hq-overlay {
+  /* HQ terminal full-screen sheet: ANY viewport matching this media query
+     (real phone landscape ~390px height) goes full-screen regardless of
+     touch detection. The body.touch-ui rule below is kept as an OR for
+     touch devices with unusual dimensions. */
+  #hq-overlay {
     align-items: stretch;
     justify-content: stretch;
   }
-  body.touch-ui #hq-panel {
+  #hq-panel {
     width: 100vw;
     max-width: none;
     height: 100vh;
@@ -1346,8 +1346,8 @@ body.touch-ui .hq-fs-nav-item {
   .hq-fs-footer {
     padding: 10px 16px;
   }
-  .hq-fs-header { padding: 10px 14px; }
-  .hq-fs-title { font-size: 15px; }
+  .hq-fs-header { padding: 8px 12px; }
+  .hq-fs-title { font-size: 15px; -webkit-text-stroke: 1.2px #2B2320; }
   .hq-fs-close { width: 32px; height: 32px; font-size: 18px; }
   body.touch-ui .hq-fs-close { width: 40px; height: 40px; }
   /* compact sidebar: narrower rail + smaller chunky segments on small
@@ -1364,15 +1364,15 @@ body.touch-ui .hq-fs-nav-item {
     letter-spacing: 0.03em;
     border-radius: 14px;
   }
-  .hq-fs-content { padding: 14px 16px; }
-  .hq-fs-status { padding-bottom: 12px; }
-  .hq-fs-status-text { font-size: 15px; }
-  .hq-fs-section { margin-top: 12px; }
-  .hq-fs-section-header { font-size: 12px; padding-bottom: 8px; margin-bottom: 8px; }
-  .hq-fs-drone-row { padding: 10px 12px; gap: 10px; }
-  .hq-fs-drone-name { font-size: 15px; }
-  .hq-fs-drone-cost { font-size: 14px; }
-  .hq-order-btn { padding: 7px 16px; font-size: 12px; }
+  .hq-fs-content { padding: 10px 12px; }
+  .hq-fs-status { padding-bottom: 8px; }
+  .hq-fs-status-text { font-size: 13px; }
+  .hq-fs-section { margin-top: 8px; }
+  .hq-fs-section-header { font-size: 11px; padding-bottom: 6px; margin-bottom: 6px; }
+  .hq-fs-drone-row { padding: 8px 10px; gap: 6px; }
+  .hq-fs-drone-name { font-size: 13px; }
+  .hq-fs-drone-cost { font-size: 12px; }
+  .hq-order-btn { padding: 6px 12px; font-size: 11px; }
 
   /* Tile info popup: tiny bottom-left chip on mobile so it never blocks
      the map; fades in (panel.js drives opacity, not transform). */
@@ -1444,6 +1444,45 @@ body.touch-ui .hq-fs-nav-item {
   .build-item-name { font-size: 13px; }
   .build-item-cost { font-size: 12px; }
   .build-item-icon { width: 36px; height: 36px; }
+
+  .hq-fs-placeholder { padding: 16px 0; font-size: 14px; }
+}
+
+/* OR: any touch device (even with unusual viewport) also gets full-screen */
+body.touch-ui #hq-overlay {
+  align-items: stretch;
+  justify-content: stretch;
+}
+body.touch-ui #hq-panel {
+  width: 100vw;
+  max-width: none;
+  height: 100vh;
+  height: 100dvh;
+  max-height: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Desktop short-window exception: mouse-based windows keep floating card */
+@media (max-height: 500px) and (pointer: fine) and (hover: hover),
+       (max-width: 640px) and (pointer: fine) and (hover: hover) {
+  #hq-overlay {
+    align-items: center;
+    justify-content: center;
+  }
+  #hq-panel {
+    width: 90vw;
+    max-width: 800px;
+    height: auto;
+    max-height: 85vh;
+    max-height: 85dvh;
+    border-radius: 16px;
+    box-shadow: 3px 3px 0 #000;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
 }
 
 /* ---- Mobile interaction layer (MobileUI) — touch devices ONLY ----
