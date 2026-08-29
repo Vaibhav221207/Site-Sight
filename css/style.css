@@ -1318,24 +1318,29 @@ body.touch-ui .hq-fs-nav-item {
   .hud-left .value { font-size: 18px; }
   .hud-btn { padding: 6px 16px; font-size: 12px; }
 
-  /* HQ terminal full-screen sheet: ANY viewport matching this media query
-     (real phone landscape ~390px height) goes full-screen regardless of
-     touch detection. The body.touch-ui rule below is kept as an OR for
-     touch devices with unusual dimensions. */
+  /* HQ terminal: on small viewports use a centered floating sheet with
+     a small inset so it never touches the screen edges or system UI.
+     This is an inset full-screen, not edge-to-edge, so it never looks
+     outpast. Desktop short-window exception below will keep mouse windows
+     as the original floating card. */
   #hq-overlay {
-    align-items: stretch;
-    justify-content: stretch;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    padding-top: calc(8px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    padding-left: calc(8px + env(safe-area-inset-left, 0px));
+    padding-right: calc(8px + env(safe-area-inset-right, 0px));
   }
   #hq-panel {
-    width: 100vw;
-    max-width: none;
-    height: 100vh;
-    height: 100dvh;
-    max-height: none;
-    border-radius: 0;
-    box-shadow: none;
-    padding-top: env(safe-area-inset-top, 0px);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    width: calc(100vw - 16px);
+    max-width: 800px;
+    height: calc(100dvh - 16px);
+    max-height: calc(100dvh - 16px);
+    border-radius: 16px;
+    box-shadow: 3px 3px 0 #000;
+    padding-top: 0;
+    padding-bottom: 0;
   }
   .hq-fs-content {
     flex: 1 1 0;
@@ -1374,12 +1379,12 @@ body.touch-ui .hq-fs-nav-item {
   .hq-fs-drone-cost { font-size: 12px; }
   .hq-order-btn { padding: 6px 12px; font-size: 11px; }
 
-  /* Tile info popup: tiny bottom-left chip on mobile so it never blocks
-     the map; fades in (panel.js drives opacity, not transform). */
+  /* Tile info popup: bottom-left chip on mobile — single column, larger
+     max-width so labels/values don't overflow, max-height allows scroll. */
   #tile-popup {
     width: auto;
-    max-width: 170px;
-    max-height: 118px;
+    max-width: 280px;
+    max-height: 200px;
     overflow-y: auto;
     top: auto;
     bottom: 60px;
@@ -1395,14 +1400,14 @@ body.touch-ui .hq-fs-nav-item {
     left: 12px;
     right: auto;
   }
-.panel-header { padding: 6px 8px; border-bottom: none; background: transparent; }
+ .panel-header { padding: 6px 8px; border-bottom: none; background: transparent; }
   .panel-title { font-size: 10px; -webkit-text-stroke: 1px #2B2320; }
   .panel-close { width: 20px; height: 20px; font-size: 12px; }
   .panel-body {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 2px 8px;
-    padding: 4px 8px 6px;
+    grid-template-columns: 1fr;
+    gap: 4px;
+    padding: 6px 8px;
   }
   .tile-coords { font-size: 11px; font-weight: 700; margin-bottom: 2px; }
   .placeholder { font-size: 10px; line-height: 1.3; }
@@ -1448,21 +1453,25 @@ body.touch-ui .hq-fs-nav-item {
   .hq-fs-placeholder { padding: 16px 0; font-size: 14px; }
 }
 
-/* OR: any touch device (even with unusual viewport) also gets full-screen */
+/* OR: any touch device (even with unusual viewport) also gets inset sheet */
 body.touch-ui #hq-overlay {
-  align-items: stretch;
-  justify-content: stretch;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  padding-top: calc(8px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  padding-left: calc(8px + env(safe-area-inset-left, 0px));
+  padding-right: calc(8px + env(safe-area-inset-right, 0px));
 }
 body.touch-ui #hq-panel {
-  width: 100vw;
-  max-width: none;
-  height: 100vh;
-  height: 100dvh;
-  max-height: none;
-  border-radius: 0;
-  box-shadow: none;
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  width: calc(100vw - 16px);
+  max-width: 800px;
+  height: calc(100dvh - 16px);
+  max-height: calc(100dvh - 16px);
+  border-radius: 16px;
+  box-shadow: 3px 3px 0 #000;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 /* Desktop short-window exception: mouse-based windows keep floating card */
