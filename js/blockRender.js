@@ -551,8 +551,8 @@ window.BlockRender = (function () {
     // ---- FIGMA CITY HQ: chunky two-tier — fits single tile, refined edges ----
     // modestly larger for readability (10% up) but still inside tile: base 0.99×, tower 0.60×
     // Scale building with iso so it never looks giant on small screens
-    var HQ_BASE_H = Math.max(8, Math.round(iso * 0.45));
-    var HQ_TOWER_H = Math.max(14, Math.round(iso * 0.85));
+    var HQ_BASE_H = Math.max(7, Math.round(iso * 0.38));
+    var HQ_TOWER_H = Math.max(12, Math.round(iso * 0.72));
     var bHalf = iso * 0.99;
     var tHalf = iso * 0.60;
     var baseTopY = cy - HQ_BASE_H;
@@ -992,8 +992,8 @@ window.BlockRender = (function () {
     if(!api.terrain.isHQ(hq.col, hq.row)) return;
     var g = api.grid; if(!g || !g.isoSize) return;
     var iso = g.isoSize;
-    var HQ_BASE_H = Math.max(8, Math.round(iso * 0.45));
-    var HQ_TOWER_H = Math.max(14, Math.round(iso * 0.85));
+    var HQ_BASE_H = Math.max(7, Math.round(iso * 0.38));
+    var HQ_TOWER_H = Math.max(12, Math.round(iso * 0.72));
     // recompute antenna top exactly as in drawHQBuilding (proportional)
     var p = g.worldToScreen(hq.col, hq.row);
     var cx = p.x, cy = p.y;
