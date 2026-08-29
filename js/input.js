@@ -213,7 +213,7 @@ window.InputHandler = (function () {
           var hqY = hp.y - (4 + elev) - (api.grid.isoSize * 0.6);
           var dx = pos.x - hp.x;
           var dy = pos.y - hqY;
-          var r = Math.max(32, api.grid.isoSize * 1.9);
+          var r = Math.max(56, api.grid.isoSize * 2.8);
           if (dx*dx + dy*dy < r*r) {
             if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
             window.BlockRender.setSelected(hq.col, hq.row);
@@ -233,6 +233,25 @@ window.InputHandler = (function () {
       // nearest tile center (desktop keeps the strict hit test)
       if (!tile && window.MobileUI && window.MobileUI.enabled) {
         tile = nearestTile(pos.x, pos.y);
+      }
+      // If the tapped tile is adjacent to HQ, prefer HQ when the tap is
+      // visually closer to the HQ building than to that tile's center.
+      if (tile && hq) {
+        if (Math.max(Math.abs(tile.col - hq.col), Math.abs(tile.row - hq.row)) <= 1) {
+          try {
+            var hqS = api.grid.worldToScreen(hq.col, hq.row);
+            var tS = api.grid.worldToScreen(tile.col, tile.row);
+            var dHq = Math.hypot(pos.x - hqS.x, pos.y - hqS.y);
+            var dTile = Math.hypot(pos.x - tS.x, pos.y - tS.y);
+            if (dHq < dTile + 6 || dHq < Math.max(36, api.grid.isoSize * 1.6)) {
+              if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
+              window.BlockRender.setSelected(hq.col, hq.row);
+              if (window.HqPanel) window.HqPanel.open();
+              if (typeof api.onPan === "function") api.onPan();
+              return;
+            }
+          } catch(e){}
+        }
       }
       if (tile && isClickable(tile.col, tile.row)) {
         api.onTileClick(tile.col, tile.row);
