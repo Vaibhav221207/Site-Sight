@@ -550,9 +550,9 @@ window.BlockRender = (function () {
 
     // ---- FIGMA CITY HQ: chunky two-tier — fits single tile, refined edges ----
     // modestly larger for readability (10% up) but still inside tile: base 0.99×, tower 0.60×
-    // Scale building with iso so it never looks giant on small screens
-    var HQ_BASE_H = Math.max(7, Math.round(iso * 0.38));
-    var HQ_TOWER_H = Math.max(12, Math.round(iso * 0.72));
+    // Scale building with iso so it stays proportionate (middle ground)
+    var HQ_BASE_H = Math.max(8, Math.round(iso * 0.42));
+    var HQ_TOWER_H = Math.max(14, Math.round(iso * 0.78));
     var bHalf = iso * 0.99;
     var tHalf = iso * 0.60;
     var baseTopY = cy - HQ_BASE_H;
@@ -733,7 +733,7 @@ window.BlockRender = (function () {
     layer.save();
     layer.translate(hpCX, hpCY);
     layer.scale(1, 0.5);
-    var hFont = Math.max(10, Math.round(iso * 0.55));
+    var hFont = Math.max(12, Math.round(iso * 0.60));
     layer.font = "900 " + hFont + "px 'Baloo 2', sans-serif";
     layer.textAlign = "center";
     layer.textBaseline = "middle";
@@ -745,11 +745,11 @@ window.BlockRender = (function () {
 
     // antenna — thick mast on helipad edge (left-back), red beacon with glow — evenly scaled with iso
     var antBase = {x: cx - hHalf*0.62, y: hpCY - hHalf*0.31};
-    var antH = Math.max(10, Math.round(iso * 0.52));
+    var antH = Math.max(12, Math.round(iso * 0.55));
     var antTop = {x: antBase.x, y: antBase.y - antH};
-    var antW = Math.max(3, Math.round(iso * 0.11));
-    var beaconR = Math.max(4, Math.round(iso * 0.14));
-    var glowR = beaconR + Math.max(3, Math.round(iso * 0.08));
+    var antW = Math.max(4, Math.round(iso * 0.12));
+    var beaconR = Math.max(5, Math.round(iso * 0.15));
+    var glowR = beaconR + Math.max(3, Math.round(iso * 0.09));
     // mast
     layer.fillStyle = HQ_EDGE;
     layer.beginPath();
@@ -993,8 +993,8 @@ window.BlockRender = (function () {
     if(!api.terrain.isHQ(hq.col, hq.row)) return;
     var g = api.grid; if(!g || !g.isoSize) return;
     var iso = g.isoSize;
-    var HQ_BASE_H = Math.max(7, Math.round(iso * 0.38));
-    var HQ_TOWER_H = Math.max(12, Math.round(iso * 0.72));
+    var HQ_BASE_H = Math.max(8, Math.round(iso * 0.42));
+    var HQ_TOWER_H = Math.max(14, Math.round(iso * 0.78));
     // recompute antenna top exactly as in drawHQBuilding (proportional)
     var p = g.worldToScreen(hq.col, hq.row);
     var cx = p.x, cy = p.y;
@@ -1005,11 +1005,11 @@ window.BlockRender = (function () {
     var hpCY = towerTopY;
     var antBaseX = cx - hHalf*0.62;
     var antBaseY = hpCY - hHalf*0.31;
-    var antH = Math.max(10, Math.round(iso * 0.52));
+    var antH = Math.max(12, Math.round(iso * 0.55));
     var antTopY = antBaseY - antH;
-    var antW = Math.max(3, Math.round(iso * 0.11));
-    var beaconR = Math.max(4, Math.round(iso * 0.14));
-    var glowR = beaconR + Math.max(3, Math.round(iso * 0.08));
+    var antW = Math.max(4, Math.round(iso * 0.12));
+    var beaconR = Math.max(5, Math.round(iso * 0.15));
+    var glowR = beaconR + Math.max(3, Math.round(iso * 0.09));
     var k = beaconPulse.v; // 0..1
     var pulse = 0.88 + 0.14 * k; // 0.88..1.02 scale — just a little
     var glowAlpha = 0.16 + 0.14 * k; // 0.16..0.30

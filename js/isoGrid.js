@@ -35,7 +35,7 @@ window.IsoGrid = (function () {
     // instead of rendering tiny in the middle of a mostly-empty canvas.
     var minDim = Math.min(w, h);
     var pad = (minDim < 560)
-      ? Math.min(PADDING, Math.max(32, Math.round(minDim * 0.22)))
+      ? Math.min(PADDING, Math.max(20, Math.round(minDim * 0.10)))
       : PADDING;
     var availW = w - pad * 2;
     var availH = h - pad * 2;

@@ -213,7 +213,7 @@ window.InputHandler = (function () {
           var hqY = hp.y - (4 + elev) - (api.grid.isoSize * 0.6);
           var dx = pos.x - hp.x;
           var dy = pos.y - hqY;
-          var r = Math.max(40, api.grid.isoSize * 2.2);
+          var r = Math.max(32, api.grid.isoSize * 1.9);
           if (dx*dx + dy*dy < r*r) {
             if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
             window.BlockRender.setSelected(hq.col, hq.row);
