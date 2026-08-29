@@ -202,6 +202,28 @@ window.InputHandler = (function () {
     }
 
     if (moved < DRAG_THRESHOLD) {
+      // HQ has a taller visual than its tile — taps on the tower/beacon
+      // would otherwise map to a neighbor tile. Treat any tap within a
+      // generous radius of the HQ as an HQ tap.
+      var hq = window.GameState && window.GameState.hqTile;
+      if (hq && window.Terrain && window.Terrain.isHQ) {
+        try {
+          var hp = api.grid.worldToScreen(hq.col, hq.row);
+          // use HQ's ground top (approx) so the hit area covers the tower
+          var elev = window.Terrain.elevationAt ? window.Terrain.elevationAt(hq.col, hq.row) : 0;
+          var hqY = hp.y - (4 + elev) - (api.grid.isoSize * 0.6);
+          var dx = pos.x - hp.x;
+          var dy = pos.y - hqY;
+          var r = Math.max(32, api.grid.isoSize * 1.9);
+          if (dx*dx + dy*dy < r*r) {
+            if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
+            window.BlockRender.setSelected(hq.col, hq.row);
+            if (window.HqPanel) window.HqPanel.open();
+            if (typeof api.onPan === "function") api.onPan();
+            return;
+          }
+        } catch(e){}
+      }
       // if the tile popup is open, close it first — a tap anywhere on the
       // canvas should dismiss the card so it never blocks the map on mobile
       if (window.TilePanel && window.TilePanel.isOpen) {
