@@ -733,7 +733,8 @@ window.BlockRender = (function () {
     layer.save();
     layer.translate(hpCX, hpCY);
     layer.scale(1, 0.5);
-    layer.font = "900 22px 'Baloo 2', sans-serif";
+    var hFont = Math.max(10, Math.round(iso * 0.55));
+    layer.font = "900 " + hFont + "px 'Baloo 2', sans-serif";
     layer.textAlign = "center";
     layer.textBaseline = "middle";
     layer.fillStyle = HELIPAD_H;
@@ -742,13 +743,13 @@ window.BlockRender = (function () {
     layer.fillText("H", 0, 5);
     layer.restore();
 
-    // antenna — thick mast on helipad edge (left-back), red beacon with glow — all proportional
+    // antenna — thick mast on helipad edge (left-back), red beacon with glow — evenly scaled with iso
     var antBase = {x: cx - hHalf*0.62, y: hpCY - hHalf*0.31};
-    var antH = Math.max(18, Math.round(iso * 0.62));
+    var antH = Math.max(10, Math.round(iso * 0.52));
     var antTop = {x: antBase.x, y: antBase.y - antH};
-    var antW = Math.max(5, Math.round(iso * 0.13));
-    var beaconR = Math.max(6, Math.round(iso * 0.17));
-    var glowR = beaconR + Math.max(4, Math.round(iso * 0.10));
+    var antW = Math.max(3, Math.round(iso * 0.11));
+    var beaconR = Math.max(4, Math.round(iso * 0.14));
+    var glowR = beaconR + Math.max(3, Math.round(iso * 0.08));
     // mast
     layer.fillStyle = HQ_EDGE;
     layer.beginPath();
@@ -1004,11 +1005,11 @@ window.BlockRender = (function () {
     var hpCY = towerTopY;
     var antBaseX = cx - hHalf*0.62;
     var antBaseY = hpCY - hHalf*0.31;
-    var antH = Math.max(18, Math.round(iso * 0.62));
+    var antH = Math.max(10, Math.round(iso * 0.52));
     var antTopY = antBaseY - antH;
-    var antW = Math.max(5, Math.round(iso * 0.13));
-    var beaconR = Math.max(6, Math.round(iso * 0.17));
-    var glowR = beaconR + Math.max(4, Math.round(iso * 0.10));
+    var antW = Math.max(3, Math.round(iso * 0.11));
+    var beaconR = Math.max(4, Math.round(iso * 0.14));
+    var glowR = beaconR + Math.max(3, Math.round(iso * 0.08));
     var k = beaconPulse.v; // 0..1
     var pulse = 0.88 + 0.14 * k; // 0.88..1.02 scale — just a little
     var glowAlpha = 0.16 + 0.14 * k; // 0.16..0.30

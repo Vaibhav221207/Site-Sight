@@ -1324,17 +1324,17 @@ body.touch-ui .hq-fs-nav-item {
   #hq-overlay {
     align-items: center;
     justify-content: center;
-    padding: 12px;
-    padding-top: calc(12px + env(safe-area-inset-top, 0px));
-    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-    padding-left: calc(12px + env(safe-area-inset-left, 0px));
-    padding-right: calc(12px + env(safe-area-inset-right, 0px));
+    padding: 16px;
+    padding-top: calc(16px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    padding-left: calc(16px + env(safe-area-inset-left, 0px));
+    padding-right: calc(16px + env(safe-area-inset-right, 0px));
   }
   #hq-panel {
-    width: calc(100vw - 24px);
-    max-width: 760px;
-    height: calc(100dvh - 24px);
-    max-height: calc(100dvh - 24px);
+    width: calc(100vw - 32px);
+    max-width: 720px;
+    height: calc(100dvh - 32px);
+    max-height: calc(100dvh - 32px);
     border-radius: 16px;
     box-shadow: 3px 3px 0 #000;
     padding-top: 0;
@@ -1375,26 +1375,26 @@ body.touch-ui .hq-fs-nav-item {
   .hq-fs-drone-cost { font-size: 11px; }
   .hq-order-btn { padding: 5px 10px; font-size: 10px; }
 
-  /* Tile info popup: bottom-left chip on mobile — compact single column
-     so it never dominates the map; reduced 15% vs desktop. */
+  /* Tile info popup: bottom-left chip on mobile — compact single column */
   #tile-popup {
-    width: auto;
-    max-width: 240px;
-    max-height: 160px;
+    width: auto !important;
+    max-width: 220px !important;
+    max-height: 140px !important;
     overflow-y: auto;
-    top: auto;
-    bottom: 56px;
-    left: 8px;
-    right: auto;
-    border-radius: 14px;
+    top: auto !important;
+    bottom: 48px !important;
+    left: 8px !important;
+    right: auto !important;
+    border-radius: 12px !important;
     box-shadow: 2px 2px 0 #000;
-    transform: none;
+    transform: none !important;
   }
   body.touch-ui #tile-popup {
-    top: auto;
-    bottom: 56px;
-    left: 8px;
-    right: auto;
+    top: auto !important;
+    bottom: 48px !important;
+    left: 8px !important;
+    right: auto !important;
+    transform: none !important;
   }
  .panel-header { padding: 4px 6px; border-bottom: none; background: transparent; }
   .panel-title { font-size: 9px; -webkit-text-stroke: 1px #2B2320; }
@@ -1462,15 +1462,15 @@ body.touch-ui #hq-overlay {
   justify-content: center;
   padding: 12px;
   padding-top: calc(12px + env(safe-area-inset-top, 0px));
-  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-  padding-left: calc(12px + env(safe-area-inset-left, 0px));
-  padding-right: calc(12px + env(safe-area-inset-right, 0px));
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  padding-left: calc(16px + env(safe-area-inset-left, 0px));
+  padding-right: calc(16px + env(safe-area-inset-right, 0px));
 }
 body.touch-ui #hq-panel {
-  width: calc(100vw - 24px);
-  max-width: 760px;
-  height: calc(100dvh - 24px);
-  max-height: calc(100dvh - 24px);
+  width: calc(100vw - 32px);
+  max-width: 720px;
+  height: calc(100dvh - 32px);
+  max-height: calc(100dvh - 32px);
   border-radius: 16px;
   box-shadow: 3px 3px 0 #000;
   padding-top: 0;
