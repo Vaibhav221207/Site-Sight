@@ -655,6 +655,8 @@ window.HqPanel = (function () {
    api.open = function () {
     if (api.isOpen) return;
     if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
+    var fsBtn = document.getElementById('fs-btn');
+    if (fsBtn) fsBtn.style.display = 'none';
     api.isOpen = true;
     api.overlayEl.style.visibility = "visible";
     api.overlayEl.style.pointerEvents = "auto";
@@ -687,6 +689,8 @@ window.HqPanel = (function () {
 
   api.close = function () {
     if (!api.isOpen) return;
+    var fsBtn2 = document.getElementById('fs-btn');
+    if (fsBtn2) fsBtn2.style.display = '';
 
     function finish() {
       api.overlayEl.style.visibility = "hidden";

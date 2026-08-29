@@ -1349,31 +1349,31 @@ body.touch-ui .hq-fs-nav-item {
   .hq-fs-footer {
     padding: 10px 16px;
   }
-  .hq-fs-header { padding: 6px 10px; }
-  .hq-fs-title { font-size: 14px; -webkit-text-stroke: 1.1px #2B2320; }
-  .hq-fs-close { width: 28px; height: 28px; font-size: 16px; }
-  body.touch-ui .hq-fs-close { width: 36px; height: 36px; }
-  /* compact sidebar: narrower rail + smaller chunky segments */
+  .hq-fs-header { padding: 4px 8px; }
+  .hq-fs-title { font-size: 13px; -webkit-text-stroke: 1px #2B2320; }
+  .hq-fs-close { width: 26px; height: 26px; font-size: 14px; }
+  body.touch-ui .hq-fs-close { width: 32px; height: 32px; }
+  /* compact sidebar: narrower rail */
   .hq-fs-nav {
-    flex: 0 0 56px;
-    gap: 4px;
-    padding: 8px 6px;
+    flex: 0 0 52px;
+    gap: 3px;
+    padding: 6px 4px;
   }
   .hq-fs-nav-item {
-    padding: 8px 3px;
-    font-size: 8px;
-    letter-spacing: 0.02em;
-    border-radius: 12px;
+    padding: 6px 2px;
+    font-size: 7px;
+    letter-spacing: 0.01em;
+    border-radius: 10px;
   }
-  .hq-fs-content { padding: 8px 10px; }
-  .hq-fs-status { padding-bottom: 6px; }
-  .hq-fs-status-text { font-size: 12px; }
-  .hq-fs-section { margin-top: 6px; }
-  .hq-fs-section-header { font-size: 10px; padding-bottom: 4px; margin-bottom: 4px; }
-  .hq-fs-drone-row { padding: 6px 8px; gap: 4px; }
-  .hq-fs-drone-name { font-size: 12px; }
-  .hq-fs-drone-cost { font-size: 11px; }
-  .hq-order-btn { padding: 5px 10px; font-size: 10px; }
+  .hq-fs-content { padding: 6px 8px; }
+  .hq-fs-status { padding-bottom: 4px; }
+  .hq-fs-status-text { font-size: 11px; }
+  .hq-fs-section { margin-top: 4px; }
+  .hq-fs-section-header { font-size: 9px; padding-bottom: 3px; margin-bottom: 3px; }
+  .hq-fs-drone-row { padding: 4px 6px; gap: 3px; }
+  .hq-fs-drone-name { font-size: 11px; }
+  .hq-fs-drone-cost { font-size: 10px; }
+  .hq-order-btn { padding: 4px 8px; font-size: 9px; }
 
   /* Tile info popup: bottom-left chip on mobile — compact single column */
   #tile-popup {

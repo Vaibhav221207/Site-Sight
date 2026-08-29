@@ -206,15 +206,14 @@ window.InputHandler = (function () {
       // would otherwise map to a neighbor tile. Treat any tap within a
       // generous radius of the HQ as an HQ tap.
       var hq = window.GameState && window.GameState.hqTile;
-      if (hq && window.Terrain && window.Terrain.isHQ) {
+      if (hq) {
         try {
           var hp = api.grid.worldToScreen(hq.col, hq.row);
-          // use HQ's ground top (approx) so the hit area covers the tower
-          var elev = window.Terrain.elevationAt ? window.Terrain.elevationAt(hq.col, hq.row) : 0;
+          var elev = (window.Terrain && window.Terrain.elevationAt) ? window.Terrain.elevationAt(hq.col, hq.row) : 0;
           var hqY = hp.y - (4 + elev) - (api.grid.isoSize * 0.6);
           var dx = pos.x - hp.x;
           var dy = pos.y - hqY;
-          var r = Math.max(32, api.grid.isoSize * 1.9);
+          var r = Math.max(40, api.grid.isoSize * 2.2);
           if (dx*dx + dy*dy < r*r) {
             if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
             window.BlockRender.setSelected(hq.col, hq.row);
