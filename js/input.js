@@ -249,9 +249,12 @@ window.InputHandler = (function () {
     if (api._droneMode) {
       return !!(window.DroneDeploy && window.DroneDeploy.isValid(c, r));
     }
-    // normal inspect mode: rock & river tiles are non-interactive scenery
+    // normal inspect mode: rock & river are scenery, HQ is replaced by the building (not inspectable)
     var type = api.terrain.typeAt(c, r);
-    if (type === "rock" || type === "river") return false;
+    if (type === "rock" || type === "river" || type === "hq") return false;
+    // also block via GameState.hqTile in case Terrain hasn't updated yet
+    var hq = window.GameState && window.GameState.hqTile;
+    if (hq && hq.col === c && hq.row === r) return false;
     return true;
   }
 
