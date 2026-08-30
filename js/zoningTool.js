@@ -176,18 +176,16 @@ window.ZoningTool = (function () {
     var total = (ec - sc + 1) * (er - sr + 1);
     var validCount = 0;
     var cxSum = 0, cySum = 0, nTiles = 0;
-    for (var c = sc; c <= ec; c++) {
-      for (var r = sr; r <= er; r++) {
-        if (api.isValidTile(c, r)) validCount++;
-      }
-    }
+    var col = zoneColor();
+    // hex to rgba for fill
+    var rC = parseInt(col.slice(1,3),16), gC = parseInt(col.slice(3,5),16), bC = parseInt(col.slice(5,7),16);
+    var fillRgba = "rgba("+rC+","+gC+","+bC+",0.22)";
+    var strokeRgba = col;
     var tiles = [];
     for (var c2 = sc; c2 <= ec; c2++) for (var r2 = sr; r2 <= er; r2++) tiles.push({c:c2,r:r2});
     tiles.sort(function(a,b){ return (a.c+a.r)-(b.c+b.r); });
     var col = zoneColor();
     // hex to rgba for fill
-    var fillCol = col;
-    // convert #RRGGBB to rgba
     var rC = parseInt(col.slice(1,3),16), gC = parseInt(col.slice(3,5),16), bC = parseInt(col.slice(5,7),16);
     var fillRgba = "rgba("+rC+","+gC+","+bC+",0.22)";
     var strokeRgba = col;

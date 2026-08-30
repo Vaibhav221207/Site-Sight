@@ -144,11 +144,12 @@ window.Main = (function () {
       });
     }
 
-    // Stop button for compactor placement mode
+    // Stop button for compactor/zoning placement mode
     var stopBtn = document.getElementById("hud-stop-btn");
     if (stopBtn) {
       stopBtn.addEventListener("click", function () {
         if (window.CompactorTool) window.CompactorTool.cancel();
+        if (window.ZoningTool) window.ZoningTool.cancel();
       });
     }
 
