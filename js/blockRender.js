@@ -1076,16 +1076,28 @@ window.BlockRender = (function () {
   }
 
   // select/deselect/swap logic for the pop-up animation
+  // Rock, river and HQ have their own visuals — never do the generic block raise
   api.setSelected = function (c, r) {
-    if (api.selected && api.selected.col === c && api.selected.row === r) {
-      // toggle off: animate the same block back down
-      animateRise(c, r, 0);
+    var terrain = api.terrain;
+    var newType = terrain && terrain.typeAt ? terrain.typeAt(c, r) : null;
+    var isSpecialNew = (newType === "rock" || newType === "river" || newType === "hq");
+    var oldSel = api.selected;
+    var oldType = null;
+    if (oldSel && terrain && terrain.typeAt) {
+      try { oldType = terrain.typeAt(oldSel.col, oldSel.row); } catch(e){}
+    }
+    var isSpecialOld = (oldType === "rock" || oldType === "river" || oldType === "hq");
+
+    if (oldSel && oldSel.col === c && oldSel.row === r) {
+      // toggle off: only animate if it wasn't a special tile
+      if (!isSpecialNew) animateRise(c, r, 0);
       api.selected = null;
     } else {
-      // swap (or fresh select): old block drops while the new one pops
-      if (api.selected) animateRise(api.selected.col, api.selected.row, 0);
+      // swap (or fresh select): drop old if it was a normal tile
+      if (oldSel && !isSpecialOld) animateRise(oldSel.col, oldSel.row, 0);
       api.selected = { col: c, row: r };
-      animateRise(c, r, POP_RISE);
+      // only pop new if it's a normal tile
+      if (!isSpecialNew) animateRise(c, r, POP_RISE);
     }
     api._dirty = true;
   };
