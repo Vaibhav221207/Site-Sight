@@ -210,25 +210,27 @@ window.InputHandler = (function () {
         return (window.Terrain && window.Terrain.isHQ && window.Terrain.isHQ(c,r)) ||
                (hq && hq.col===c && hq.row===r);
       };
-      // HQ tile is now a distinct, non-inspectable tile — any tap on its
-      // diamond or on the building that sits on it opens HQ, never TilePanel.
+      // Old mechanism that worked: exact HQ tile never pops, plus a tight
+      // building hit for the tower that overhangs. No large circle.
       if (hq) {
         try {
-          var hp = api.grid.worldToScreen(hq.col, hq.row);
-          var iso = api.grid.isoSize, half = iso/2;
-          var elev = (window.Terrain && window.Terrain.elevationAt) ? window.Terrain.elevationAt(hq.col, hq.row) : 0;
-          var groundY = hp.y - (4 + elev);
-          // bounding box of the HQ building (base diamond + tower + antenna)
-          var bHalf = iso * 0.99;
-          var tHalf = iso * 0.60;
-          var baseTopY = groundY - Math.max(8, Math.round(iso * 0.42));
-          var towerTopY = baseTopY - Math.max(14, Math.round(iso * 0.78));
-          var antH = Math.max(12, Math.round(iso * 0.55));
-          var topY = towerTopY - tHalf/2 - antH - 10;
-          var botY = groundY + half;
-          var leftX = hp.x - bHalf - 4;
-          var rightX = hp.x + bHalf + 4;
-          if (pos.x >= leftX && pos.x <= rightX && pos.y >= topY && pos.y <= botY) {
+          var hp2 = api.grid.worldToScreen(hq.col, hq.row);
+          var iso2 = api.grid.isoSize, half2 = iso2/2;
+          // exact diamond hit for the base tile
+          var dx0 = Math.abs(pos.x - hp2.x);
+          var dy0 = Math.abs(pos.y - (hp2.y - 4));
+          if (dx0/iso2 + dy0/half2 <= 1) {
+            if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
+            window.BlockRender.setSelected(hq.col, hq.row);
+            if (window.HqPanel) window.HqPanel.open();
+            if (typeof api.onPan === "function") api.onPan();
+            return;
+          }
+          // tower column above the diamond (narrow, so it doesn't cover neighbors)
+          var bHalf2 = iso2 * 0.99;
+          var tHalf2 = iso2 * 0.60;
+          var towerW = tHalf2 * 0.9;
+          if (Math.abs(pos.x - hp2.x) <= towerW && pos.y >= hp2.y - 60 && pos.y <= hp2.y + half2) {
             if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
             window.BlockRender.setSelected(hq.col, hq.row);
             if (window.HqPanel) window.HqPanel.open();
