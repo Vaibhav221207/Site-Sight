@@ -206,6 +206,10 @@ window.InputHandler = (function () {
       // would otherwise map to a neighbor tile. Treat any tap within a
       // generous radius of the HQ as an HQ tap.
       var hq = window.GameState && window.GameState.hqTile;
+      var isHqAt = function(c,r){
+        return (window.Terrain && window.Terrain.isHQ && window.Terrain.isHQ(c,r)) ||
+               (hq && hq.col===c && hq.row===r);
+      };
       if (hq) {
         try {
           var hp = api.grid.worldToScreen(hq.col, hq.row);
@@ -213,7 +217,7 @@ window.InputHandler = (function () {
           var hqY = hp.y - (4 + elev) - (api.grid.isoSize * 0.5);
           var dx = pos.x - hp.x;
           var dy = pos.y - hqY;
-          var r = Math.max(22, api.grid.isoSize * 1.15);
+          var r = Math.max(28, api.grid.isoSize * 1.5);
           if (dx*dx + dy*dy < r*r) {
             if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
             window.BlockRender.setSelected(hq.col, hq.row);
@@ -233,6 +237,14 @@ window.InputHandler = (function () {
       // nearest tile center (desktop keeps the strict hit test)
       if (!tile && window.MobileUI && window.MobileUI.enabled) {
         tile = nearestTile(pos.x, pos.y);
+      }
+      // Exact HQ tile — never show tile popup, always HQ terminal (replaces tile)
+      if (tile && isHqAt(tile.col, tile.row)) {
+        if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
+        window.BlockRender.setSelected(tile.col, tile.row);
+        if (window.HqPanel) window.HqPanel.open();
+        if (typeof api.onPan === "function") api.onPan();
+        return;
       }
       if (tile && isClickable(tile.col, tile.row)) {
         api.onTileClick(tile.col, tile.row);
