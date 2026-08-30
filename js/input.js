@@ -210,15 +210,23 @@ window.InputHandler = (function () {
         return (window.Terrain && window.Terrain.isHQ && window.Terrain.isHQ(c,r)) ||
                (hq && hq.col===c && hq.row===r);
       };
-      // Old mechanism that worked: exact HQ tile never pops, plus a tight
-      // building hit for the tower that overhangs. No large circle.
+      // HQ building footprint: base diamond (ground) + tower + helipad overhang.
+      // Any tap inside this screen-space footprint is HQ, even if screenToTile
+      // would map the tower top to a neighbor tile (the old Math.round bug).
       if (hq) {
         try {
           var hp2 = api.grid.worldToScreen(hq.col, hq.row);
           var iso2 = api.grid.isoSize, half2 = iso2/2;
-          // exact diamond hit for the base tile
+          var elev2 = (window.Terrain && window.Terrain.elevationAt) ? window.Terrain.elevationAt(hq.col, hq.row) : 0;
+          var groundY2 = hp2.y - (4 + elev2);
+          var baseH2 = Math.max(8, Math.round(iso2 * 0.42));
+          var towerH2 = Math.max(14, Math.round(iso2 * 0.78));
+          var bHalf2 = iso2 * 0.99;
+          var tHalf2 = iso2 * 0.60;
+          var hHalf2 = tHalf2 * 1.22;
+          // 1) exact ground diamond (base tile)
           var dx0 = Math.abs(pos.x - hp2.x);
-          var dy0 = Math.abs(pos.y - (hp2.y - 4));
+          var dy0 = Math.abs(pos.y - groundY2);
           if (dx0/iso2 + dy0/half2 <= 1) {
             if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
             window.BlockRender.setSelected(hq.col, hq.row);
@@ -226,16 +234,27 @@ window.InputHandler = (function () {
             if (typeof api.onPan === "function") api.onPan();
             return;
           }
-          // tower column above the diamond (narrow, so it doesn't cover neighbors)
-          var bHalf2 = iso2 * 0.99;
-          var tHalf2 = iso2 * 0.60;
-          var towerW = tHalf2 * 0.9;
-          if (Math.abs(pos.x - hp2.x) <= towerW && pos.y >= hp2.y - 60 && pos.y <= hp2.y + half2) {
-            if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
-            window.BlockRender.setSelected(hq.col, hq.row);
-            if (window.HqPanel) window.HqPanel.open();
-            if (typeof api.onPan === "function") api.onPan();
-            return;
+          // 2) building bounding box (covers base, tower, helipad, antenna)
+          var baseTopY2 = groundY2 - baseH2;
+          var towerTopY2 = baseTopY2 - towerH2;
+          var antH2 = Math.max(12, Math.round(iso2 * 0.55));
+          var topY2 = towerTopY2 - tHalf2/2 - antH2 - 10;
+          var botY2 = groundY2 + half2;
+          var leftX2 = hp2.x - Math.max(bHalf2, hHalf2) - 4;
+          var rightX2 = hp2.x + Math.max(bHalf2, hHalf2) + 4;
+          if (pos.x >= leftX2 && pos.x <= rightX2 && pos.y >= topY2 && pos.y <= botY2) {
+            // still need to ensure it's not a far neighbor's ground — check if tap is
+            // within the building's vertical column, not just the broad box
+            var towerW2 = tHalf2 * 1.1;
+            var isOverTower = Math.abs(pos.x - hp2.x) <= towerW2 && pos.y <= baseTopY2 + half2;
+            var isOverBase = dx0/iso2 + Math.abs(pos.y - groundY2)/half2 <= 1.35;
+            if (isOverTower || isOverBase) {
+              if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
+              window.BlockRender.setSelected(hq.col, hq.row);
+              if (window.HqPanel) window.HqPanel.open();
+              if (typeof api.onPan === "function") api.onPan();
+              return;
+            }
           }
         } catch(e){}
       }
