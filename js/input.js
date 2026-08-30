@@ -210,41 +210,40 @@ window.InputHandler = (function () {
         return (window.Terrain && window.Terrain.isHQ && window.Terrain.isHQ(c,r)) ||
                (hq && hq.col===c && hq.row===r);
       };
-      // Old working mechanism (10 Aug 2026): exact HQ tile via screenToTile
-      // plus a tight tower column for the building's height. No broad box.
       if (hq) {
         try {
           var hp2 = api.grid.worldToScreen(hq.col, hq.row);
           var iso2 = api.grid.isoSize, half2 = iso2/2;
           var elev2 = (window.Terrain && window.Terrain.elevationAt) ? window.Terrain.elevationAt(hq.col, hq.row) : 0;
           var groundY2 = hp2.y - (4 + elev2);
-          // 1) exact ground diamond (base tile) — old mechanism
+          var bHalf2 = iso2 * 0.99;
+          var tHalf2 = iso2 * 0.60;
+          var hHalf2 = tHalf2 * 1.22;
+          var baseH2 = Math.max(8, Math.round(iso2 * 0.42));
+          var towerH2 = Math.max(14, Math.round(iso2 * 0.78));
+          var antH2 = Math.max(12, Math.round(iso2 * 0.55));
+          // 1) base diamond expanded for helipad overhang (1.35) — old + helipad
           var dx0 = Math.abs(pos.x - hp2.x);
           var dy0 = Math.abs(pos.y - groundY2);
-          if (dx0/iso2 + dy0/half2 <= 1) {
+          if (dx0/iso2 + dy0/half2 <= 1.35) {
             if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
             window.BlockRender.setSelected(hq.col, hq.row);
             if (window.HqPanel) window.HqPanel.open();
             if (typeof api.onPan === "function") api.onPan();
             return;
           }
-          // 2) narrow tower column directly above HQ (covers beacon/H, not neighbors)
-          var tHalf2 = iso2 * 0.60;
-          var towerW2 = tHalf2 * 0.9;
-          if (Math.abs(pos.x - hp2.x) <= towerW2) {
-            var baseH2 = Math.max(8, Math.round(iso2 * 0.42));
-            var towerH2 = Math.max(14, Math.round(iso2 * 0.78));
-            var baseTopY2 = groundY2 - baseH2;
-            var antH2 = Math.max(12, Math.round(iso2 * 0.55));
-            var topY2 = baseTopY2 - towerH2 - tHalf2/2 - antH2;
-            var botY2 = baseTopY2 + half2;
-            if (pos.y >= topY2 && pos.y <= botY2) {
-              if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
-              window.BlockRender.setSelected(hq.col, hq.row);
-              if (window.HqPanel) window.HqPanel.open();
-              if (typeof api.onPan === "function") api.onPan();
-              return;
-            }
+          // 2) tower/helipad/beacon box above diamond (covers building, not neighbor ground)
+          var baseTopY2 = groundY2 - baseH2;
+          var towerTopY2 = baseTopY2 - towerH2;
+          var topY2 = towerTopY2 - tHalf2/2 - antH2 - 10;
+          var botY2 = baseTopY2 + half2;
+          var buildingHalfW2 = Math.max(bHalf2, hHalf2) + 4;
+          if (Math.abs(pos.x - hp2.x) <= buildingHalfW2 * 0.85 && pos.y >= topY2 && pos.y <= botY2) {
+            if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
+            window.BlockRender.setSelected(hq.col, hq.row);
+            if (window.HqPanel) window.HqPanel.open();
+            if (typeof api.onPan === "function") api.onPan();
+            return;
           }
         } catch(e){}
       }
