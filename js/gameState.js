@@ -140,6 +140,7 @@ window.GameState = (function () {
         mineralDeposits: "HQ",
         bedrockDepth: "HQ",
         bestUse: "HQ",
+        zoneType: null,
         isHQ: true
       };
     }
@@ -153,6 +154,7 @@ window.GameState = (function () {
         mineralDeposits: null,    // "None" | "Trace" | "Rich"
         bedrockDepth: null,       // "Shallow" | "Moderate" | "Deep"
         bestUse: null,            // computed, see computeBestUse
+        zoneType: null,           // "residential" | "commercial" | "industrial" | "mining" | null
       };
     }
     return api.tileData[k];

@@ -23,7 +23,7 @@ window.HqPanel = (function () {
     storeRow2: null,    // STORE GPR row (order button's home when not in footer)
   };
 
-   var SECTIONS = ["data", "inventory", "store"];
+   var SECTIONS = ["data", "inventory", "store", "zoning"];
 
   api.init = function () {
     api.overlayEl = document.getElementById("hq-overlay");
@@ -46,7 +46,14 @@ window.HqPanel = (function () {
       if (name === "inventory") {
         api.inventorySection = api.sections[name];
       }
+      if (name === "zoning") {
+        api.zoningSection = api.sections[name];
+      }
     });
+
+    // ZONING tab state
+    api.selectedZoneType = null;
+    api.zoningButtons = {};
 
     if (api.closeBtn) {
       api.closeBtn.addEventListener("click", function () { api.close(); });
@@ -190,6 +197,9 @@ window.HqPanel = (function () {
     if (name === "data") {
       api.initDataMap();
       if (api.refreshDataMap) api.refreshDataMap();
+    }
+    if (name === "zoning") {
+      api.renderZoning();
     }
     var sec = api.sections[name];
     if (sec) {
@@ -528,6 +538,85 @@ window.HqPanel = (function () {
     console.log("[HQ] Deploy Compactor: selected " + id + " -> entering placement mode");
     if (window.CompactorTool) window.CompactorTool.startPlacement();
     if (api.isOpen) api.close();
+  };
+
+  // ---- ZONING tab ----
+  var ZONE_TYPES = [
+    { id: "residential", label: "Residential", color: "#66BB6A" },
+    { id: "commercial",  label: "Commercial",  color: "#42A5F5" },
+    { id: "industrial",  label: "Industrial",  color: "#8D6E63" },
+    { id: "mining",      label: "Mining",      color: "#FFB300" }
+  ];
+
+  api.renderZoning = function () {
+    var sec = document.getElementById("hq-section-zoning");
+    var grid = document.getElementById("hq-zoning-buttons");
+    var hint = document.getElementById("hq-zoning-hint");
+    if (!sec || !grid) return;
+    grid.innerHTML = "";
+    // build 4 zone buttons in a 2x2 grid
+    grid.style.display = "grid";
+    grid.style.gridTemplateColumns = "repeat(2, minmax(0, 1fr))";
+    grid.style.gap = "10px";
+    grid.style.marginTop = "12px";
+    ZONE_TYPES.forEach(function (z) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "hq-zoning-btn";
+      btn.dataset.zoneType = z.id;
+      btn.style.cssText = "display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 12px;background:#FFFBF0;border:3px solid #2B2320;border-radius:14px;cursor:pointer;box-shadow:3px 3px 0 #000;font-size:13px;font-weight:700;letter-spacing:0.02em;transition:background 0.15s,border-color 0.15s,transform 0.09s;";
+      // left color swatch
+      var swatch = document.createElement("span");
+      swatch.style.cssText = "width:14px;height:14px;border-radius:4px;border:2px solid #2B2320;flex-shrink:0;background:" + z.color + ";";
+      var label = document.createElement("span");
+      label.textContent = z.label;
+      label.style.color = "#2B2320";
+      btn.appendChild(swatch);
+      btn.appendChild(label);
+      // highlight if selected
+      var isSel = api.selectedZoneType === z.id;
+      if (isSel) {
+        btn.style.background = z.color;
+        btn.style.borderColor = "#2B2320";
+        label.style.color = (z.id === "industrial" || z.id === "mining") ? "#FFFFFF" : "#2B2320";
+        swatch.style.borderColor = (z.id === "industrial" || z.id === "mining") ? "#FFFFFF" : "#2B2320";
+        btn.style.transform = "translateY(2px)";
+        btn.style.boxShadow = "0 0 0 transparent";
+      }
+      btn.addEventListener("click", function () {
+        api.selectZone(z.id);
+      });
+      grid.appendChild(btn);
+      api.zoningButtons[z.id] = btn;
+    });
+    if (hint) hint.style.display = "";
+  };
+
+  api.selectZone = function (zoneId) {
+    var wasSelected = api.selectedZoneType === zoneId;
+    // single-select: clear all, then set if not toggling off
+    api.selectedZoneType = wasSelected ? null : zoneId;
+    // update visuals
+    ZONE_TYPES.forEach(function (z) {
+      var btn = api.zoningButtons[z.id];
+      if (!btn) return;
+      var isSel = api.selectedZoneType === z.id;
+      var label = btn.querySelector("span:last-child");
+      var swatch = btn.querySelector("span:first-child");
+      if (isSel) {
+        btn.style.background = z.color;
+        label.style.color = (z.id === "industrial" || z.id === "mining") ? "#FFFFFF" : "#2B2320";
+        swatch.style.borderColor = (z.id === "industrial" || z.id === "mining") ? "#FFFFFF" : "#2B2320";
+        btn.style.transform = "translateY(2px)";
+        btn.style.boxShadow = "0 0 0 transparent";
+      } else {
+        btn.style.background = "#FFFBF0";
+        label.style.color = "#2B2320";
+        swatch.style.borderColor = "#2B2320";
+        btn.style.transform = "";
+        btn.style.boxShadow = "3px 3px 0 #000";
+      }
+    });
   };
 
   api.showMsg = function (text, success, container) {
