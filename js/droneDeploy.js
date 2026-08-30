@@ -239,7 +239,10 @@ window.DroneDeploy = (function () {
     api.deploying = true;
     api.deployed = null;
     if (gs.inventory) gs.inventory.deployed = null;
+    if (window.InputHandler && window.InputHandler.setMode) window.InputHandler.setMode('deploying-drone');
     api._fillSlots();
+    // _fillSlots may have completed synchronously if queue was empty
+    if (!api.deploying && window.InputHandler && window.InputHandler.setMode) window.InputHandler.setMode('idle');
     return true;
   };
 
@@ -276,6 +279,7 @@ window.DroneDeploy = (function () {
         window.GameState.inventory.deployed = { wholeMap: true };
       }
       if (typeof api.onDeployDone === "function") api.onDeployDone();
+      if (window.InputHandler && window.InputHandler.setMode) window.InputHandler.setMode('idle');
     }
   };
 

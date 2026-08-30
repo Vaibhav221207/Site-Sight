@@ -1,35 +1,86 @@
-/* js/input.js — canvas pointer input: pan (press+drag) + tile click
- * detection. Uses the Pointer Events API so mouse and touch share ONE
- * code path (pointerdown/pointermove/pointerup fire identically for both).
- *   - Drag threshold prevents accidental clicks during panning.
- *   - Pointer capture keeps the drag smooth even off-canvas and releases
- *     cleanly, so no mouseleave-style handler is needed.
- *   - In placement mode (HQ build), only valid flat land tiles are
- *     clickable.
- *   - Normal mode: hill & river tiles are non-interactive scenery; only
- *     land and trench tiles trigger a click.
+/* js/input.js — single unified tile-interaction state machine.
+ *
+ * ONE state variable (InteractionState.mode) gates every canvas pointer.
+ * No tool registers its own canvas listener; all clicks/drags/pans flow
+ * through exactly ONE pointerdown/pointermove/pointerup triple on the
+ * canvas, which dispatches to the active mode's handler and returns.
+ *
+ * Modes: 'idle' (default), 'placing-hq', 'compacting', 'zoning',
+ *        'deploying-drone' (whole-map, no click target, kept for symmetry)
+ * Idle is the only mode that shows HQ terminal or tile popup.
+ * Any non-idle mode consumes the click entirely.
+ *
+ * Pan (5px drag threshold) works in idle; drag-select preview works in
+ * compacting/zoning; pinch-zoom is not handled here (DataMap owns its
+ * minimap pinch, main map uses pointer-drag pan only) and is left
+ * untouched so it cannot conflict.
  */
 
 window.InputHandler = (function () {
-  var DRAG_THRESHOLD = 5; // px movement before we treat the gesture as a drag
+  var DRAG_THRESHOLD = 5;
+
+  // ---- single source of truth ----
+  var InteractionState = { mode: 'idle' }; // 'idle' | 'placing-hq' | 'compacting' | 'zoning' | 'deploying-drone'
 
   var api = {
     canvas: null,
     grid: null,
     terrain: null,
-    _userOnTileClick: null, // (col, row) -> void  (normal-mode inspect click)
-    onPan: null,            // () -> void   (called after each pan frame)
+    InteractionState: InteractionState, // exposed for tools and debugging
+    _userOnTileClick: null, // (col,row) -> void  (idle-mode inspect)
+    onPan: null,
     _pressed: false,
     _dragging: false,
-    _activePointer: null,   // pointerId currently tracked (multi-touch guard)
+    _activePointer: null,
     _dragStart: { x: 0, y: 0 },
     _lastPos: { x: 0, y: 0 },
-    _placementMode: false,
-    _droneMode: false,      // drone placement mode (click-to-place a drone)
-    _compactorDragSelect: false,
     _compactorDragStart: null,
     _compactorSelectionEnd: null,
+    _zoningDragStart: null,
+    _zoningSelectionEnd: null,
     _cursor: "grab",
+    // backward-compat mirrors (derived from InteractionState.mode, not independent)
+    _placementMode: false,
+    _droneMode: false,
+  };
+
+  // keep legacy booleans in sync for callers that still read them
+  function syncLegacyFlags() {
+    var m = InteractionState.mode;
+    api._placementMode = (m === 'placing-hq' || m === 'compacting' || m === 'zoning');
+    api._droneMode = (m === 'deploying-drone');
+    // legacy alias used by some callers
+    api._compactorDragSelect = (m === 'compacting' && api._pressed && !!api._compactorDragStart);
+  }
+
+  api.setMode = function (mode) {
+    InteractionState.mode = mode;
+    syncLegacyFlags();
+    // cursor management per mode
+    if (mode === 'placing-hq' || mode === 'compacting' || mode === 'zoning') {
+      api.setCursor("crosshair");
+    } else if (mode === 'idle') {
+      api.setCursor("grab");
+    }
+  };
+
+  api.getMode = function () { return InteractionState.mode; };
+
+  // legacy wrappers — now delegate to InteractionState
+  api.isPlacementMode = function () { return api._placementMode; };
+  api.setPlacementMode = function (v) {
+    // true means placing-hq (BuildMenu/HQBuild path); false means idle
+    // Compactor/Zoning callers should use api.setMode('compacting'/'zoning') directly
+    if (v) {
+      if (InteractionState.mode === 'idle') api.setMode('placing-hq');
+    } else {
+      if (InteractionState.mode === 'placing-hq') api.setMode('idle');
+    }
+  };
+  api.isDroneMode = function () { return api._droneMode; };
+  api.setDroneMode = function (v) {
+    if (v) api.setMode('deploying-drone');
+    else if (InteractionState.mode === 'deploying-drone') api.setMode('idle');
   };
 
   api.init = function (canvas, grid, onTileClick, onPan, terrain) {
@@ -43,9 +94,6 @@ window.InputHandler = (function () {
 
   function bind(canvas) {
     canvas.style.cursor = "grab";
-    // Pointer Events: one code path for mouse + touch. touch-action must be
-    // none (CSS also sets it) so the browser never hijacks a drag for
-    // scrolling/zooming and pointermove keeps streaming.
     canvas.addEventListener("pointerdown", onPointerDown);
     canvas.addEventListener("pointermove", onPointerMove);
     canvas.addEventListener("pointerup", onPointerUp);
@@ -53,11 +101,6 @@ window.InputHandler = (function () {
     canvas.addEventListener("dragstart", function (e) { e.preventDefault(); });
   }
 
-  // fat-finger tap snapping (touch devices only, where tiles are small):
-  // resolve the tap to the NEAREST tile center within a forgiving radius
-  // instead of requiring an exact hit inside the diamond. Checks all four
-  // candidate lattice centers around the tap (exact nearest by screen
-  // distance) and returns null when nothing is within radius.
   function nearestTile(sx, sy) {
     var g = api.grid;
     var fr = g.screenToWorld(sx, sy);
@@ -80,18 +123,71 @@ window.InputHandler = (function () {
     return best;
   }
 
-  // pointer position in CSS pixels relative to the canvas
   function pointerPos(evt) {
     var rect = api.canvas.getBoundingClientRect();
     return { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
   }
+
+  // ---- mode-specific handlers (all go through central dispatch) ----
+
+  function handlePlacingHq(pos, tile) {
+    if (!tile) return;
+    // HQBuild validates land/rock/river/trench and cash; on success it
+    // will call BuildMenu.onBuildSuccess which resets mode to idle
+    var success = window.HQBuild && window.HQBuild.attempt(tile.col, tile.row, function () {
+      api.setMode('idle');
+      if (window.BuildMenu && window.BuildMenu.onBuildSuccess) window.BuildMenu.onBuildSuccess();
+      if (window.Main && window.Main.updateHUD) window.Main.updateHUD();
+      if (typeof api.onPan === "function") api.onPan();
+    });
+    if (!success) {
+      // stay in placing-hq so player can pick another tile
+    } else {
+      // HQBuild.attempt already called onSuccess which set idle, but ensure
+      api.setMode('idle');
+    }
+  }
+
+  function handleCompactingClick(pos, tile) {
+    // Compactor uses drag-select, not single clicks; single clicks are ignored
+    // while compacting is active. The drag flow is handled in pointerDown/Move/Up
+    // when mode === 'compacting'. If a click without drag occurs, do nothing.
+  }
+
+  function handleZoningClick(pos, tile) {
+    // Placeholder for future zoning tool — mirrors compactor drag-select
+    // If a Zoning tool exists, delegate to it; otherwise ignore
+    if (window.ZoningTool && window.ZoningTool.attempt) {
+      window.ZoningTool.attempt(tile.col, tile.row);
+    }
+  }
+
+  function handleIdleClick(pos, tile) {
+    // HQ tile always opens terminal, never the small popup
+    var isHq = false;
+    if (tile) {
+      isHq = (window.Terrain && window.Terrain.isHQ && window.Terrain.isHQ(tile.col, tile.row)) ||
+             (window.GameState && window.GameState.hqTile && window.GameState.hqTile.col === tile.col && window.GameState.hqTile.row === tile.row);
+    }
+    if (isHq && window.HqPanel) {
+      if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
+      window.BlockRender.setSelected(tile.col, tile.row);
+      window.HqPanel.open();
+      if (typeof api.onPan === "function") api.onPan();
+      return;
+    }
+    if (tile && isClickable(tile.col, tile.row)) {
+      api.onTileClick(tile.col, tile.row);
+    }
+  }
+
+  // ---- central pointer handlers (exactly ONE pair) ----
 
   function onPointerDown(evt) {
     if (window.HqPanel && window.HqPanel.isOpen) return;
     if (api._pressed) return;
     api._pressed = true;
     api._dragging = false;
-    api._compactorDragSelect = false;
     api._activePointer = evt.pointerId;
     if (api.canvas.setPointerCapture) {
       try { api.canvas.setPointerCapture(evt.pointerId); } catch (e) {}
@@ -99,12 +195,17 @@ window.InputHandler = (function () {
     var pos = pointerPos(evt);
     api._dragStart = pos;
     api._lastPos = pos;
-    if (window.CompactorTool && window.CompactorTool.isActive) {
-      api._compactorDragSelect = true;
+
+    // Mode-gated drag start
+    if (InteractionState.mode === 'compacting' && window.CompactorTool && window.CompactorTool.isActive) {
       api._compactorDragStart = pos;
       api._compactorSelectionEnd = pos;
       window.CompactorTool.setPreview(pos, pos);
-    } else if (!api._droneMode) {
+    } else if (InteractionState.mode === 'zoning' && window.ZoningTool && window.ZoningTool.isActive) {
+      api._zoningDragStart = pos;
+      api._zoningSelectionEnd = pos;
+      if (window.ZoningTool.setPreview) window.ZoningTool.setPreview(pos, pos);
+    } else if (InteractionState.mode === 'idle' && !api._droneMode) {
       api.canvas.style.cursor = "grabbing";
     }
   }
@@ -112,30 +213,44 @@ window.InputHandler = (function () {
   function onPointerMove(evt) {
     if (api._pressed && evt.pointerId !== api._activePointer) return;
     var pos = pointerPos(evt);
-    if (api._droneMode && window.DroneDeploy) {
-      var tile = api.grid.screenToTile(pos.x, pos.y);
-      window.DroneDeploy.setHover(tile ? tile.col : null, tile ? tile.row : null);
+    // Drone hover preview (whole-map, no placement) — still gated by mode
+    if (InteractionState.mode === 'deploying-drone' && window.DroneDeploy) {
+      var hoverTile = api.grid.screenToTile(pos.x, pos.y);
+      window.DroneDeploy.setHover(hoverTile ? hoverTile.col : null, hoverTile ? hoverTile.row : null);
     }
     if (!api._pressed) return;
     if (window.HqPanel && window.HqPanel.isOpen) return;
-    if (api._compactorDragSelect && window.CompactorTool && window.CompactorTool.isActive) {
-      var cur = pointerPos(evt);
-      api._compactorSelectionEnd = cur;
-      window.CompactorTool.setPreview(api._compactorDragStart, cur);
+
+    // Mode-gated drag preview
+    if (InteractionState.mode === 'compacting' && window.CompactorTool && window.CompactorTool.isActive) {
+      api._compactorSelectionEnd = pos;
+      window.CompactorTool.setPreview(api._compactorDragStart, pos);
       if (window.BlockRender) window.BlockRender.invalidate();
       return;
     }
+    if (InteractionState.mode === 'zoning' && window.ZoningTool && window.ZoningTool.isActive) {
+      api._zoningSelectionEnd = pos;
+      if (window.ZoningTool.setPreview) window.ZoningTool.setPreview(api._zoningDragStart, pos);
+      if (window.BlockRender) window.BlockRender.invalidate();
+      return;
+    }
+
     var dx = pos.x - api._lastPos.x;
     var dy = pos.y - api._lastPos.y;
     var dist = Math.sqrt(dx * dx + dy * dy);
-
     if (dist >= DRAG_THRESHOLD) api._dragging = true;
     if (api._dragging) {
-      api.grid.camera.x += dx;
-      api.grid.camera.y += dy;
-      api._lastPos = pos;
-      if (typeof api.onPan === "function") api.onPan();
-      return; // don't fire a click while panning
+      // Pan only in idle (or when not in a drag-select mode)
+      if (InteractionState.mode === 'idle') {
+        api.grid.camera.x += dx;
+        api.grid.camera.y += dy;
+        api._lastPos = pos;
+        if (typeof api.onPan === "function") api.onPan();
+      } else {
+        // In placing modes, dragging is for selection, not pan — still update lastPos for threshold
+        api._lastPos = pos;
+      }
+      return;
     }
   }
 
@@ -147,146 +262,187 @@ window.InputHandler = (function () {
     api._dragging = false;
     api._activePointer = null;
     if (api.canvas.releasePointerCapture) {
-      try { api.canvas.releasePointerCapture(evt.pointerId); } catch (e) { /* ignore */ }
+      try { api.canvas.releasePointerCapture(evt.pointerId); } catch (e) {}
     }
-    if (!api._droneMode) api.canvas.style.cursor = api._cursor;
+    if (InteractionState.mode !== 'compacting' && InteractionState.mode !== 'zoning') {
+      api.canvas.style.cursor = api._cursor;
+    }
 
     if (window.HqPanel && window.HqPanel.isOpen) return;
     if (cancelled) return;
 
     var pos = pointerPos(evt);
-    var moved = Math.sqrt(
-      Math.pow(pos.x - api._dragStart.x, 2) + Math.pow(pos.y - api._dragStart.y, 2)
-    );
+    var moved = Math.sqrt(Math.pow(pos.x - api._dragStart.x, 2) + Math.pow(pos.y - api._dragStart.y, 2));
 
-    if (api._compactorDragSelect && window.CompactorTool && window.CompactorTool.isActive) {
-      api._compactorDragSelect = false;
-      var endPos = pos;
-      api._compactorSelectionEnd = endPos;
-      if (api._compactorDragStart) {
-        var startTile = api.grid.screenToTile(api._compactorDragStart.x, api._compactorDragStart.y);
-        var endTile = api.grid.screenToTile(endPos.x, endPos.y);
-        if (startTile && endTile) {
-          var startCol = Math.min(startTile.col, endTile.col);
-          var endCol = Math.max(startTile.col, endTile.col);
-          var startRow = Math.min(startTile.row, endTile.row);
-          var endRow = Math.max(startTile.row, endTile.row);
-          var selection = { startCol: startCol, endCol: endCol, startRow: startRow, endRow: endRow };
-          if (window.CompactorTool && window.CompactorTool.isValidSelection) {
-            var validTiles = window.CompactorTool.getValidTilesInSelection(selection);
-            if (validTiles.length > 0) {
-              // no native confirm — compact directly with a chunky toast
-              if (window.HqPanel) window.HqPanel.showMsg("Compacting " + validTiles.length + " trench tile" + (validTiles.length>1?"s":"") + "…", false);
-              window.CompactorTool.confirmSelection(selection, function() {});
-            } else {
-              window.CompactorTool.clearPreview();
-              if (window.HqPanel) window.HqPanel.showMsg("No trench tiles — need scanned trench, not Excellent", true);
-              if (window.BlockRender) window.BlockRender.invalidate();
-            }
-          }
-        } else {
-          // drag outside grid — clear ghost
-          window.CompactorTool.clearPreview();
-          if (window.BlockRender) window.BlockRender.invalidate();
-        }
-        api._compactorDragStart = null;
-        api._compactorSelectionEnd = null;
-        return;
-      }
-      // no start recorded — clear ghost
-      window.CompactorTool.clearPreview();
-      if (window.BlockRender) window.BlockRender.invalidate();
+    // ---- compacting drag-select completion (mode-gated) ----
+    if (InteractionState.mode === 'compacting' && window.CompactorTool && window.CompactorTool.isActive) {
+      var compStart = api._compactorDragStart;
       api._compactorDragStart = null;
       api._compactorSelectionEnd = null;
+      if (!compStart) {
+        window.CompactorTool.clearPreview();
+        if (window.BlockRender) window.BlockRender.invalidate();
+        return;
+      }
+      var startTile = api.grid.screenToTile(compStart.x, compStart.y);
+      var endTile = api.grid.screenToTile(pos.x, pos.y);
+      if (startTile && endTile) {
+        var startCol = Math.min(startTile.col, endTile.col);
+        var endCol = Math.max(startTile.col, endTile.col);
+        var startRow = Math.min(startTile.row, endTile.row);
+        var endRow = Math.max(startTile.row, endTile.row);
+        var selection = { startCol: startCol, endCol: endCol, startRow: startRow, endRow: endRow };
+        if (window.CompactorTool.isValidSelection) {
+          var validTiles = window.CompactorTool.getValidTilesInSelection(selection);
+          if (validTiles.length > 0) {
+            if (window.HqPanel) window.HqPanel.showMsg("Compacting " + validTiles.length + " trench tile" + (validTiles.length>1?"s":"") + "…", false);
+            window.CompactorTool.confirmSelection(selection, function() {});
+            // compactor stays in 'compacting' (continuous mode); Stop control will set idle
+          } else {
+            window.CompactorTool.clearPreview();
+            if (window.HqPanel) window.HqPanel.showMsg("No trench tiles — need scanned trench, not Excellent", true);
+            if (window.BlockRender) window.BlockRender.invalidate();
+          }
+        }
+      } else {
+        window.CompactorTool.clearPreview();
+        if (window.BlockRender) window.BlockRender.invalidate();
+      }
       return;
     }
 
-    if (moved < DRAG_THRESHOLD) {
-      // HQ has a taller visual than its tile — taps on the tower/beacon
-      // would otherwise map to a neighbor tile. Treat any tap within a
-      // generous radius of the HQ as an HQ tap.
-      var hq = window.GameState && window.GameState.hqTile;
-      var isHqAt = function(c,r){
-        return (window.Terrain && window.Terrain.isHQ && window.Terrain.isHQ(c,r)) ||
-               (hq && hq.col===c && hq.row===r);
-      };
-      if (hq) {
-        try {
-          var hp2 = api.grid.worldToScreen(hq.col, hq.row);
-          var iso2 = api.grid.isoSize, half2 = iso2/2;
-          var elev2 = (window.Terrain && window.Terrain.elevationAt) ? window.Terrain.elevationAt(hq.col, hq.row) : 0;
-          var groundY2 = hp2.y - (4 + elev2);
-          var bHalf2 = iso2 * 0.99;
-          var tHalf2 = iso2 * 0.60;
-          var hHalf2 = tHalf2 * 1.22;
-          var baseH2 = Math.max(8, Math.round(iso2 * 0.42));
-          var towerH2 = Math.max(14, Math.round(iso2 * 0.78));
-          var antH2 = Math.max(12, Math.round(iso2 * 0.55));
-          // 1) base diamond expanded for helipad overhang (1.35) — old + helipad
-          var dx0 = Math.abs(pos.x - hp2.x);
-          var dy0 = Math.abs(pos.y - groundY2);
-          if (dx0/iso2 + dy0/half2 <= 1.35) {
-            if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
-            window.BlockRender.setSelected(hq.col, hq.row);
-            if (window.HqPanel) window.HqPanel.open();
-            if (typeof api.onPan === "function") api.onPan();
-            return;
-          }
-          // 2) tower/helipad/beacon box above diamond (covers building, not neighbor ground)
-          var baseTopY2 = groundY2 - baseH2;
-          var towerTopY2 = baseTopY2 - towerH2;
-          var topY2 = towerTopY2 - tHalf2/2 - antH2 - 10;
-          var botY2 = baseTopY2 + half2;
-          var buildingHalfW2 = Math.max(bHalf2, hHalf2) + 4;
-          if (Math.abs(pos.x - hp2.x) <= buildingHalfW2 * 0.85 && pos.y >= topY2 && pos.y <= botY2) {
-            if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
-            window.BlockRender.setSelected(hq.col, hq.row);
-            if (window.HqPanel) window.HqPanel.open();
-            if (typeof api.onPan === "function") api.onPan();
-            return;
-          }
-        } catch(e){}
-      }
-      // if the tile popup is open, close it first — a tap anywhere on the
-      // canvas should dismiss the card so it never blocks the map on mobile
-      if (window.TilePanel && window.TilePanel.isOpen) {
-        window.TilePanel.hide();
-      }
-      var tile = api.grid.screenToTile(pos.x, pos.y);
-      // touch devices: exact diamond hit, else fat-finger snap to the
-      // nearest tile center (desktop keeps the strict hit test)
-      if (!tile && window.MobileUI && window.MobileUI.enabled) {
-        tile = nearestTile(pos.x, pos.y);
-      }
-      // Exact HQ tile — never show tile popup, always HQ terminal (replaces tile)
-      if (tile && isHqAt(tile.col, tile.row)) {
-        if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
-        window.BlockRender.setSelected(tile.col, tile.row);
-        if (window.HqPanel) window.HqPanel.open();
-        if (typeof api.onPan === "function") api.onPan();
+    // ---- zoning drag-select completion (mirrors compactor) ----
+    if (InteractionState.mode === 'zoning' && window.ZoningTool && window.ZoningTool.isActive) {
+      var zoneStart = api._zoningDragStart;
+      api._zoningDragStart = null;
+      api._zoningSelectionEnd = null;
+      if (!zoneStart) {
+        if (window.ZoningTool.clearPreview) window.ZoningTool.clearPreview();
+        if (window.BlockRender) window.BlockRender.invalidate();
         return;
       }
-      if (tile && isClickable(tile.col, tile.row)) {
-        api.onTileClick(tile.col, tile.row);
+      var zStartTile = api.grid.screenToTile(zoneStart.x, zoneStart.y);
+      var zEndTile = api.grid.screenToTile(pos.x, pos.y);
+      if (zStartTile && zEndTile && window.ZoningTool.confirmSelection) {
+        var zSel = { startCol: Math.min(zStartTile.col, zEndTile.col), endCol: Math.max(zStartTile.col, zEndTile.col),
+                     startRow: Math.min(zStartTile.row, zEndTile.row), endRow: Math.max(zStartTile.row, zEndTile.row) };
+        window.ZoningTool.confirmSelection(zSel, function(){});
+      } else {
+        if (window.ZoningTool.clearPreview) window.ZoningTool.clearPreview();
+        if (window.BlockRender) window.BlockRender.invalidate();
       }
+      return;
+    }
+
+    if (moved >= DRAG_THRESHOLD) return; // was a pan, not a click
+
+    // Dismiss popup on any tap in idle (so it never blocks map on mobile)
+    if (InteractionState.mode === 'idle' && window.TilePanel && window.TilePanel.isOpen) {
+      // Don't auto-close if the tap will immediately reopen the same tile — let toggle handle it
+      // Instead, we hide and let the dispatch below decide; toggle will handle same-tile close
+      window.TilePanel.hide();
+    }
+
+    // Resolve tile under cursor (with fat-finger fallback on touch)
+    var tile = api.grid.screenToTile(pos.x, pos.y);
+    if (!tile && window.MobileUI && window.MobileUI.enabled) {
+      tile = nearestTile(pos.x, pos.y);
+    }
+    if (!tile) return;
+
+    // ---- central dispatch by mode (ORDER MATTERS) ----
+    // Any non-idle mode consumes the click entirely and returns — idle popup logic never runs
+    if (InteractionState.mode === 'placing-hq') {
+      handlePlacingHq(pos, tile);
+      return;
+    }
+    if (InteractionState.mode === 'compacting') {
+      handleCompactingClick(pos, tile);
+      return;
+    }
+    if (InteractionState.mode === 'zoning') {
+      handleZoningClick(pos, tile);
+      return;
+    }
+    if (InteractionState.mode === 'deploying-drone') {
+      // whole-map deploy has no click target; ignore clicks while deploying
+      return;
+    }
+
+    // ---- idle mode only beyond this point ----
+    // HQ building footprint check (tower overhang maps to neighbor via Math.round)
+    // Do this BEFORE generic isClickable so HQ never shows tile popup
+    var hq = window.GameState && window.GameState.hqTile;
+    if (hq) {
+      try {
+        var hp2 = api.grid.worldToScreen(hq.col, hq.row);
+        var iso2 = api.grid.isoSize, half2 = iso2/2;
+        var elev2 = (window.Terrain && window.Terrain.elevationAt) ? window.Terrain.elevationAt(hq.col, hq.row) : 0;
+        var groundY2 = hp2.y - (4 + elev2);
+        // base diamond (1.35 covers helipad wings)
+        var dx0 = Math.abs(pos.x - hp2.x);
+        var dy0 = Math.abs(pos.y - groundY2);
+        if (dx0/iso2 + dy0/half2 <= 1.35) {
+          window.BlockRender.setSelected(hq.col, hq.row);
+          if (window.HqPanel) window.HqPanel.open();
+          if (typeof api.onPan === "function") api.onPan();
+          return;
+        }
+        var bHalf2 = iso2 * 0.99;
+        var tHalf2 = iso2 * 0.60;
+        var hHalf2 = tHalf2 * 1.22;
+        var baseH2 = Math.max(8, Math.round(iso2 * 0.42));
+        var towerH2 = Math.max(14, Math.round(iso2 * 0.78));
+        var antH2 = Math.max(12, Math.round(iso2 * 0.55));
+        var baseTopY2 = groundY2 - baseH2;
+        var towerTopY2 = baseTopY2 - towerH2;
+        var topY2 = towerTopY2 - tHalf2/2 - antH2 - 10;
+        var botY2 = groundY2 + half2;
+        var buildingHalfW2 = Math.max(bHalf2, hHalf2) + 4;
+        if (Math.abs(pos.x - hp2.x) <= buildingHalfW2 * 0.85 && pos.y >= topY2 && pos.y <= botY2) {
+          window.BlockRender.setSelected(hq.col, hq.row);
+          if (window.HqPanel) window.HqPanel.open();
+          if (typeof api.onPan === "function") api.onPan();
+          return;
+        }
+      } catch(e){}
+    }
+
+    // Exact HQ tile (replaces tile, never inspectable)
+    var isHqAt = (window.Terrain && window.Terrain.isHQ && window.Terrain.isHQ(tile.col, tile.row)) ||
+                 (hq && hq.col===tile.col && hq.row===tile.row);
+    if (isHqAt) {
+      window.BlockRender.setSelected(tile.col, tile.row);
+      if (window.HqPanel) window.HqPanel.open();
+      if (typeof api.onPan === "function") api.onPan();
+      return;
+    }
+
+    // Normal idle inspect — only non-HQ, clickable tiles
+    if (isClickable(tile.col, tile.row)) {
+      api.onTileClick(tile.col, tile.row);
     }
   }
 
   function isClickable(c, r) {
     if (!api.terrain) return true;
-    if (api._placementMode) {
-      if (window.CompactorTool && window.CompactorTool.isActive) return !!(window.CompactorTool && window.CompactorTool.isValidTile && window.CompactorTool.isValidTile(c, r));
+    if (InteractionState.mode === 'placing-hq') {
       return !!(window.HQBuild && window.HQBuild.isValid(c, r));
     }
-    if (api._droneMode) {
-      return !!(window.DroneDeploy && window.DroneDeploy.isValid(c, r));
+    if (InteractionState.mode === 'compacting') {
+      return !!(window.CompactorTool && window.CompactorTool.isValidTile && window.CompactorTool.isValidTile(c, r));
     }
-    // normal inspect mode: rock & river are scenery, HQ is replaced by the building (not inspectable)
+    if (InteractionState.mode === 'zoning') {
+      return !!(window.ZoningTool && window.ZoningTool.isValid && window.ZoningTool.isValid(c, r));
+    }
+    if (InteractionState.mode === 'deploying-drone') {
+      return !!(window.DroneDeploy && window.DroneDeploy.isValid && window.DroneDeploy.isValid(c, r));
+    }
+    // idle: rock & river are scenery, HQ is replaced by building (not inspectable)
     var type = api.terrain.typeAt(c, r);
     if (type === "rock" || type === "river" || type === "hq") return false;
-    // also block via GameState.hqTile in case Terrain hasn't updated yet
-    var hq = window.GameState && window.GameState.hqTile;
-    if (hq && hq.col === c && hq.row === r) return false;
+    var hq2 = window.GameState && window.GameState.hqTile;
+    if (hq2 && hq2.col === c && hq2.row === r) return false;
     return true;
   }
 
@@ -294,56 +450,32 @@ window.InputHandler = (function () {
     return (window.GameState.hqTile && window.GameState.hqTile.col === c && window.GameState.hqTile.row === r);
   };
   api.isScanBusy = isScanBusy;
-  api.isPlacementMode = function () { return api._placementMode || false; };
-  api.setPlacementMode = function (v) { api._placementMode = !!v; };
-  api.isDroneMode = function () { return api._droneMode || false; };
-  api.setDroneMode = function (v) { api._droneMode = !!v; };
-  // set the canvas cursor (placement modes manage this rather than the grab
-  // cursor that onDown/onUp would otherwise restore)
+  api.isPlacementMode = function () { return InteractionState.mode === 'placing-hq' || InteractionState.mode === 'compacting' || InteractionState.mode === 'zoning'; };
+  api.setPlacementMode = function (v) {
+    if (v) { if (InteractionState.mode === 'idle') api.setMode('placing-hq'); }
+    else { if (InteractionState.mode === 'placing-hq') api.setMode('idle'); }
+  };
+  api.isDroneMode = function () { return InteractionState.mode === 'deploying-drone'; };
+  api.setDroneMode = function (v) {
+    if (v) api.setMode('deploying-drone');
+    else if (InteractionState.mode === 'deploying-drone') api.setMode('idle');
+  };
   api.setCursor = function (v) {
     api._cursor = v || "grab";
     if (api.canvas) api.canvas.style.cursor = api._cursor;
   };
 
-  // true while a Drone or GPR sweep is running. During a scan the map tiles and
-  // the HQ become non-interactive (no inspect popups, no HQ terminal) so the
-  // scan reads cleanly; camera panning still works so the player can watch.
   function isScanBusy() {
     return !!((window.DroneDeploy && window.DroneDeploy.deploying) ||
               (window.GprDeploy && window.GprDeploy.deploying));
   }
 
-  // single click router: drone placement -> DroneDeploy.attempt;
-  // placement mode -> HQBuild.attempt; otherwise normal inspect click
   api.onTileClick = function (col, row) {
     if (window.HqPanel && window.HqPanel.isOpen) return;
-    if (isScanBusy()) return; // tiles + HQ disabled while a scan is running
-    if (api._droneMode) {
-      if (window.DroneDeploy) {
-        window.DroneDeploy.attempt(col, row);
-      }
-      return;
-    }
-    if (api._placementMode) {
-      if (window.CompactorTool && window.CompactorTool.isActive) {
-        var cSuccess = window.CompactorTool.attempt(col, row, function () {
-          api.setPlacementMode(false);
-          if (typeof api.onPan === "function") api.onPan();
-        });
-        if (!cSuccess) { /* invalid compactor target — stay in placement mode */ }
-        return;
-      }
-        var success = window.HQBuild && window.HQBuild.attempt(col, row, function () {
-          api.setPlacementMode(false);
-          if (window.BuildMenu && window.BuildMenu.onBuildSuccess) window.BuildMenu.onBuildSuccess();
-          if (window.Main && window.Main.updateHUD) window.Main.updateHUD();
-          if (typeof api.onPan === "function") api.onPan();
-        });
-      if (!success) {
-        // invalid spot (river/hill/trench, already built, or not enough cash) —
-        // stay in placement mode so the player can pick another tile
-      }
-    } else if (typeof api._userOnTileClick === "function") {
+    if (isScanBusy()) return;
+    // This is only called from idle dispatch, but keep guards for direct callers
+    if (InteractionState.mode !== 'idle') return;
+    if (typeof api._userOnTileClick === "function") {
       var isHQ = (window.Terrain && window.Terrain.isHQ && window.Terrain.isHQ(col, row)) ||
                  (window.GameState && window.GameState.hqTile && window.GameState.hqTile.col === col && window.GameState.hqTile.row === row);
       if (isHQ && window.HqPanel) {

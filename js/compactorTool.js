@@ -32,7 +32,10 @@ window.CompactorTool = (function () {
     api._selectionStart = null;
     api._selectionEnd = null;
     api._selectionConfirmed = false;
-    if (window.InputHandler) {
+    if (window.InputHandler && window.InputHandler.setMode) {
+      window.InputHandler.setMode('compacting');
+      window.InputHandler.setCursor("crosshair");
+    } else if (window.InputHandler) {
       window.InputHandler.setPlacementMode(true);
       window.InputHandler.setCursor("crosshair");
     }
@@ -61,7 +64,10 @@ window.CompactorTool = (function () {
     api._selectionStart = null;
     api._selectionEnd = null;
     api._selectionConfirmed = false;
-    if (window.InputHandler) {
+    if (window.InputHandler && window.InputHandler.setMode) {
+      if (window.InputHandler.getMode() === 'compacting') window.InputHandler.setMode('idle');
+      window.InputHandler.setCursor("grab");
+    } else if (window.InputHandler) {
       window.InputHandler.setPlacementMode(false);
       window.InputHandler.setCursor("grab");
     }

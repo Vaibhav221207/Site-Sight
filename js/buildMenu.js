@@ -97,7 +97,8 @@ var ITEMS = [
     api.selected = id;
     api.close();
     module.startPlacement();
-    if (window.InputHandler) window.InputHandler.setPlacementMode(true);
+    if (window.InputHandler && window.InputHandler.setMode) window.InputHandler.setMode('placing-hq');
+    else if (window.InputHandler) window.InputHandler.setPlacementMode(true);
     api.refresh();
   };
 
@@ -109,7 +110,8 @@ var ITEMS = [
       if (module && typeof module.cancel === "function") module.cancel();
     }
     api.selected = null;
-    if (window.InputHandler) window.InputHandler.setPlacementMode(false);
+    if (window.InputHandler && window.InputHandler.setMode) window.InputHandler.setMode('idle');
+    else if (window.InputHandler) window.InputHandler.setPlacementMode(false);
     api.close();
   };
 
@@ -125,7 +127,8 @@ var ITEMS = [
       barEl.style.transform = "";
     }
     api.refresh();
-    if (window.InputHandler) window.InputHandler.setPlacementMode(false);
+    if (window.InputHandler && window.InputHandler.setMode) window.InputHandler.setMode('idle');
+    else if (window.InputHandler) window.InputHandler.setPlacementMode(false);
   };
 
   api.isPlacing = function () { return api.selected !== null; };

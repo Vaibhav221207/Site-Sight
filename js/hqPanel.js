@@ -691,13 +691,13 @@ window.HqPanel = (function () {
     if (!api.isOpen) return;
     var fsBtn2 = document.getElementById('fs-btn');
     if (fsBtn2) fsBtn2.style.display = '';
+    api.isOpen = false;
 
     function finish() {
       api.overlayEl.style.visibility = "hidden";
       api.overlayEl.style.pointerEvents = "none";
       api.panelEl.style.transform = "";
       api.panelEl.style.opacity = "";
-      api.isOpen = false;
     }
 
     if (typeof anime !== "undefined" && anime) {

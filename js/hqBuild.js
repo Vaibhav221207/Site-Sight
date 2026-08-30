@@ -9,10 +9,15 @@ window.HQBuild = (function () {
 
   api.startPlacement = function () {
     api.isActive = true;
+    if (window.InputHandler && window.InputHandler.setMode) window.InputHandler.setMode('placing-hq');
+    else if (window.InputHandler) window.InputHandler.setPlacementMode(true);
   };
 
   api.cancel = function () {
     api.isActive = false;
+    if (window.InputHandler && window.InputHandler.setMode) {
+      if (window.InputHandler.getMode && window.InputHandler.getMode() === 'placing-hq') window.InputHandler.setMode('idle');
+    } else if (window.InputHandler) window.InputHandler.setPlacementMode(false);
   };
 
   api.attempt = function (col, row, onSuccess) {
@@ -40,6 +45,9 @@ window.HQBuild = (function () {
     if (window.GameState.subsurfaceScanned) window.GameState.subsurfaceScanned[key] = true;
 
     api.isActive = false;
+    if (window.InputHandler && window.InputHandler.setMode) {
+      if (window.InputHandler.getMode && window.InputHandler.getMode() === 'placing-hq') window.InputHandler.setMode('idle');
+    } else if (window.InputHandler) window.InputHandler.setPlacementMode(false);
     if (window.BlockRender && window.BlockRender.triggerHQPlace) window.BlockRender.triggerHQPlace(col, row);
     if (typeof onSuccess === "function") onSuccess(col, row);
     return true;

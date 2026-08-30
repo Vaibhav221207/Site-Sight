@@ -211,6 +211,7 @@ window.TilePanel = (function () {
   // On mobile: fade out (no slide).
   api.hide = function (onComplete) {
     if (!api.panel) return;
+    api.isOpen = false;
     clearTimeout(api._autoCloseTimer);
     api._clearHideEnd();
 
@@ -224,13 +225,13 @@ window.TilePanel = (function () {
         done = true;
         api.panel.style.visibility = "hidden";
         api.panel.style.opacity = "1";
-        api.isOpen = false;
         api.currentTile = null;
         api.isHQ = false;
         if (typeof onComplete === "function") onComplete();
       }, 120);
     } else {
       // desktop: slide out to right
+      api.isOpen = false;
       var ended = false;
       api._animEnded = function () {
         if (ended) return;
@@ -238,7 +239,6 @@ window.TilePanel = (function () {
         api._clearHideEnd();
         api._setPos(api._offscreenX(), false);
         api.panel.style.visibility = "hidden";
-        api.isOpen = false;
         api.currentTile = null;
         api.isHQ = false;
         if (typeof onComplete === "function") onComplete();

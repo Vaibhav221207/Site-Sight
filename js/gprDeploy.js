@@ -181,7 +181,9 @@ window.GprDeploy = (function () {
     api.deploying = true;
     api.deployed = null;
     if (gs.inventory) gs.inventory.gprDeployed = null;
+    if (window.InputHandler && window.InputHandler.setMode) window.InputHandler.setMode('deploying-drone');
     api._fillSlots();
+    if (!api.deploying && window.InputHandler && window.InputHandler.setMode) window.InputHandler.setMode('idle');
     return true;
   };
 
@@ -208,6 +210,7 @@ window.GprDeploy = (function () {
         window.GameState.inventory.gprDeployed = { wholeMap: true };
       }
       if (typeof api.onDeployDone === "function") api.onDeployDone();
+      if (window.InputHandler && window.InputHandler.setMode) window.InputHandler.setMode('idle');
     }
   };
 
