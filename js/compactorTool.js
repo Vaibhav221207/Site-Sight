@@ -440,7 +440,7 @@ window.CompactorTool = (function () {
       ctx.restore();
       return true;
     }
-    var sc = Math.min(sTile.col, eTile.col), ec = Math.max(sTile.col, eTile.col);
+var sc = Math.min(sTile.col, eTile.col), ec = Math.max(sTile.col, eTile.col);
     var sr = Math.min(sTile.row, eTile.row), er = Math.max(sTile.row, eTile.row);
     // clamp to grid bounds
     sc = Math.max(0, sc); sr = Math.max(0, sr);
