@@ -147,6 +147,29 @@ window.BlockRender = (function () {
     ctx.fillStyle = topColor;
     ctx.fill();
     if (isRiverTile) ctx.restore();
+    // zone tint overlay (0.4 opacity) — flat land zoned tiles show category color
+    try {
+      var zd = window.GameState && window.GameState.getTileData ? window.GameState.getTileData(c, r) : null;
+      var zt = zd && zd.zoneType;
+      if (zt) {
+        var ZC = { residential: "#66BB6A", commercial: "#42A5F5", industrial: "#8D6E63", mining: "#FFB300" };
+        var zc = ZC[zt] || null;
+        if (zc) {
+          var zr = parseInt(zc.slice(1,3),16), zg = parseInt(zc.slice(3,5),16), zb = parseInt(zc.slice(5,7),16);
+          ctx.save();
+          ctx.globalAlpha = 0.4;
+          ctx.fillStyle = "rgba(" + zr + "," + zg + "," + zb + ",1)";
+          ctx.beginPath();
+          ctx.moveTo(n.x, n.y);
+          ctx.lineTo(e.x, e.y);
+          ctx.lineTo(s.x, s.y);
+          ctx.lineTo(w.x, w.y);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+    } catch(e){}
     ctx.strokeStyle = isSelected ? SELECT_STROKE : TOP_STROKE;
     ctx.lineWidth = isSelected ? 2.5 : 1;
     ctx.stroke();

@@ -589,7 +589,27 @@ window.HqPanel = (function () {
       grid.appendChild(btn);
       api.zoningButtons[z.id] = btn;
     });
-    if (hint) hint.style.display = "";
+    // Deploy button below grid (only when a zone is selected)
+    var existingDeploy = sec.querySelector('#hq-zoning-deploy');
+    if (existingDeploy) existingDeploy.remove();
+    var deployWrap = document.createElement("div");
+    deployWrap.id = "hq-zoning-deploy";
+    deployWrap.style.display = api.selectedZoneType ? "" : "none";
+    deployWrap.style.marginTop = "14px";
+    deployWrap.style.textAlign = "right";
+    var deployBtn = document.createElement("button");
+    deployBtn.type = "button";
+    deployBtn.className = "hq-order-btn";
+    deployBtn.textContent = "Deploy";
+    deployBtn.style.padding = "10px 18px";
+    deployBtn.addEventListener("click", function () { api.deployZoning(); });
+    deployWrap.appendChild(deployBtn);
+    sec.appendChild(deployWrap);
+    if (hint) {
+      hint.style.display = "";
+      // move hint below deploy
+      sec.appendChild(hint);
+    }
   };
 
   api.selectZone = function (zoneId) {
@@ -617,6 +637,19 @@ window.HqPanel = (function () {
         btn.style.boxShadow = "3px 3px 0 #000";
       }
     });
+    var deployWrap = document.getElementById("hq-zoning-deploy");
+    if (deployWrap) deployWrap.style.display = api.selectedZoneType ? "" : "none";
+  };
+
+  api.deployZoning = function () {
+    var zone = api.selectedZoneType;
+    if (!zone) {
+      if (window.HqPanel) window.HqPanel.showMsg("Select a zone type first", true);
+      return;
+    }
+    console.log("[HQ] Deploy Zoning: selected " + zone + " -> entering placement mode");
+    if (window.ZoningTool) window.ZoningTool.startPlacement();
+    if (api.isOpen) api.close();
   };
 
   api.showMsg = function (text, success, container) {
