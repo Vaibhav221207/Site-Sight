@@ -217,8 +217,10 @@ window.InputHandler = (function () {
           var hqY = hp.y - (4 + elev) - (api.grid.isoSize * 0.5);
           var dx = pos.x - hp.x;
           var dy = pos.y - hqY;
-          var r = Math.max(28, api.grid.isoSize * 1.5);
-          if (dx*dx + dy*dy < r*r) {
+          var r = Math.max(22, api.grid.isoSize * 1.25);
+          // don't cover the ground in front (south) or far behind — only the building column
+          if (dy > r * 0.5 || dy < -r * 1.4) { /* south front or far north behind — not HQ */ }
+          else if (dx*dx + dy*dy < r*r) {
             if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
             window.BlockRender.setSelected(hq.col, hq.row);
             if (window.HqPanel) window.HqPanel.open();
