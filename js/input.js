@@ -210,17 +210,25 @@ window.InputHandler = (function () {
         return (window.Terrain && window.Terrain.isHQ && window.Terrain.isHQ(c,r)) ||
                (hq && hq.col===c && hq.row===r);
       };
+      // HQ tile is now a distinct, non-inspectable tile — any tap on its
+      // diamond or on the building that sits on it opens HQ, never TilePanel.
       if (hq) {
         try {
           var hp = api.grid.worldToScreen(hq.col, hq.row);
+          var iso = api.grid.isoSize, half = iso/2;
           var elev = (window.Terrain && window.Terrain.elevationAt) ? window.Terrain.elevationAt(hq.col, hq.row) : 0;
-          var hqY = hp.y - (4 + elev) - (api.grid.isoSize * 0.5);
-          var dx = pos.x - hp.x;
-          var dy = pos.y - hqY;
-          var r = Math.max(22, api.grid.isoSize * 1.25);
-          // don't cover the ground in front (south) or far behind — only the building column
-          if (dy > r * 0.5 || dy < -r * 1.4) { /* south front or far north behind — not HQ */ }
-          else if (dx*dx + dy*dy < r*r) {
+          var groundY = hp.y - (4 + elev);
+          // bounding box of the HQ building (base diamond + tower + antenna)
+          var bHalf = iso * 0.99;
+          var tHalf = iso * 0.60;
+          var baseTopY = groundY - Math.max(8, Math.round(iso * 0.42));
+          var towerTopY = baseTopY - Math.max(14, Math.round(iso * 0.78));
+          var antH = Math.max(12, Math.round(iso * 0.55));
+          var topY = towerTopY - tHalf/2 - antH - 10;
+          var botY = groundY + half;
+          var leftX = hp.x - bHalf - 4;
+          var rightX = hp.x + bHalf + 4;
+          if (pos.x >= leftX && pos.x <= rightX && pos.y >= topY && pos.y <= botY) {
             if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
             window.BlockRender.setSelected(hq.col, hq.row);
             if (window.HqPanel) window.HqPanel.open();
