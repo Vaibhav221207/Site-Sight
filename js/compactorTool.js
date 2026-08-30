@@ -440,7 +440,7 @@ window.CompactorTool = (function () {
       ctx.restore();
       return true;
     }
-var sc = Math.min(sTile.col, eTile.col), ec = Math.max(sTile.col, eTile.col);
+    var sc = Math.min(sTile.col, eTile.col), ec = Math.max(sTile.col, eTile.col);
     var sr = Math.min(sTile.row, eTile.row), er = Math.max(sTile.row, eTile.row);
     // clamp to grid bounds
     sc = Math.max(0, sc); sr = Math.max(0, sr);
@@ -448,6 +448,8 @@ var sc = Math.min(sTile.col, eTile.col), ec = Math.max(sTile.col, eTile.col);
     var total = (ec - sc + 1) * (er - sr + 1);
     var validCount = 0;
     var cxSum = 0, cySum = 0, nTiles = 0;
+    var fillRgba = "rgba(79,195,247,0.22)";
+    var strokeRgba = "rgba(79,195,247,0.95)";
     // pre-count valid for badge
     for (var c = sc; c <= ec; c++) {
       for (var r = sr; r <= er; r++) {
