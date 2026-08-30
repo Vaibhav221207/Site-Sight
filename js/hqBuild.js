@@ -31,6 +31,13 @@ window.HQBuild = (function () {
     if (window.Terrain && typeof window.Terrain.setHQ === "function") {
       window.Terrain.setHQ(col, row);
     }
+    // replace the tile — remove any land tileData so it never shows "Not yet scanned"
+    var key = col + "," + row;
+    if (window.GameState.tileData && window.GameState.tileData[key]) {
+      delete window.GameState.tileData[key];
+    }
+    if (window.GameState.scanned) window.GameState.scanned[key] = true;
+    if (window.GameState.subsurfaceScanned) window.GameState.subsurfaceScanned[key] = true;
 
     api.isActive = false;
     if (window.BlockRender && window.BlockRender.triggerHQPlace) window.BlockRender.triggerHQPlace(col, row);

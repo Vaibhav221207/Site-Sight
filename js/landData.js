@@ -138,8 +138,26 @@ window.LandData = (function () {
   // ---- public API ----------------------------------------------------------
   function getTileData(c, r) {
     if (c < 0 || c >= GRID_SIZE || r < 0 || r >= GRID_SIZE) return null;
-    var t = getTerrain(c, r);
     var hq = isHQ(c, r);
+    if (hq) {
+      return {
+        col: c,
+        row: r,
+        terrain: "hq",
+        elevation: getElevation(c, r),
+        soil: null,
+        quality: null,
+        vegetation: null,
+        waterTable: null,
+        stability: null,
+        mineral: null,
+        scanned: true,
+        subsurfaceScanned: true,
+        isHQ: true,
+        grade: "HQ CORE"
+      };
+    }
+    var t = getTerrain(c, r);
     var scanned = isScanned(c, r);
     var sub = isSubsurfaceScanned(c, r);
     // Surface data is revealed by the aerial Drone scan (or the HQ tile).

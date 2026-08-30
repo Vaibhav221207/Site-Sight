@@ -165,7 +165,9 @@ window.TilePanel = (function () {
   };
 
   api.isSameTile = function (col, row) {
-    return api.currentTile && api.currentTile.col === col && api.currentTile.row === row && api.isHQ === (window.Terrain && window.Terrain.isHQ(col, row));
+    var hqNow = (window.Terrain && window.Terrain.isHQ && window.Terrain.isHQ(col, row)) ||
+                (window.GameState && window.GameState.hqTile && window.GameState.hqTile.col === col && window.GameState.hqTile.row === row);
+    return api.currentTile && api.currentTile.col === col && api.currentTile.row === row && api.isHQ === hqNow;
   };
 
   api.show = function (col, row) {

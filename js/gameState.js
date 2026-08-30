@@ -130,6 +130,19 @@ window.GameState = (function () {
   //   droneScanned, gprScanned, surfaceStability, soilType, mineralDeposits,
   //   bedrockDepth, bestUse
   api.getTileData = function (col, row) {
+    if (isHqTile(col, row)) {
+      // HQ replaces the tile — no survey data, just HQ sentinel (never "Not yet scanned")
+      return {
+        droneScanned: true,
+        gprScanned: true,
+        surfaceStability: "HQ",
+        soilType: "HQ",
+        mineralDeposits: "HQ",
+        bedrockDepth: "HQ",
+        bestUse: "HQ",
+        isHQ: true
+      };
+    }
     var k = col + "," + row;
     if (!api.tileData[k]) {
       api.tileData[k] = {
