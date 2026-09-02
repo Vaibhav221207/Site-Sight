@@ -168,6 +168,25 @@ window.BlockRender = (function () {
           ctx.fill();
           ctx.restore();
         }
+        // mismatch visual cue: thin dashed amber/red border for risky zoning
+        try {
+          var zd2 = window.GameState && window.GameState.getTileData ? window.GameState.getTileData(c, r) : null;
+          if (zd2 && zd2.zoneType && zd2.zoneMismatched) {
+            ctx.save();
+            ctx.setLineDash([4, 3]);
+            ctx.strokeStyle = "#FFA000";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(n.x, n.y);
+            ctx.lineTo(e.x, e.y);
+            ctx.lineTo(s.x, s.y);
+            ctx.lineTo(w.x, w.y);
+            ctx.closePath();
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.restore();
+          }
+        } catch(e2){}
       }
     } catch(e){}
     ctx.strokeStyle = isSelected ? SELECT_STROKE : TOP_STROKE;

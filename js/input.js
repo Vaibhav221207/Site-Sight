@@ -311,7 +311,7 @@ window.InputHandler = (function () {
       return;
     }
 
-    // ---- zoning drag-select completion (mirrors compactor) ----
+    // ---- zoning drag-select completion (Step 3: lock-in + cost breakdown, not immediate confirm) ----
     if (InteractionState.mode === 'zoning' && window.ZoningTool && window.ZoningTool.isActive) {
       var zoneStart = api._zoningDragStart;
       api._zoningDragStart = null;
@@ -323,10 +323,11 @@ window.InputHandler = (function () {
       }
       var zStartTile = api.grid.screenToTile(zoneStart.x, zoneStart.y);
       var zEndTile = api.grid.screenToTile(pos.x, pos.y);
-      if (zStartTile && zEndTile && window.ZoningTool.confirmSelection) {
+      if (zStartTile && zEndTile && window.ZoningTool.lockSelection) {
         var zSel = { startCol: Math.min(zStartTile.col, zEndTile.col), endCol: Math.max(zStartTile.col, zEndTile.col),
                      startRow: Math.min(zStartTile.row, zEndTile.row), endRow: Math.max(zStartTile.row, zEndTile.row) };
-        window.ZoningTool.confirmSelection(zSel, function(){});
+        window.ZoningTool.lockSelection(zSel);
+        if (window.BlockRender) window.BlockRender.invalidate();
       } else {
         if (window.ZoningTool.clearPreview) window.ZoningTool.clearPreview();
         if (window.BlockRender) window.BlockRender.invalidate();
