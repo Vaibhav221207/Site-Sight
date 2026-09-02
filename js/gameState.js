@@ -239,6 +239,59 @@ window.GameState = (function () {
     return d;
   };
 
+  // light spatial smoothing for bestUse — makes DATA less salt-and-pepper,
+  // a little more district-like, without changing generation odds
+  function smoothBestUseForArea(tiles) {
+    if (!tiles || tiles.length === 0) return;
+    // Build a map of current bestUse for the area + 1-ring border
+    var candidates = {};
+    var toCheck = [];
+    for (var i = 0; i < tiles.length; i++) {
+      toCheck.push(tiles[i]);
+      for (var dc = -1; dc <= 1; dc++) for (var dr = -1; dr <= 1; dr++) {
+        var cc = tiles[i].col + dc, rr = tiles[i].row + dr;
+        if (cc < 0 || cc >= 20 || rr < 0 || rr >= 20) continue;
+        var k2 = cc + "," + rr;
+        if (!candidates[k2]) {
+          var d2 = api.tileData[k2];
+          if (d2 && d2.bestUse) candidates[k2] = d2.bestUse;
+        }
+      }
+    }
+    // For each tile in the area, if 4+ of 8 neighbors share a bestUse, nudge it
+    var changes = [];
+    for (var j = 0; j < tiles.length; j++) {
+      var t = tiles[j];
+      var d = api.getTileData(t.col, t.row);
+      if (!d || !d.bestUse || d.bestUse === "Partial Data") continue;
+      var counts = {};
+      for (var dx = -1; dx <= 1; dx++) for (var dy = -1; dy <= 1; dy++) {
+        var nc = t.col + dx, nr = t.row + dy;
+        if (nc < 0 || nc >= 20 || nr < 0 || nr >= 20) continue;
+        var kd = api.tileData[nc + "," + nr];
+        var bu = kd ? kd.bestUse : null;
+        if (bu && bu !== "Partial Data" && bu !== "Unscanned") {
+          counts[bu] = (counts[bu] || 0) + 1;
+        }
+      }
+      var best = null, bestCount = 0;
+      for (var k in counts) if (counts[k] > bestCount) { bestCount = counts[k]; best = k; }
+      if (best && best !== d.bestUse && bestCount >= 4) {
+        // 70% chance to snap to neighborhood — keeps some noise, not full blur
+        var hash = (t.col * 92837111) ^ (t.row * 689287499) ^ 0x517cc1b7;
+        hash = (hash ^ (hash >>> 16)) * 0x45d9f3b;
+        var r = (hash >>> 0) % 100;
+        if (r < 70) changes.push({ col: t.col, row: t.row, bestUse: best });
+      }
+    }
+    for (var c2 = 0; c2 < changes.length; c2++) {
+      var ch = changes[c2];
+      var dd = api.getTileData(ch.col, ch.row);
+      // keep underlying stability/soil for now, just nudge the category for clustering
+      dd.bestUse = ch.bestUse;
+    }
+  }
+
   // convenience bulk hooks called by the scan systems on chunk completion.
   api.markAreaDroneData = function (tiles) {
     if (!tiles) return;
@@ -256,6 +309,8 @@ window.GameState = (function () {
       if (isHqTile(c, r)) continue;
       api.markGprScanned(c, r);
     }
+    // light cluster pass after both tiers are present
+    smoothBestUseForArea(tiles);
   };
 
   return api;
