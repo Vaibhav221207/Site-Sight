@@ -130,7 +130,10 @@ window.CompactorTool = (function () {
 
     api._target = { col: col, row: row };
     api.isActive = false;
-    if (window.InputHandler) {
+    if (window.InputHandler && window.InputHandler.setMode) {
+      if (window.InputHandler.getMode() === 'compacting') window.InputHandler.setMode('idle');
+      window.InputHandler.setCursor("grab");
+    } else if (window.InputHandler) {
       window.InputHandler.setPlacementMode(false);
       window.InputHandler.setCursor("grab");
     }
@@ -164,7 +167,10 @@ window.CompactorTool = (function () {
     api.isActive = false;
     api._selectionConfirmed = true;
 
-    if (window.InputHandler) {
+    if (window.InputHandler && window.InputHandler.setMode) {
+      window.InputHandler.setMode('idle');
+      window.InputHandler.setCursor("grab");
+    } else if (window.InputHandler) {
       window.InputHandler.setPlacementMode(false);
       window.InputHandler.setCursor("grab");
     }
@@ -356,7 +362,10 @@ window.CompactorTool = (function () {
           api._selectionConfirmed = false;
           api._selectionStart = null;
           api._selectionEnd = null;
-          if (window.InputHandler) {
+          if (window.InputHandler && window.InputHandler.setMode) {
+            window.InputHandler.setMode('compacting');
+            window.InputHandler.setCursor("crosshair");
+          } else if (window.InputHandler) {
             window.InputHandler.setPlacementMode(true);
             window.InputHandler.setCursor("crosshair");
           }
@@ -448,8 +457,6 @@ window.CompactorTool = (function () {
     var total = (ec - sc + 1) * (er - sr + 1);
     var validCount = 0;
     var cxSum = 0, cySum = 0, nTiles = 0;
-    var fillRgba = "rgba(79,195,247,0.22)";
-    var strokeRgba = "rgba(79,195,247,0.95)";
     // pre-count valid for badge
     for (var c = sc; c <= ec; c++) {
       for (var r = sr; r <= er; r++) {
