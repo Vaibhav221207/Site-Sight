@@ -12,12 +12,16 @@
     briefPanel = document.getElementById('start-brief-panel');
     skyEl = document.querySelector('#start-screen .start-sky');
     dossierEl = document.querySelector('#start-screen .start-dossier');
+    var droneEl = document.getElementById('start-cursor-drone');
     if(!startEl) return;
 
-    // whole-page mouse follow — dossier tilts, sky drifts, stars parallax
-    var raf = null, mx = 0, my = 0;
+    // whole-page alive: dossier tilt + sky + cursor-drone follows mouse
+    var raf = null, mx = 0, my = 0, tx = window.innerWidth/2, ty = window.innerHeight/2, cx = tx, cy = ty;
+    // init drone at center
+    if(droneEl){ droneEl.style.transform = 'translate('+(cx-26)+'px,'+(cy-16)+'px)'; }
     startEl.addEventListener('mousemove', function(e){
-      mx = (e.clientX / window.innerWidth - 0.5) * 2; // -1 .. 1
+      tx = e.clientX; ty = e.clientY;
+      mx = (e.clientX / window.innerWidth - 0.5) * 2;
       my = (e.clientY / window.innerHeight - 0.5) * 2;
       if(raf) return;
       raf = requestAnimationFrame(function(){
@@ -28,11 +32,24 @@
         if(skyEl){
           skyEl.style.transform = 'translate('+(mx*10)+'px,'+(my*7)+'px) scale(1.02)';
         }
+        // drone follows with lerp
+        if(droneEl){
+          cx += (tx - cx) * 0.14;
+          cy += (ty - cy) * 0.14;
+          droneEl.style.transform = 'translate('+(cx-26)+'px,'+(cy-16)+'px) rotate('+(mx*6)+'deg)';
+        }
+        if(Math.abs(tx-cx) > 0.5 || Math.abs(ty-cy) > 0.5){
+          raf = requestAnimationFrame(arguments.callee);
+        }
       });
     });
     startEl.addEventListener('mouseleave', function(){
       if(dossierEl) dossierEl.style.transform = '';
       if(skyEl) skyEl.style.transform = '';
+      if(droneEl) droneEl.style.opacity = '0';
+    });
+    startEl.addEventListener('mouseenter', function(){
+      if(droneEl) droneEl.style.opacity = '1';
     });
 
     if(enterBtn){

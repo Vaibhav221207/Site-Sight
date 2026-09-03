@@ -36,6 +36,22 @@
     <!-- START SCREEN — ConTech Dossier (chunky game style, not a mini-game) -->
     <div id="start-screen" aria-label="Site Sight briefing">
       <div class="start-sky" aria-hidden="true"></div>
+      <!-- Arrow-follower: small Recon Drone that trails the cursor -->
+      <div id="start-cursor-drone" aria-hidden="true">
+        <svg viewBox="0 0 64 40" width="52" height="32" xmlns="http://www.w3.org/2000/svg">
+          <g opacity="0.95">
+            <ellipse cx="32" cy="28" rx="14" ry="4" fill="#000" opacity="0.18"/>
+            <rect x="14" y="14" width="36" height="10" rx="5" fill="#FFFBF0" stroke="#2B2320" stroke-width="2.5"/>
+            <rect x="18" y="8" width="28" height="10" rx="4" fill="#FFFBF0" stroke="#2B2320" stroke-width="2"/>
+            <circle cx="32" cy="13" r="5" fill="#7ED6FF" stroke="#2B2320" stroke-width="1.8"/>
+            <circle cx="32" cy="13" r="2" fill="#fff" opacity="0.9"/>
+            <circle cx="20" cy="14" r="3" fill="#2B2320"/><circle cx="20" cy="14" r="1.6" fill="#E8604A"/>
+            <circle cx="44" cy="14" r="3" fill="#2B2320"/><circle cx="44" cy="14" r="1.6" fill="#E8604A"/>
+            <circle cx="32" cy="5" r="2.8" fill="#EF4444" stroke="#2B2320" stroke-width="1.5"/><circle cx="32" cy="5" r="1" fill="#fff" opacity="0.9"/>
+          </g>
+        </svg>
+        <span class="drone-label">RECON</span>
+      </div>
       <div class="start-dossier">
         <div class="start-stamp">EYES ONLY // SITE-04</div>
         <header class="start-head">

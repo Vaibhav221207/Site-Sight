@@ -1727,6 +1727,32 @@ body.touch-ui #tile-popup {
   -webkit-overflow-scrolling: touch;
 }
 #start-screen.hidden { display: none !important; }
+#start-cursor-drone {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 10001;
+  pointer-events: none;
+  will-change: transform;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.35));
+  transition: opacity 0.2s ease;
+  opacity: 0;
+}
+#start-screen:hover #start-cursor-drone { opacity: 1; }
+#start-cursor-drone .drone-label {
+  display: block;
+  text-align: center;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #E8604A;
+  background: #FFFBF0;
+  border: 1.5px solid #2B2320;
+  border-radius: 999px;
+  padding: 1px 5px;
+  margin-top: 2px;
+  box-shadow: 1px 1px 0 #000;
+}
 .start-sky {
   position: absolute;
   inset: 0;
