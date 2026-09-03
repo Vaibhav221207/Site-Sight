@@ -9,6 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700&display=swap" rel="stylesheet" />
+  <!-- Atkinson Hyperlegible — Pro Max Minimalism for start screen -->
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet" />
   <!-- Anime.js — vendored locally (was CDN; prevents Edge Tracking-Prevention storage warnings) -->
   <script src="js/vendor/anime.min.js"></script>
   <script>
@@ -32,6 +34,54 @@
 </head>
 <body>
     <div id="debug-overlay" style="position:fixed;top:4px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(255,80,80,0.92);color:#fff;font:11px/1.3 monospace;padding:4px 8px;border-radius:6px;pointer-events:none;max-width:90vw;white-space:pre-wrap;word-break:break-word;display:none"></div>
+
+    <!-- START SCREEN — Pro Max Minimalism & Swiss Style (does not affect game logic) -->
+    <div id="start-screen" aria-label="Site Sight start screen">
+      <div class="start-bg" aria-hidden="true"></div>
+      <div class="start-shell">
+        <header class="start-header">
+          <span class="start-eyebrow">CONTECH SYSTEMS — SITE SURVEY DIVISION</span>
+          <h1 class="start-title">SITE SIGHT</h1>
+          <p class="start-tagline">Map the terrain. Scan the earth. Zone with intent.</p>
+        </header>
+
+        <div class="start-grid">
+          <div class="start-card">
+            <h2 class="start-card-title">Your Budget</h2>
+            <div class="start-budget">$50,000</div>
+            <p class="start-card-desc">Build HQ ($10k) to unlock scans. Every scan and zone is an investment.</p>
+            <div class="start-actions">
+              <button id="start-enter" class="start-cta" type="button">ENTER SITE →</button>
+              <button id="start-how" class="start-ghost" type="button" aria-expanded="false" aria-controls="start-how-panel">HOW TO PLAY</button>
+            </div>
+            <div id="start-how-panel" class="start-how-panel" hidden>
+              <ol>
+                <li><strong>1 — Build HQ</strong> on flat scanned land (tap BUILD → place H).</li>
+                <li><strong>2 — Scan:</strong> Drone = surface, GPR = subsurface (both needed for bestUse).</li>
+                <li><strong>3 — Compact</strong> trench/rock, then <strong>Zone</strong> residential/commercial/industrial/mining. Match <code>bestUse</code> or pay mismatch.</li>
+              </ol>
+              <p class="start-hint">Tip: Zoning is free to preview — cost only on Confirm. Mismatched tiles get an amber dashed border.</p>
+            </div>
+          </div>
+
+          <div class="start-preview" aria-hidden="true">
+            <div class="start-preview-label">LIVE PREVIEW — HOVER TO INSPECT</div>
+            <div class="start-mini-grid" id="start-mini-grid"></div>
+            <div class="start-legend">
+              <span class="legend-dot" style="background:#66BB6A"></span> Residential
+              <span class="legend-dot" style="background:#42A5F5"></span> Commercial
+              <span class="legend-dot" style="background:#8D6E63"></span> Industrial
+              <span class="legend-dot" style="background:#FFB300"></span> Mining
+            </div>
+          </div>
+        </div>
+
+        <footer class="start-footer">
+          <span>Minimalism & Swiss Style — Atkinson Hyperlegible • 4.5:1 • keyboard: Tab/Enter • <span id="start-viewport"></span></span>
+          <span class="start-foot-hint">Esc to re-open start screen in-game</span>
+        </footer>
+      </div>
+    </div>
     <script>
       (function(){
         function show(txt, isErr){
@@ -355,6 +405,7 @@
     <script src="js/mobileUI.js"></script>
     <script src="js/fullscreen.js"></script>
     <script src="js/orientation.js"></script>
+    <script src="js/startScreen.js"></script>
   </body>
 </html>
 
