@@ -1,6 +1,6 @@
-/* js/startScreen.js — ConTech Dossier start screen (chunky, game-matched).
- * Whole-page alive: dossier tilts + sky parallax follow mouse, not a boxed mini-game.
- * Uses Baloo 2 / coral / cream to match the game, not Pro Max teal.
+/* js/startScreen.js — Site Sight start screen (chunky, game-matched).
+ * Subtle parallax: dossier tilts + sky drifts on mouse move, no drone, no mini-game.
+ * Keeps your chunky Baloo 2 / coral / cream aesthetic.
  */
 (function(){
   var startEl, enterBtn, briefBtn, briefPanel, skyEl, dossierEl;
@@ -12,15 +12,11 @@
     briefPanel = document.getElementById('start-brief-panel');
     skyEl = document.querySelector('#start-screen .start-sky');
     dossierEl = document.querySelector('#start-screen .start-dossier');
-    var droneEl = document.getElementById('start-cursor-drone');
     if(!startEl) return;
 
-    // whole-page alive: dossier tilt + sky + cursor-drone follows mouse
-    var raf = null, mx = 0, my = 0, tx = window.innerWidth/2, ty = window.innerHeight/2, cx = tx, cy = ty;
-    // init drone at center
-    if(droneEl){ droneEl.style.transform = 'translate('+(cx-26)+'px,'+(cy-16)+'px)'; }
+    // subtle parallax on mouse move — dossier tilts slightly, sky drifts
+    var raf = null, mx = 0, my = 0;
     startEl.addEventListener('mousemove', function(e){
-      tx = e.clientX; ty = e.clientY;
       mx = (e.clientX / window.innerWidth - 0.5) * 2;
       my = (e.clientY / window.innerHeight - 0.5) * 2;
       if(raf) return;
@@ -32,24 +28,11 @@
         if(skyEl){
           skyEl.style.transform = 'translate('+(mx*10)+'px,'+(my*7)+'px) scale(1.02)';
         }
-        // drone follows with lerp
-        if(droneEl){
-          cx += (tx - cx) * 0.14;
-          cy += (ty - cy) * 0.14;
-          droneEl.style.transform = 'translate('+(cx-26)+'px,'+(cy-16)+'px) rotate('+(mx*6)+'deg)';
-        }
-        if(Math.abs(tx-cx) > 0.5 || Math.abs(ty-cy) > 0.5){
-          raf = requestAnimationFrame(arguments.callee);
-        }
       });
     });
     startEl.addEventListener('mouseleave', function(){
       if(dossierEl) dossierEl.style.transform = '';
       if(skyEl) skyEl.style.transform = '';
-      if(droneEl) droneEl.style.opacity = '0';
-    });
-    startEl.addEventListener('mouseenter', function(){
-      if(droneEl) droneEl.style.opacity = '1';
     });
 
     if(enterBtn){
@@ -111,7 +94,6 @@
     if(enterBtn) enterBtn.focus();
   }
 
-  // expose for console / menu
   window.StartScreen = { hide: hide, show: show };
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
