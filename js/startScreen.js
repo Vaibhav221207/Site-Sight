@@ -1,47 +1,39 @@
 /* js/startScreen.js — ConTech Dossier start screen (chunky, game-matched).
- * Isolated overlay — does not touch game logic, just gates visibility.
- * Interactive: hoverable site-ops map that teases the real terrain.
+ * Whole-page alive: dossier tilts + sky parallax follow mouse, not a boxed mini-game.
+ * Uses Baloo 2 / coral / cream to match the game, not Pro Max teal.
  */
 (function(){
-  var startEl, enterBtn, briefBtn, briefPanel, opsMap;
+  var startEl, enterBtn, briefBtn, briefPanel, skyEl, dossierEl;
 
   function init(){
     startEl = document.getElementById('start-screen');
     enterBtn = document.getElementById('start-enter');
     briefBtn = document.getElementById('start-brief');
     briefPanel = document.getElementById('start-brief-panel');
-    opsMap = document.getElementById('start-ops-map');
+    skyEl = document.querySelector('#start-screen .start-sky');
+    dossierEl = document.querySelector('#start-screen .start-dossier');
     if(!startEl) return;
 
-    // 10×10 ops map — hover to preview scan, click to pulse HQ
-    if(opsMap){
-      var pal = { land: '#7EB24A', river: '#5B6FA8', trench: '#4A3F6B', rock: '#9AA3AB', hq: '#44ddbb' };
-      for(var i=0;i<100;i++){
-        var r = Math.floor(i/10), c = i%10;
-        var cell = document.createElement('div');
-        cell.className = 'sleg-cell';
-        var isRiver = (r===4 && c>=2 && c<=6) || (r===5 && c>=3 && c<=7);
-        var isTrench = (r>=6 && r<=8 && c>=6 && c<=8);
-        var isRock = (i===12 || i===18 || i===73);
-        var t = isRiver ? 'river' : isTrench ? 'trench' : isRock ? 'rock' : 'land';
-        cell.style.background = pal[t];
-        cell.title = t;
-        cell.addEventListener('mouseenter', (function(el, tt){
-          return function(){ el.style.filter='brightness(1.25)'; el.style.transform='scale(1.08)'; };
-        })(cell, t));
-        cell.addEventListener('mouseleave', (function(el){
-          return function(){ el.style.filter=''; el.style.transform=''; };
-        })(cell));
-        opsMap.appendChild(cell);
-      }
-      // pulse center HQ
-      var hqCell = opsMap.children[44];
-      if(hqCell){
-        hqCell.style.background = pal.hq;
-        hqCell.style.boxShadow = '0 0 0 2px #E8604A';
-        setInterval(function(){ hqCell.style.opacity = hqCell.style.opacity==='0.85'?'1':'0.85'; }, 900);
-      }
-    }
+    // whole-page mouse follow — dossier tilts, sky drifts, stars parallax
+    var raf = null, mx = 0, my = 0;
+    startEl.addEventListener('mousemove', function(e){
+      mx = (e.clientX / window.innerWidth - 0.5) * 2; // -1 .. 1
+      my = (e.clientY / window.innerHeight - 0.5) * 2;
+      if(raf) return;
+      raf = requestAnimationFrame(function(){
+        raf = null;
+        if(dossierEl){
+          dossierEl.style.transform = 'perspective(900px) rotateY('+(mx*2.2)+'deg) rotateX('+(-my*1.6)+'deg) translateZ(0)';
+        }
+        if(skyEl){
+          skyEl.style.transform = 'translate('+(mx*10)+'px,'+(my*7)+'px) scale(1.02)';
+        }
+      });
+    });
+    startEl.addEventListener('mouseleave', function(){
+      if(dossierEl) dossierEl.style.transform = '';
+      if(skyEl) skyEl.style.transform = '';
+    });
 
     if(enterBtn){
       enterBtn.addEventListener('click', hide);

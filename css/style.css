@@ -1797,13 +1797,12 @@ body.touch-ui #tile-popup {
 }
 .start-kicker { color: #E8604A; }
 .start-body {
-  display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   flex: 1;
   min-height: 0;
 }
-@media (max-width: 680px) { .start-body { grid-template-columns: 1fr; } }
 .start-brief {
   display: flex;
   flex-direction: column;
@@ -1873,53 +1872,12 @@ body.touch-ui #tile-popup {
 .start-brief-panel ol { margin: 0 0 6px 18px; padding: 0; }
 .start-brief-panel li { margin: 4px 0; }
 .start-foot-hint { font-size: 10px; color: #6B5B4F; font-style: italic; text-align: center; }
-.start-ops {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  background: #2B2320;
-  border: 3px solid #2B2320;
-  border-radius: 12px;
-  padding: 10px;
-  color: #FFFBF0;
-  overflow: hidden;
-  min-height: 0;
+/* dossier subtly follows mouse — whole page feels alive, not a boxed mini-game */
+.start-dossier {
+  transition: transform 0.18s ease-out;
+  will-change: transform;
 }
-.start-ops-head {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #F59E0B;
-  text-align: center;
+.start-sky {
+  transition: transform 0.25s ease-out;
+  will-change: transform;
 }
-.start-ops-map {
-  display: grid;
-  grid-template-columns: repeat(10, 1fr);
-  gap: 2px;
-  flex: 1;
-  min-height: 120px;
-  align-content: start;
-  background: #1a1a2e;
-  border-radius: 8px;
-  padding: 6px;
-}
-.start-ops-map .sleg-cell {
-  aspect-ratio: 1;
-  border-radius: 2px;
-  border: 1px solid #2B2320;
-  transition: transform 0.12s ease, filter 0.12s;
-}
-.start-ops-map .sleg-cell:hover { transform: scale(1.08); filter: brightness(1.2); }
-.start-ops-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 10px;
-  font-size: 8px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #9AA3AB;
-  justify-content: center;
-}
-.sleg { width: 8px; height: 8px; border-radius: 2px; display: inline-block; vertical-align: middle; border: 1px solid #2B2320; }
