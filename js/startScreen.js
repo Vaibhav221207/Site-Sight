@@ -1,43 +1,46 @@
-/* js/startScreen.js — Start screen for Site Sight (Pro Max Minimalism experiment).
+/* js/startScreen.js — ConTech Dossier start screen (chunky, game-matched).
  * Isolated overlay — does not touch game logic, just gates visibility.
- * Uses: Flexbox/Grid, safe-area, focus-visible, CustomEvent, no RAF polling.
+ * Interactive: hoverable site-ops map that teases the real terrain.
  */
 (function(){
-  var startEl, enterBtn, howBtn, howPanel, miniGrid, viewportEl;
+  var startEl, enterBtn, briefBtn, briefPanel, opsMap;
 
   function init(){
     startEl = document.getElementById('start-screen');
     enterBtn = document.getElementById('start-enter');
-    howBtn = document.getElementById('start-how');
-    howPanel = document.getElementById('start-how-panel');
-    miniGrid = document.getElementById('start-mini-grid');
-    viewportEl = document.getElementById('start-viewport');
+    briefBtn = document.getElementById('start-brief');
+    briefPanel = document.getElementById('start-brief-panel');
+    opsMap = document.getElementById('start-ops-map');
     if(!startEl) return;
 
-    // build 5x5 mini grid — interactive demo of zoning colors
-    if(miniGrid){
-      for(var i=0;i<25;i++){
-        var cell = document.createElement('button');
-        cell.type = 'button';
-        cell.className = 'mcell';
-        cell.setAttribute('aria-label', 'Demo cell '+(i+1));
-        // center + random hilite for demo
-        if(i===12) cell.classList.add('is-ctr');
-        if([6,8,16,18].indexOf(i)>=0) cell.classList.add('is-hil');
-        cell.addEventListener('click', (function(c){
-          return function(){
-            c.classList.toggle('is-hil');
-            c.style.background = c.classList.contains('is-hil') ? '#D97706' : '';
-          };
+    // 10×10 ops map — hover to preview scan, click to pulse HQ
+    if(opsMap){
+      var pal = { land: '#7EB24A', river: '#5B6FA8', trench: '#4A3F6B', rock: '#9AA3AB', hq: '#44ddbb' };
+      for(var i=0;i<100;i++){
+        var r = Math.floor(i/10), c = i%10;
+        var cell = document.createElement('div');
+        cell.className = 'sleg-cell';
+        var isRiver = (r===4 && c>=2 && c<=6) || (r===5 && c>=3 && c<=7);
+        var isTrench = (r>=6 && r<=8 && c>=6 && c<=8);
+        var isRock = (i===12 || i===18 || i===73);
+        var t = isRiver ? 'river' : isTrench ? 'trench' : isRock ? 'rock' : 'land';
+        cell.style.background = pal[t];
+        cell.title = t;
+        cell.addEventListener('mouseenter', (function(el, tt){
+          return function(){ el.style.filter='brightness(1.25)'; el.style.transform='scale(1.08)'; };
+        })(cell, t));
+        cell.addEventListener('mouseleave', (function(el){
+          return function(){ el.style.filter=''; el.style.transform=''; };
         })(cell));
-        miniGrid.appendChild(cell);
+        opsMap.appendChild(cell);
       }
-    }
-
-    if(viewportEl){
-      var upd = function(){ viewportEl.textContent = window.innerWidth+'×'+window.innerHeight+' @'+(window.devicePixelRatio||1)+'x'; };
-      upd();
-      window.addEventListener('resize', upd);
+      // pulse center HQ
+      var hqCell = opsMap.children[44];
+      if(hqCell){
+        hqCell.style.background = pal.hq;
+        hqCell.style.boxShadow = '0 0 0 2px #E8604A';
+        setInterval(function(){ hqCell.style.opacity = hqCell.style.opacity==='0.85'?'1':'0.85'; }, 900);
+      }
     }
 
     if(enterBtn){
@@ -46,19 +49,16 @@
         if(e.key==='Enter' || e.key===' ') { e.preventDefault(); hide(); }
       });
     }
-    if(howBtn && howPanel){
-      howBtn.addEventListener('click', function(){
-        var expanded = howBtn.getAttribute('aria-expanded')==='true';
-        howBtn.setAttribute('aria-expanded', !expanded);
-        howPanel.hidden = expanded;
-        if(!expanded) howPanel.scrollIntoView({behavior:'smooth', block:'nearest'});
+    if(briefBtn && briefPanel){
+      briefBtn.addEventListener('click', function(){
+        var expanded = briefBtn.getAttribute('aria-expanded')==='true';
+        briefBtn.setAttribute('aria-expanded', !expanded);
+        briefPanel.hidden = expanded;
       });
     }
 
-    // focus first CTA for keyboard
     if(enterBtn) enterBtn.focus();
 
-    // Esc to re-open in-game
     window.addEventListener('keydown', function(e){
       if(e.key==='Escape' && startEl.classList.contains('hidden')){
         show();
@@ -67,8 +67,7 @@
       }
     });
 
-    // CustomEvent example — start screen listens for game state, not polling
-    window.addEventListener('site:started', function(){ /* hook for future */ });
+    window.addEventListener('site:started', function(){});
   }
 
   function hide(){
