@@ -33,43 +33,17 @@
 <body>
     <div id="debug-overlay" style="position:fixed;top:4px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(255,80,80,0.92);color:#fff;font:11px/1.3 monospace;padding:4px 8px;border-radius:6px;pointer-events:none;max-width:90vw;white-space:pre-wrap;word-break:break-word;display:none"></div>
 
-    <!-- START SCREEN — ConTech Dossier (chunky game style, not a mini-game) -->
-    <div id="start-screen" aria-label="Site Sight briefing">
+    <div id="start-screen" aria-label="Site Sight">
       <div class="start-sky" aria-hidden="true"></div>
       <div class="start-atmosphere" aria-hidden="true"></div>
       <div class="start-dossier">
-        <div class="start-stamp">EYES ONLY // SITE-04</div>
         <header class="start-head">
           <h1 class="start-title">SITE SIGHT</h1>
-          <p class="start-subtitle"><span class="start-kicker">CONTECH</span> Uncharted 20×20 • One HQ • No second chances</p>
+          <p class="start-subtitle">Uncharted 20×20 • One HQ • No second chances</p>
         </header>
-
-        <div class="start-body">
-          <div class="start-brief">
-            <div class="start-budget-row">
-              <span class="start-budget-label">BUDGET AUTHORIZED</span>
-              <span class="start-budget-val">$50,000</span>
-              <span class="start-budget-note">HQ $10k to unlock</span>
-            </div>
-            <p class="start-blurb">You’re dropped on raw land — river, trench, rock, all unknown. <strong>Build HQ</strong>, run <strong>Drone</strong> (surface) + <strong>GPR</strong> (subsurface), then <strong>Compact</strong> and <strong>Zone</strong> by <code>bestUse</code>. Mismatch = hazard.</p>
-            <div class="start-actions">
-              <button id="start-enter" class="start-cta" type="button">DROP IN — ENTER SITE</button>
-              <button id="start-brief" class="start-ghost" type="button" aria-expanded="false" aria-controls="start-brief-panel">BRIEFING</button>
-            </div>
-            <div id="start-brief-panel" class="start-brief-panel" hidden>
-              <ol>
-                <li><strong>Build HQ</strong> — flat land only, $10k, unlocks DATA.</li>
-                <li><strong>Scan</strong> — Drone + GPR for full <code>bestUse</code> (Res/Com/Ind/Min/Unsuitable).</li>
-                <li><strong>Prep & Zone</strong> — Compact trench/rock, then paint Residential (green), Commercial (blue), Industrial (brown), Mining (amber). Stay on <code>bestUse</code> or pay.</li>
-              </ol>
-            </div>
-            <p class="start-foot-hint">Click to enter • Esc to return</p>
-          </div>
-        </div>
+        <button id="start-enter" class="start-cta" type="button">DROP IN — ENTER SITE</button>
       </div>
-    </div>
-    <script>
-      (function(){
+    </div>      (function(){
         function show(txt, isErr){
           var el=document.getElementById('debug-overlay');
           if(!el) return;
