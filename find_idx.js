@@ -1,0 +1,12 @@
+const fs = require('fs');
+const c = fs.readFileSync('index.html', 'utf8');
+const start = c.indexOf('<div id="start-screen"');
+const afterStart = c.substring(start + 500);
+const idx1 = afterStart.indexOf('</div>');
+const idx2 = afterStart.indexOf('</div>', idx1 + 1);
+const idx3 = afterStart.indexOf('</div>', idx2 + 1);
+const idx4 = afterStart.indexOf('</div>', idx3 + 1);
+const idx5 = afterStart.indexOf('</div>', idx4 + 1);
+const idx6 = afterStart.indexOf('</div>', idx5 + 1);
+console.log('idx6 pos:', idx6);
+console.log('end in full:', start + 500 + idx6 + 6);
