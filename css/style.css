@@ -1771,6 +1771,12 @@ body.touch-ui #tile-popup {
     radial-gradient(3px 3px at 72% 7%, #fff 50%, transparent 51%);
   opacity: 0.55;
 }
+.start-atmosphere {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 60%, #000 100%);
+  pointer-events: none;
+}
 .start-dossier {
   position: relative;
   width: min(92vw, 760px);
