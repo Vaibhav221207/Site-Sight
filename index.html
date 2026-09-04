@@ -1,13 +1,192 @@
-<div id="start-screen" aria-label="Site Sight">
-      <div class="start-sky" aria-hidden="true"></div>
-      <div class="start-atmosphere" aria-hidden="true"></div>
-      <div class="start-dossier">
-        <header class="start-head">
-          <h1 class="start-title">SITE SIGHT</h1>
-          <p class="start-subtitle">Uncharted 20×20 • One HQ • No second chances</p>
-        </header>
-        <button id="start-enter" class="start-cta" type="button">DROP IN — ENTER SITE</button>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>Site Sight</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- Baloo 2 — rounded playful UI font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700&display=swap" rel="stylesheet" />
+  <!-- Anime.js — vendored locally (was CDN; prevents Edge Tracking-Prevention storage warnings) -->
+  <script src="js/vendor/anime.min.js"></script>
+  <script>
+    // live debug: surface any JS error + canvas diagnostics on screen so
+    // file:// caching / CDN failures are visible in a screenshot
+    window._siteSightErrors = [];
+    window.addEventListener('error', function (e) {
+      var msg = (e.message || e.error || 'error') + ' @' + (e.filename||'').split('/').pop() + ':' + e.lineno;
+      window._siteSightErrors.push(msg);
+      var el = document.getElementById('debug-overlay');
+      if (el) el.textContent = 'ERR: ' + window._siteSightErrors.join(' | ') + ' | ' + (el.dataset.info||'');
+      console.error('[SiteSight debug]', e.message, e.filename, e.lineno, e.error);
+    });
+    window.addEventListener('unhandledrejection', function (e) {
+      var msg = 'promise: ' + (e.reason && e.reason.message ? e.reason.message : e.reason);
+      window._siteSightErrors.push(msg);
+      var el = document.getElementById('debug-overlay');
+      if (el) el.textContent = 'ERR: ' + window._siteSightErrors.join(' | ');
+    });
+  </script>
+</head>
+<body>
+    <div id="debug-overlay" style="position:fixed;top:4px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(255,80,80,0.92);color:#fff;font:11px/1.3 monospace;padding:4px 8px;border-radius:6px;pointer-events:none;max-width:90vw;white-space:pre-wrap;word-break:break-word;display:none"></div>
+
+    <!-- START SCREEN — Site Sight Title Screen -->
+    <div id="start-screen" aria-label="Site Sight Title Screen" role="dialog" aria-modal="true">
+      <!-- Background layers -->
+      <div class="start-bg" aria-hidden="true">
+        <div class="start-bg-stars" aria-hidden="true"></div>
+        <div class="start-scanlines" aria-hidden="true"></div>
+        <div class="start-radar" aria-hidden="true"></div>
+        <div class="start-grid" aria-hidden="true"></div>
       </div>
+
+      <!-- Title and Button - visually separated -->
+      <div class="start-title-block" role="document">
+        <h1 class="start-title" id="start-title">SITE SIGHT</h1>
+        <p class="start-tagline" aria-hidden="true">Uncharted 20×20 • One HQ • No second chances</p>
+      </div>
+
+      <div class="start-action-block">
+        <button id="start-enter" class="start-enter-btn" type="button" aria-label="Enter the game">
+          <span class="start-enter-text">ENTER GAME</span>
+          <span class="start-enter-prompt" aria-hidden="true">▼</span>
+        </button>
+        <p class="start-hint" aria-hidden="true">Press <kbd>Enter</kbd> or <kbd>Space</kbd> to begin</p>
+      </div>
+    </div>
+    <script>
+      (function(){
+        function show(txt, isErr){
+          var el=document.getElementById('debug-overlay');
+          if(!el) return;
+          el.style.display='block';
+          el.style.background=isErr?'rgba(200,30,30,0.95)':'rgba(30,30,30,0.92)';
+          el.textContent=txt;
+          el.dataset.info=txt;
+        }
+        window._siteSightDebugShow = show;
+        setTimeout(function(){
+          var c=document.getElementById('game-canvas');
+          var info='canvas '+(c?c.width+'x'+c.height:'missing')+' css '+ (c?c.clientWidth+'x'+c.clientHeight:'-');
+          info+=' | IsoGrid '+(window.IsoGrid?('iso '+Math.round(window.IsoGrid.isoSize)+' cam '+Math.round(window.IsoGrid.camera.x)+','+Math.round(window.IsoGrid.camera.y)):'missing');
+          info+=' | BlockRender '+(window.BlockRender?'ok'+(window.BlockRender.staticLayer?' layer '+window.BlockRender.staticLayer.width+'x'+window.BlockRender.staticLayer.height:' no-layer'):'missing');
+          info+=' | Terrain '+(window.Terrain?'ok seed '+(window.Terrain.seed||'?'):'missing');
+          info+=' | anime '+(typeof anime!=='undefined'?'ok':'missing');
+          info+=' | InputHandler '+(window.InputHandler?'ok':'MISS')+' TilePanel '+(window.TilePanel?'ok':'MISS')+' HqPanel '+(window.HqPanel?'ok':'MISS')+' BuildMenu '+(window.BuildMenu?'ok':'MISS');
+          if(window._siteSightErrors.length) info='ERR: '+window._siteSightErrors.join(' | ')+' | '+info;
+          var c2=document.getElementById('game-canvas');
+          var bad=!c2 || !c2.width || c2.width===300 || !window.BlockRender || !window.BlockRender.staticLayer || !window.BlockRender.staticLayer.width || window.BlockRender.staticLayer.width===300;
+          if(bad || window._siteSightErrors.length){
+            show(info, !!window._siteSightErrors.length);
+          } else {
+            console.log('[SiteSight debug] '+info);
+            var el=document.getElementById('debug-overlay');
+            if(el){ el.style.display='none'; el.textContent=info; el.dataset.info=info; }
+          }
+        }, 1400);
+        setTimeout(function(){
+          var el=document.getElementById('debug-overlay');
+          var c=document.getElementById('game-canvas');
+          // auto-hide if we recovered (canvas now ok and no persistent RENDER ERR)
+          if(el && c && c.width>300) {
+            var isRenderErr = el.textContent.indexOf('RENDER ERR:')===0;
+            if(isRenderErr){
+              // if the game is actually rendering (terrain visible), hide the transient bar
+              if(window.BlockRender && window.BlockRender.staticLayer && window.BlockRender.staticLayer.width>300){
+                el.style.display='none';
+              }
+            } else if(el.style.display==='block' && !window._siteSightErrors.length){
+              el.style.display='none';
+            }
+          }
+        }, 2600);
+      })();
+    </script>
+    <!-- Night sky stars (behind the transparent canvas backdrop) -->
+    <div id="sky-deco" aria-hidden="true">
+      <span class="star" style="top:6%;left:8%;width:3px;height:3px"></span>
+      <span class="star" style="top:12%;left:22%;width:2px;height:2px"></span>
+      <span class="star" style="top:9%;left:41%;width:3px;height:3px"></span>
+      <span class="star" style="top:18%;left:14%;width:2px;height:2px"></span>
+      <span class="star" style="top:14%;left:58%;width:2px;height:2px"></span>
+      <span class="star" style="top:7%;left:72%;width:3px;height:3px"></span>
+      <span class="star" style="top:22%;left:68%;width:2px;height:2px"></span>
+      <span class="star" style="top:5%;left:88%;width:2px;height:2px"></span>
+      <span class="star" style="top:28%;left:6%;width:2px;height:2px"></span>
+      <span class="star" style="top:32%;left:33%;width:3px;height:3px"></span>
+      <span class="star" style="top:26%;left:49%;width:2px;height:2px"></span>
+      <span class="star" style="top:34%;left:77%;width:3px;height:3px"></span>
+      <span class="star" style="top:38%;left:18%;width:2px;height:2px"></span>
+      <span class="star" style="top:42%;left:44%;width:2px;height:2px"></span>
+      <span class="star" style="top:36%;left:62%;width:3px;height:3px"></span>
+      <span class="star" style="top:45%;left:82%;width:2px;height:2px"></span>
+      <span class="star" style="top:12%;left:91%;width:3px;height:3px"></span>
+      <span class="star" style="top:48%;left:11%;width:3px;height:3px"></span>
+      <span class="star" style="top:52%;left:29%;width:2px;height:2px"></span>
+      <span class="star" style="top:55%;left:54%;width:2px;height:2px"></span>
+      <span class="star" style="top:58%;left:71%;width:3px;height:3px"></span>
+      <span class="star" style="top:62%;left:8%;width:2px;height:2px"></span>
+      <span class="star" style="top:66%;left:38%;width:2px;height:2px"></span>
+      <span class="star" style="top:68%;left:86%;width:2px;height:2px"></span>
+      <span class="star" style="top:74%;left:16%;width:3px;height:3px"></span>
+      <span class="star" style="top:78%;left:52%;width:2px;height:2px"></span>
+      <span class="star" style="top:82%;left:67%;width:2px;height:2px"></span>
+      <span class="star" style="top:86%;left:28%;width:3px;height:3px"></span>
+      <span class="star" style="top:88%;left:74%;width:2px;height:2px"></span>
+      <span class="star" style="top:92%;left:42%;width:2px;height:2px"></span>
+      <span class="star" style="top:92%;left:42%;width:2px;height:2px"></span>
+      <span class="star" style="top:94%;left:60%;width:2px;height:2px"></span>
+      <!-- extra stars — denser field -->
+      <span class="star" style="top:4%;left:34%;width:2px;height:2px"></span>
+      <span class="star" style="top:16%;left:48%;width:2px;height:2px"></span>
+      <span class="star" style="top:20%;left:84%;width:2px;height:2px"></span>
+      <span class="star" style="top:30%;left:20%;width:2px;height:2px"></span>
+      <span class="star" style="top:40%;left:6%;width:2px;height:2px"></span>
+      <span class="star" style="top:44%;left:30%;width:2px;height:2px"></span>
+      <span class="star" style="top:50%;left:62%;width:2px;height:2px"></span>
+      <span class="star" style="top:56%;left:86%;width:2px;height:2px"></span>
+      <span class="star" style="top:64%;left:24%;width:2px;height:2px"></span>
+      <span class="star" style="top:72%;left:44%;width:2px;height:2px"></span>
+      <span class="star" style="top:80%;left:8%;width:2px;height:2px"></span>
+      <span class="star" style="top:84%;left:90%;width:2px;height:2px"></span>
+      <span class="star" style="top:90%;left:18%;width:2px;height:2px"></span>
+      <span class="star" style="top:94%;left:60%;width:2px;height:2px"></span>
+      <!-- brighter stars — slightly larger, stand out -->
+      <span class="star star--bright" style="top:8%;left:52%;width:4px;height:4px"></span>
+      <span class="star star--bright" style="top:24%;left:36%;width:4px;height:4px"></span>
+      <span class="star star--bright" style="top:18%;left:78%;width:4px;height:4px"></span>
+      <span class="star star--bright" style="top:36%;left:48%;width:4px;height:4px"></span>
+      <span class="star star--bright" style="top:46%;left:92%;width:4px;height:4px"></span>
+      <span class="star star--bright" style="top:54%;left:14%;width:4px;height:4px"></span>
+      <span class="star star--bright" style="top:60%;left:48%;width:4px;height:4px"></span>
+      <span class="star star--bright" style="top:70%;left:72%;width:4px;height:4px"></span>
+      <span class="star star--bright" style="top:76%;left:34%;width:4px;height:4px"></span>
+      <span class="star star--bright" style="top:88%;left:56%;width:4px;height:4px"></span>
+    </div>
+
+    <!-- Game canvas: extruded 3D isometric blocks, fills the browser window -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- Build palette: toggle bar that slides up above the HUD when
+         "Build" is clicked; cards are generated from the BuildMenu registry -->
+    <div id="build-bar" class="build-bar hidden">
+      <div class="build-bar-head">
+        <span class="build-bar-title">BUILD MENU</span>
+      </div>
+      <div id="build-items" class="build-items"></div>
+    </div>
+
+    <!-- HUD: always visible at the top, includes cash balance and build button -->
+    <div id="hud" class="hud">
+      <div class="hud-left">
+        <span class="label">CASH</span>
+        <span id="hud-cash" class="value">$0</span>
+      </div>
+      <button id="hud-build-btn" class="hud-btn">Build</button>
+      <button id="hud-stop-btn" class="hud-btn" style="display:none;">Stop</button>
     </div>
 
     <!-- Full-screen HQ management overlay (terminal layout, separate from small tile popup) -->
@@ -24,14 +203,14 @@
             <button id="hq-nav-store" class="hq-fs-nav-item hq-fs-nav-item--active">STORE</button>
             <button id="hq-nav-zoning" class="hq-fs-nav-item">ZONING</button>
           </nav>
-<div class="hq-fs-content">
-              <div id="hq-section-data" class="hq-fs-section" style="display:none">
-                <div class="hq-data-layout">
-                  <div class="hq-data-minimap-col">
-                    <div class="hq-data-map-header">
-                      <span class="hq-data-map-title">SITE SURVEY MAP</span>
-                      <span class="hq-data-map-hint">tap a tile for details</span>
-                    </div>
+          <div class="hq-fs-content">
+            <div id="hq-section-data" class="hq-fs-section" style="display:none">
+              <div class="hq-data-layout">
+                <div class="hq-data-minimap-col">
+                  <div class="hq-data-map-header">
+                    <span class="hq-data-map-title">SITE SURVEY MAP</span>
+                    <span class="hq-data-map-hint">tap a tile for details</span>
+                  </div>
                   <div class="hq-data-minimap-wrap">
                     <canvas id="data-minimap" width="400" height="400"></canvas>
                   </div>
@@ -98,7 +277,6 @@
           </div>
         </div>
       </div>
-    </div>
 
     <!-- Glassmorphism tile inspection popup (animation shell only) -->
     <div id="tile-popup">
@@ -194,8 +372,7 @@
     <script src="js/gprDeploy.js"></script>
     <script src="js/hqBuild.js"></script>
     <script src="js/compactorTool.js"></script>
-    <script src="js/zoningTool.js"></script>
-  <script src="js/droneDeploy.js"></script>
+    <script src="js/droneDeploy.js"></script>
     <script src="js/buildMenu.js"></script>
     <script src="js/dataMap.js"></script>
     <script src="js/hqPanel.js"></script>
@@ -206,4 +383,3 @@
     <script src="js/startScreen.js"></script>
   </body>
 </html>
-

@@ -1,20 +1,25 @@
-/* js/startScreen.js — Site Sight start screen (chunky, game-matched).
- * Subtle parallax: dossier tilts + sky drifts on mouse move, no drone, no mini-game.
- * Keeps your chunky Baloo 2 / coral / cream aesthetic.
+/* js/startScreen.js — Site Sight Title Screen
+ * Game-feel title screen with subtle parallax, animated title, juicy button,
+ * and atmospheric background. No drone, no mini-game — just pure game feel.
  */
 (function(){
-  var startEl, enterBtn, briefBtn, briefPanel, skyEl, dossierEl;
+  var startEl, enterBtn, skyEl, dossierEl, titleEl, taglineEl, enterBtn, hintEl;
+  var raf = null, mx = 0, my = 0;
 
   function init(){
-    startEl = document.getElementById('start-screen');
-    enterBtn = document.getElementById('start-enter');
-    briefBtn = document.getElementById('start-brief');
-    briefPanel = document.getElementById('start-brief-panel');
-    skyEl = document.querySelector('#start-screen .start-sky');
-    dossierEl = document.querySelector('#start-screen .start-dossier');
+    var startEl = document.getElementById('start-screen');
+    var enterBtn = document.getElementById('start-enter');
+    var briefBtn = document.getElementById('start-brief');
+    var briefPanel = document.getElementById('start-brief-panel');
+    var skyEl = document.querySelector('#start-screen .start-bg');
+    var dossierEl = document.querySelector('.start-title-block');
+    var titleEl = document.getElementById('start-title');
+    var taglineEl = document.querySelector('.start-tagline');
+    var enterBtn = document.getElementById('start-enter');
+    var hintEl = document.querySelector('.start-hint');
     if(!startEl) return;
 
-    // subtle parallax on mouse move — dossier tilts slightly, sky drifts
+    // Subtle parallax on mouse move — title block tilts slightly, background drifts
     var raf = null, mx = 0, my = 0;
     startEl.addEventListener('mousemove', function(e){
       mx = (e.clientX / window.innerWidth - 0.5) * 2;
@@ -41,28 +46,58 @@
         if(e.key==='Enter' || e.key===' ') { e.preventDefault(); hide(); }
       });
     }
-    if(briefBtn && briefPanel){
-      briefBtn.addEventListener('click', function(){
-        var expanded = briefBtn.getAttribute('aria-expanded')==='true';
-        briefBtn.setAttribute('aria-expanded', !expanded);
-        briefPanel.hidden = expanded;
+
+    // Enter/Space to start, Esc to toggle
+    window.addEventListener('keydown', function(e){
+      if(e.key==='Enter' || e.key===' ') { e.preventDefault(); hide(); }
+      else if(e.key==='Escape' && !startEl.classList.contains('hidden')){
+        hide();
+      } else if(e.key==='Escape' && startEl.classList.contains('hidden')){
+        show();
+      }
+    });
+
+    // Enter button press animation
+    var enterBtn = document.getElementById('start-enter');
+    if(enterBtn){
+      enterBtn.addEventListener('mousedown', function(){
+        this.style.transform = 'translateY(2px) scale(0.98)';
+      });
+      window.addEventListener('mouseup', function(){
+        var btn = document.getElementById('start-enter');
+        if(btn) btn.style.transform = '';
+      });
+      enterBtn.addEventListener('mouseleave', function(){
+        this.style.transform = '';
       });
     }
 
-    if(enterBtn) enterBtn.focus();
+    // Subtle idle animations for title and button
+    startIdleAnimations();
 
+    // Enter/Space to start, Esc to toggle
     window.addEventListener('keydown', function(e){
-      if(e.key==='Escape' && startEl.classList.contains('hidden')){
-        show();
-      } else if(e.key==='Escape' && !startEl.classList.contains('hidden')){
+      if(e.key==='Enter' || e.key===' ') { e.preventDefault(); hide(); }
+      else if(e.key==='Escape' && !startEl.classList.contains('hidden')){
         hide();
+      } else if(e.key==='Escape' && startEl.classList.contains('hidden')){
+        show();
       }
     });
+
+    // Subtle idle animations for title and button
+    startIdleAnimations();
 
     window.addEventListener('site:started', function(){});
   }
 
+  function startIdleAnimations(){
+    // Title float handled by CSS
+    // Button bob handled by CSS
+  }
+
   function hide(){
+    var startEl = document.getElementById('start-screen');
     if(!startEl || startEl.classList.contains('hidden')) return;
     if(typeof anime !== 'undefined' && anime){
       anime({
@@ -85,6 +120,7 @@
   }
 
   function show(){
+    var startEl = document.getElementById('start-screen');
     if(!startEl) return;
     startEl.classList.remove('hidden');
     if(typeof anime !== 'undefined' && anime){
