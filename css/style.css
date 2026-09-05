@@ -1628,41 +1628,35 @@ body.touch-ui .hud { display: none; }
 
 body.touch-ui .rotate-enter { display: inline-flex; }
 
-/* ---- Fullscreen toggle (top-left corner, both desktop & mobile) ---- */
+/* ---- Fullscreen toggle (universal, top-left, always visible) ---- */
 .fs-btn {
   position: fixed;
   top: 12px;
   left: 12px;
-  z-index: 20000;          /* topmost chrome: floats above title (10000) and gate (10002) */
-  width: 40px;
-  height: 40px;
+  z-index: 20000;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
-  background: #E8604A;
-  box-shadow: 0 2px 0 0 #000;
+  background: #FFB300;
   border: 3px solid #2B2320;
   border-radius: 14px;
+  box-shadow: 0 3px 0 #2B2320;
   cursor: pointer;
   touch-action: none;
-  transition: transform 0.09s ease, box-shadow 0.09s ease,
-    background 0.15s ease;
+  transition: transform 0.09s ease, box-shadow 0.09s ease, background 0.15s ease;
 }
-
-.fs-btn:hover {
-  background: #D05240;
-}
-
+.fs-btn:hover { background: #FFC133; }
 .fs-btn:active {
   transform: translateY(2px);
-  box-shadow: 0 0 0 0 transparent;
+  box-shadow: 0 0 0 transparent;
 }
-
 .fs-btn svg {
-  width: 22px;
-  height: 22px;
-  fill: #FFFFFF;
+  width: 26px;
+  height: 26px;
+  fill: #2B2320;
 }
 
 /* ---- mobile polish: safe-area insets + tap behavior (later-file overrides) --
