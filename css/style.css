@@ -1640,7 +1640,7 @@ body.touch-ui .rotate-enter { display: inline-flex; }
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 0 12px;
+  padding: 0 16px;
   background: #FFB300;
   border: 3px solid #2B2320;
   border-radius: 14px;
@@ -1652,7 +1652,7 @@ body.touch-ui .rotate-enter { display: inline-flex; }
   text-transform: uppercase;
   letter-spacing: 0.04em;
   cursor: pointer;
-  touch-action: none;
+  touch-action: manipulation;
   transition: transform 0.09s ease, box-shadow 0.09s ease, background 0.15s ease;
 }
 .fs-btn:hover { background: #FFC133; }
@@ -1665,10 +1665,6 @@ body.touch-ui .rotate-enter { display: inline-flex; }
   height: 22px;
   fill: #2B2320;
   flex-shrink: 0;
-}
-.fs-btn .fs-label {
-  display: inline-block;
-  white-space: nowrap;
 }
 
 /* ---- mobile polish: safe-area insets + tap behavior (later-file overrides) --
@@ -1692,6 +1688,7 @@ body {
 body.touch-ui .fs-btn {
   width: 56px;
   height: 56px;
+  touch-action: manipulation;
 }
 
 .mu-btn {
