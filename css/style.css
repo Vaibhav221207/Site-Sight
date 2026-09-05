@@ -1733,6 +1733,44 @@ body.touch-ui #tile-popup {
 }
 #start-screen.hidden { display: none !important; }
 
+/* Fresh fullscreen toggle living INSIDE the title overlay — it shares the
+   overlay's fate, so no cross-layer stacking mystery is possible. Fades out
+   while the exit transition runs. */
+.site-fs-btn {
+  position: absolute;
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  right: calc(12px + env(safe-area-inset-right, 0px));
+  z-index: 3;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: #FFB300;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
+  box-shadow: 0 3px 0 #2B2320;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.09s ease, box-shadow 0.09s ease, background 0.15s ease,
+    opacity 0.2s ease;
+}
+.site-fs-btn:hover { background: #FFC133; }
+.site-fs-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 transparent;
+}
+.site-fs-btn svg {
+  width: 24px;
+  height: 24px;
+  fill: #2B2320;
+}
+#start-screen.is-leaving .site-fs-btn {
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* The single background idea: a slow-drifting star field on plain black.
    Reuses the game's starry-sky identity. Nothing else layered on top. */
 .start-bg {

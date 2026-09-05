@@ -12,9 +12,7 @@
 window.Fullscreen = (function () {
   var api = { active: false };
 
-  var btn = null;
-  var iconExpand = null;
-  var iconCompress = null;
+  var btns = [];
 
   // vendor-prefixed API surfaces
   var docEl = null;
@@ -23,13 +21,17 @@ window.Fullscreen = (function () {
 
   function isFullscreen() {
     return !!(document.fullscreenElement || document.webkitFullscreenElement ||
-              document.msFullscreenElement);
+               document.msFullscreenElement);
   }
 
   function syncIcon() {
     api.active = isFullscreen();
-    if (iconExpand) iconExpand.style.display = api.active ? "none" : "";
-    if (iconCompress) iconCompress.style.display = api.active ? "" : "none";
+    btns.forEach(function (b) {
+      var ex = b.querySelector(".fs-icon-expand");
+      var co = b.querySelector(".fs-icon-compress");
+      if (ex) ex.style.display = api.active ? "none" : "";
+      if (co) co.style.display = api.active ? "" : "none";
+    });
   }
 
   function tryLockLandscape() {
@@ -65,11 +67,12 @@ window.Fullscreen = (function () {
   }
 
   api.init = function () {
-    btn = document.getElementById("fs-btn");
-    if (!btn) return;
+    // both toggles: the in-game corner button and the one inside the title
+    // screen (whichever is visible; both stay in sync)
+    btns = Array.prototype.slice.call(
+      document.querySelectorAll("#fs-btn, #site-fs-btn"));
+    if (!btns.length) return;
     docEl = document.documentElement;
-    iconExpand = btn.querySelector(".fs-icon-expand");
-    iconCompress = btn.querySelector(".fs-icon-compress");
 
     // resolve vendor-prefixed API
     enterFS = docEl.requestFullscreen || docEl.webkitRequestFullscreen ||
@@ -77,13 +80,14 @@ window.Fullscreen = (function () {
     exitFS = document.exitFullscreen || document.webkitExitFullscreen ||
              document.msExitFullscreen || null;
 
-    // hide the button entirely if fullscreen is completely unsupported
+    // hide the buttons entirely if fullscreen is completely unsupported
+    // (e.g. iPhone Safari) — neither context gets a dead control
     if (!enterFS) {
-      btn.style.display = "none";
+      btns.forEach(function (b) { b.style.display = "none"; });
       return;
     }
 
-    btn.addEventListener("click", toggle);
+    btns.forEach(function (b) { b.addEventListener("click", toggle); });
 
     // keep the icon in sync even if the user exits via a system gesture
     // (e.g. iOS swipe-down) rather than the button
