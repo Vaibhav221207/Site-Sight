@@ -46,24 +46,65 @@ window.Fullscreen = (function () {
   }
 
   function toggle() {
-    if (!docEl) return;
+    if (!docEl) { note("no docEl"); return; }
     if (isFullscreen()) {
       if (exitFS) {
-        try { exitFS.call(document); } catch (e) { /* ignore */ }
+        try { exitFS.call(document); }
+        catch (e) { note("exit threw: " + e.message); }
+      } else {
+        note("no exit API");
       }
     } else {
-      if (enterFS) {
-        try {
-          var p = enterFS.call(docEl);
-          if (p && typeof p.then === "function") {
-            p.then(function () { tryLockLandscape(); }).catch(function () {});
-          } else {
-            // older browsers return undefined — lock after a short delay
-            setTimeout(tryLockLandscape, 300);
-          }
-        } catch (e) { /* ignore: unsupported context */ }
-      }
+      if (!enterFS) { note("no enter API @" + location.protocol); return; }
+      try {
+        var p = enterFS.call(docEl);
+        if (p && typeof p.then === "function") {
+          p.then(function () { tryLockLandscape(); })
+           .catch(function (err) {
+             note("enter rejected: " + (err && err.name) + " @" + location.protocol);
+           });
+        } else {
+          // older browsers return undefined — lock after a short delay
+          setTimeout(tryLockLandscape, 300);
+        }
+      } catch (e) { note("enter threw: " + e.message); }
     }
+  }
+
+  // visible diagnostics: any fullscreen failure shows a transient message
+  // (console-only would be invisible to players filing "it doesn't work")
+  function note(msg) {
+    try { console.warn("[Fullscreen] " + msg); } catch (e) {}
+    try {
+      var el = document.getElementById("debug-overlay");
+      if (!el) return;
+      el.style.display = "block";
+      el.style.background = "rgba(200,30,30,0.95)";
+      el.textContent = "FULLSCREEN: " + msg;
+      setTimeout(function () {
+        try {
+          if (el.textContent.indexOf("FULLSCREEN:") === 0) el.style.display = "none";
+        } catch (e2) {}
+      }, 2600);
+    } catch (e) {}
+  }
+
+  // pointerdown-first activation: if click synthesis ever breaks while the
+  // press itself lands, the toggle still fires. Guarded against double-fire.
+  var lastPointerToggle = 0;
+  function onPointerDown() {
+    lastPointerToggle = Date.now();
+    toggle();
+  }
+  function onClick() {
+    try {
+      if (Date.now() - lastPointerToggle < 600) return;
+    } catch (e) {}
+    toggle();
+  }
+  function bindBtn(b) {
+    b.addEventListener("click", onClick);
+    b.addEventListener("pointerdown", onPointerDown);
   }
 
   api.init = function () {
@@ -87,7 +128,7 @@ window.Fullscreen = (function () {
       return;
     }
 
-    btns.forEach(function (b) { b.addEventListener("click", toggle); });
+    btns.forEach(bindBtn);
 
     // keep the icon in sync even if the user exits via a system gesture
     // (e.g. iOS swipe-down) rather than the button
@@ -112,7 +153,7 @@ window.Fullscreen = (function () {
       btn.setAttribute('aria-label', 'Toggle fullscreen');
       btn.innerHTML = '<svg class="fs-icon-expand" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg><svg class="fs-icon-compress" viewBox="0 0 24 24" aria-hidden="true" style="display:none"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg><span class="fs-label">FULLSCREEN</span>';
       document.body.appendChild(btn);
-      btn.addEventListener('click', toggle);
+      bindBtn(btn);
     }
     // Ensure it's visible and on top
     btn.style.display = 'flex';
