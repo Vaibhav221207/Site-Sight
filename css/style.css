@@ -1718,445 +1718,316 @@ body.touch-ui #tile-popup {
   position: fixed;
   inset: 0;
   z-index: 10000;
+  --mx: 50%;
+  --my: 66%;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: clamp(56px, 12vh, 110px);
   padding: calc(12px + env(safe-area-inset-top, 0px)) calc(12px + env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) calc(12px + env(safe-area-inset-left, 0px));
-  background: #000;
+  background: linear-gradient(180deg, #081426 0%, #0d2342 55%, #0a1a33 82%, #060d1d 100%);
   overflow: auto;
   -webkit-overflow-scrolling: touch;
 }
 #start-screen.hidden { display: none !important; }
 
-/* Background layers */
+/* The single background idea: a slow-drifting star field on plain black.
+   Reuses the game's starry-sky identity. Nothing else layered on top. */
 .start-bg {
   position: absolute;
   inset: 0;
-  background: #000;
-  pointer-events: none;
-}
-.start-bg-stars {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-.start-bg-stars::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image:
-    radial-gradient(2px 2px at 8% 6%, #fff 50%, transparent 51%),
-    radial-gradient(2px 2px at 22% 12%, #fff 50%, transparent 51%),
-    radial-gradient(3px 3px at 41% 9%, #fff 50%, transparent 51%),
-    radial-gradient(2px 2px at 58% 14%, #fff 50%, transparent 51%),
-    radial-gradient(3px 3px at 72% 7%, #fff 50%, transparent 51%);
-  opacity: 0.6;
-  animation: start-star-twinkle 8s ease-in-out infinite;
-}
-@keyframes start-star-twinkle {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
-}
-.start-scanlines {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image: repeating-linear-gradient(
-    0deg,
-    transparent 0,
-    transparent 2px,
-    rgba(255,255,255,0.02) 2px,
-    rgba(255,255,255,0.02) 4px
-  );
-  animation: start-scanlines-drift 20s linear infinite;
-}
-@keyframes start-scanlines-drift {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(100%); }
-}
-.start-radar {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(232,96,74,0.08) 70%, transparent 100%),
-    radial-gradient(ellipse at 30% 30%, transparent 50%, rgba(232,96,74,0.05) 80%, transparent 100%),
-    radial-gradient(ellipse at 70% 70%, transparent 50%, rgba(232,96,74,0.05) 80%, transparent 100%);
-  animation: start-radar-sweep 8s linear infinite;
-}
-@keyframes start-radar-sweep {
-  0% { transform: rotate(0deg); opacity: 0.3; }
-  50% { opacity: 0.6; }
-  100% { transform: rotate(360deg); opacity: 0.3; }
-}
-.start-grid {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(232,96,74,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(232,96,74,0.03) 1px, transparent 1px);
-  background-size: 48px 48px;
-  animation: start-grid-drift 60s linear infinite;
-}
-@keyframes start-grid-drift {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(48px, 48px); }
-}
-
-/* Title block */
-.start-title-block {
-  text-align: center;
-  animation: start-title-float 6s ease-in-out infinite;
-}
-@keyframes start-title-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
-}
-.start-title {
-  font-family: "Baloo 2", sans-serif;
-  font-size: clamp(32px, 8vw, 72px);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: #FFFBF0;
-  -webkit-text-stroke: 2px #2B2320;
-  paint-order: stroke fill;
-  text-shadow: 0 4px 0 #2B2320, 0 8px 20px rgba(232,96,74,0.3);
-  animation: start-title-pulse 4s ease-in-out infinite;
-}
-@keyframes start-title-pulse {
-  0%, 100% { filter: brightness(1); }
-  50% { filter: brightness(1.08); }
-}
-.start-tagline {
-  margin-top: 8px;
-  font-size: clamp(12px, 1.5vw, 16px);
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #E8604A;
-  opacity: 0.85;
-  text-shadow: 0 2px 0 #2B2320;
-}
-
-/* Enter Game Button - Game Feel */
-.start-action-block {
-  margin-top: 24px;
-  text-align: center;
-}
-.start-enter-btn {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 56px;
-  padding: 16px 40px;
-  border: none;
-  border-radius: 16px;
-  background: linear-gradient(180deg, #FF6B3A 0%, #E8604A 100%);
-  color: #FFFBF0;
-  font-family: "Baloo 2", sans-serif;
-  font-size: clamp(16px, 2.5vw, 20px);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #FFFBF0;
-  -webkit-text-stroke: 1px #2B2320;
-  paint-order: stroke fill;
-  border: none;
-  border-radius: 14px;
-  cursor: pointer;
-  box-shadow:
-    0 8px 0 #C0392B,
-    0 0 0 1px #2B2320,
-    0 0 30px rgba(232,96,74,0.4),
-    inset 0 -2px 0 #C0392B;
-  filter: drop-shadow(0 8px 0 #C0392B);
-  transition:
-    transform 0.08s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    box-shadow 0.08s ease,
-    background 0.1s ease,
-    filter 0.2s ease;
-  will-change: transform, box-shadow, filter;
-}
-.start-enter-btn::before {
-  content: "";
-  position: absolute;
-  inset: -4px;
-  border-radius: 18px;
-  background: linear-gradient(180deg, rgba(232,96,74,0.4), transparent 60%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  filter: blur(8px);
-  pointer-events: none;
-}
-.start-enter-btn:hover {
-  transform: translateY(-3px) scale(1.02);
-  box-shadow:
-    0 12px 0 #C0392B,
-    0 0 0 1px #2B2320,
-    0 0 40px rgba(232,96,74,0.6),
-    inset 0 -2px 0 #C0392B;
-  filter: drop-shadow(0 12px 0 #C0392B) brightness(1.1);
-}
-.start-enter-btn:active {
-  transform: translateY(2px) scale(0.98);
-  box-shadow:
-    0 4px 0 #C0392B,
-    0 0 0 1px #2B2320,
-    0 0 20px rgba(232,96,74,0.3),
-    inset 0 -1px 0 #C0392B;
-}
-.start-enter-btn:focus-visible {
-  outline: 3px solid #E8604A;
-  outline-offset: 4px;
-}
-.start-enter-text {
-  display: inline-block;
-  animation: start-btn-text-bob 2.5s ease-in-out infinite;
-}
-@keyframes start-btn-text-bob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-2px); }
-}
-.start-enter-prompt {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  background: rgba(255,251,240,0.2);
-  border-radius: 50%;
-  animation: start-prompt-bounce 1.5s ease-in-out infinite;
-}
-@keyframes start-prompt-bounce {
-  0%, 100% { transform: translateY(0); opacity: 0.7; }
-  50% { transform: translateY(4px); opacity: 1; }
-}
-.start-hint {
-  margin-top: 12px;
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: #E8604A;
-  opacity: 0.6;
-  text-shadow: 0 1px 0 #2B2320;
-}
-
-/* Background atmosphere layers */
-.start-atmosphere {
-  position: absolute;
-  inset: 0;
+  background: transparent;
   pointer-events: none;
   overflow: hidden;
 }
-.start-atmosphere::before {
-  content: "";
+/* Distant site glow on the horizon — warm work lights, slow breathing. */
+.start-horizon {
   position: absolute;
-  inset: -20%;
-  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.8) 100%);
+  left: -10%;
+  right: -10%;
+  bottom: -6%;
+  height: 30%;
+  background: radial-gradient(38% 90% at 50% 108%, rgba(255,179,0,0.5), rgba(232,96,74,0.16) 55%, transparent 70%);
   pointer-events: none;
+  animation: horizon-breathe 6s ease-in-out infinite;
+}
+@keyframes horizon-breathe {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
 }
 .start-stars {
   position: absolute;
-  inset: 0;
+  inset: -60px;
   pointer-events: none;
-}
-.start-stars::before {
-  content: "";
-  position: absolute;
-  inset: -10%;
   background-image:
-    radial-gradient(2px 2px at 5% 10%, #fff 50%, transparent 51%),
-    radial-gradient(2px 2px at 25% 20%, #fff 50%, transparent 51%),
-    radial-gradient(3px 3px at 60% 15%, #fff 50%, transparent 51%),
-    radial-gradient(2px 2px at 75% 25%, #fff 50%, transparent 51%),
-    radial-gradient(3px 3px at 90% 80%, #fff 50%, transparent 51%),
-    radial-gradient(2px 2px at 30% 40%, #fff 50%, transparent 51%),
-    radial-gradient(3px 3px at 80% 30%, #fff 50%, transparent 51%),
-    radial-gradient(2px 2px at 45% 60%, #fff 50%, transparent 51%),
-    radial-gradient(3px 3px at 15% 80%, #fff 50%, transparent 51%),
-    radial-gradient(2px 2px at 90% 45%, #fff 50%, transparent 51%),
-    radial-gradient(3px 3px at 10% 90%, #fff 50%, transparent 51%),
-    radial-gradient(2px 2px at 95% 20%, #fff 50%, transparent 51%);
-  opacity: 0.7;
-  animation: start-stars-twinkle 12s ease-in-out infinite, start-stars-drift 120s linear infinite;
-}
-@keyframes start-stars-twinkle {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
+    radial-gradient(2px 2px at 6% 8%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 18% 24%, #fff 50%, transparent 51%),
+    radial-gradient(3px 3px at 31% 12%, #FFFBF0 50%, transparent 51%),
+    radial-gradient(2px 2px at 44% 30%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 57% 9%, #fff 50%, transparent 51%),
+    radial-gradient(3px 3px at 68% 22%, #FFFBF0 50%, transparent 51%),
+    radial-gradient(2px 2px at 79% 40%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 90% 14%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 12% 58%, #fff 50%, transparent 51%),
+    radial-gradient(3px 3px at 25% 76%, #FFFBF0 50%, transparent 51%),
+    radial-gradient(2px 2px at 38% 64%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 52% 84%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 64% 58%, #fff 50%, transparent 51%),
+    radial-gradient(3px 3px at 76% 72%, #FFFBF0 50%, transparent 51%),
+    radial-gradient(2px 2px at 86% 88%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 94% 52%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 4% 44%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 22% 88%, #fff 50%, transparent 51%),
+    radial-gradient(3px 3px at 36% 48%, #FFFBF0 50%, transparent 51%),
+    radial-gradient(2px 2px at 48% 6%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 60% 92%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 72% 52%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 82% 66%, #fff 50%, transparent 51%),
+    radial-gradient(3px 3px at 96% 78%, #FFFBF0 50%, transparent 51%);
+  opacity: 0.8;
+  animation:
+    start-stars-drift 90s linear infinite alternate,
+    start-stars-twinkle 7s ease-in-out infinite;
+  will-change: transform, opacity;
 }
 @keyframes start-stars-drift {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(50px, 50px); }
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(60px, 60px, 0); }
 }
-.start-scan-beam {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 60%;
-  height: 100%;
-  pointer-events: none;
-  background: linear-gradient(
-    180deg,
-    transparent 0%,
-    rgba(232,96,74,0.03) 20%,
-    rgba(232,96,74,0.12) 50%,
-    rgba(232,96,74,0.03) 80%,
-    transparent 100%
-  );
-  clip-path: polygon(45% 0, 55% 0, 50% 100%, 40% 100%);
-  animation: start-scan-sweep 6s ease-in-out infinite;
-  transform-origin: top center;
+@keyframes start-stars-twinkle {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.95; }
 }
-@keyframes start-scan-beam {
-  0%, 100% { transform: translateX(-20%) skewX(-5deg); opacity: 0; }
-  10% { opacity: 0.4; }
-  40% { opacity: 0.8; }
-  50% { transform: translateX(0) skewX(0); opacity: 1; }
-  60% { opacity: 0.8; }
-  90% { opacity: 0.3; }
-  100% { transform: translateX(20%) skewX(5deg); opacity: 0; }
-}
-.start-grid-lines {
+/* (ground strip removed — open sky below) */
+/* Scan reveal: a dim survey silhouette (faint iso grid + contour glows)
+   visible ONLY inside a small disc that follows the cursor — the one
+   interactive background idea. Plain dark everywhere outside it. */
+.start-reveal {
   position: absolute;
   inset: 0;
+  display: none;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(232,96,74,0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(232,96,74,0.05) 1px, transparent 1px);
-  background-size: 64px 64px;
-  animation: start-grid-pulse 4s ease-in-out infinite;
+    radial-gradient(220px 160px at 30% 62%, rgba(0,172,193,0.16), transparent 70%),
+    radial-gradient(260px 180px at 68% 40%, rgba(232,96,74,0.13), transparent 70%),
+    repeating-linear-gradient(30deg, rgba(255,251,240,0.10) 0 1px, transparent 1px 34px),
+    repeating-linear-gradient(-30deg, rgba(255,251,240,0.10) 0 1px, transparent 1px 34px);
+  -webkit-mask-image: radial-gradient(circle 190px at var(--mx) var(--my), #000 0%, transparent 70%);
+  mask-image: radial-gradient(circle 190px at var(--mx) var(--my), #000 0%, transparent 70%);
 }
-@keyframes start-grid-pulse {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.6; }
+@supports ((-webkit-mask-image: radial-gradient(circle 10px at 0 0, #000, transparent)) or (mask-image: radial-gradient(circle 10px at 0 0, #000, transparent))) {
+  .start-reveal { display: block; }
+}
+/* Occasional shooting star — JS-driven, one at a time, gone in a second. */
+.start-meteor {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  width: 140px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #FFFBF0);
+  opacity: 0;
+  pointer-events: none;
+  transform: rotate(-24deg);
 }
 
-/* Dossier subtle follow mouse */
-.start-dossier {
-  transition: transform 0.2s ease-out;
+/* Title: one clean treatment — cream Baloo 2, one hard coral offset.
+   One ambient motion only: a slow gentle float. */
+.start-title-block {
+  text-align: center;
+  animation: start-title-float 7s ease-in-out infinite;
   will-change: transform;
 }
-.start-stamp {
-  align-self: flex-start;
-  font-size: 10px;
+@keyframes start-title-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+.start-title {
+  margin: 0;
+  font-family: "Baloo 2", sans-serif;
+  font-size: clamp(34px, 11vw, 168px);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  color: #FFFBF0;
+  text-shadow: 4px 4px 0 #E8604A, 9px 9px 0 rgba(0,172,193,0.85);
+  transform: rotate(-2deg);
+}
+/* Split letters — each one wobbles when touched by the cursor. */
+.start-title .ch,
+.start-title .sp {
+  display: inline-block;
+  will-change: transform;
+}
+.start-title .ch { position: relative; }
+.start-title .sp { width: 0.28em; }
+
+/* ENTER GAME: teal pill — distinct from the coral in-game HUD buttons —
+   same chunky language (ink outline, hard offset shadow, zero blur), no gradients. */
+.start-action-block {
+  text-align: center;
+  animation: start-btn-bob 3.4s ease-in-out infinite;
+  will-change: transform;
+}
+@keyframes start-btn-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+.start-enter-btn {
+  position: relative;
+  min-height: 80px;
+  padding: 24px 46px;
+  font-family: "Baloo 2", sans-serif;
+  font-size: clamp(17px, 2.4vw, 21px);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #E8604A;
-  background: #FFFBF0;
-  border: 2px solid #2B2320;
-  border-radius: 999px;
-  padding: 4px 10px;
-  box-shadow: 2px 2px 0 #000;
-  transform: rotate(-0.6deg);
-}
-.start-head { text-align: center; }
-.start-title {
-  margin: 8px 0 4px;
-  font-size: clamp(26px, 5vw, 38px);
-  font-weight: 700;
-  letter-spacing: -0.02em;
   color: #2B2320;
-  -webkit-text-stroke: 1.4px #2B2320;
-  paint-order: stroke fill;
-  line-height: 1;
-}
-.start-subtitle {
-  margin: 0;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #6B5B4F;
-}
-.start-kicker { color: #E8604A; }
-.start-body {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  flex: 1;
-  min-height: 0;
-}
-.start-brief {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background: #F6EEDC;
+  text-shadow: 0 2px 0 #C07F00;
+  background-color: #FFB300;
+  background-image:
+    radial-gradient(circle 3px at 14px 14px, #2B2320 98%, transparent),
+    radial-gradient(circle 3px at calc(100% - 14px) 14px, #2B2320 98%, transparent),
+    radial-gradient(circle 3px at 14px calc(100% - 32px), #2B2320 98%, transparent),
+    radial-gradient(circle 3px at calc(100% - 14px) calc(100% - 32px), #2B2320 98%, transparent);
   border: 3px solid #2B2320;
-  border-radius: 12px;
-  padding: 12px;
-  box-shadow: 2px 2px 0 #000;
+  border-radius: 18px;
+  box-shadow: inset 0 3px 0 rgba(255,251,240,0.45), 0 10px 0 #2B2320;
+  cursor: pointer;
+  transition: transform 0.09s ease, box-shadow 0.09s ease, background 0.15s ease;
+  will-change: transform, box-shadow;
 }
-.start-budget-row {
+/* Hazard-stripe plate base — travels with the button, shadow compresses under it. */
+.start-enter-btn::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 14px;
+  background: repeating-linear-gradient(-45deg, #E8604A 0 9px, #FFFBF0 9px 18px);
+  border-top: 3px solid #2B2320;
+  border-radius: 0 0 15px 15px;
+  pointer-events: none;
+}
+.start-enter-btn:hover {
+  transform: translateY(-2px);
+  background-color: #FFC133;
+  box-shadow: inset 0 3px 0 rgba(255,251,240,0.45), 0 12px 0 #2B2320;
+}
+.start-enter-btn:hover::before {
+  animation: stripes-march 0.6s linear infinite;
+}
+@keyframes stripes-march {
+  to { background-position-x: 25.46px; }
+}
+.start-enter-btn:active {
+  background-color: #E69E00;
+}
+.start-enter-btn.is-down {
+  box-shadow: inset 0 3px 0 rgba(255,251,240,0.25), 0 2px 0 #2B2320;
+}
+/* Status LED — powered-equipment pilot light, gently breathing. */
+.start-enter-dot {
+  position: absolute;
+  top: 13px;
+  right: 30px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #00ACC1;
+  border: 2px solid #2B2320;
+  box-shadow: 0 0 8px 2px rgba(0,172,193,0.7);
+  animation: led-pulse 2.2s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes led-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+/* Dust kicked up by the slam. */
+.start-dust {
+  position: absolute;
+  left: calc(50% - 4px);
+  top: 88%;
+  background: #FFFBF0;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 3;
+}
+.start-enter-btn:focus-visible {
+  outline: 3px solid #FFFBF0;
+  outline-offset: 4px;
+}
+/* While leaving, ambient loops stop so the exit tween owns the motion. */
+#start-screen.is-leaving .start-title-block,
+#start-screen.is-leaving .start-action-block,
+#start-screen.is-leaving .start-stars {
+  animation: none;
+}
+
+/* ---- Site loader: the transition out of the title ----
+   Opaque overlay so the title/button never share layout with the bar. */
+.site-loader {
+  position: absolute;
+  inset: 0;
   display: flex;
-  align-items: baseline;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 7vh;
+  gap: 14px;
+  background: transparent;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.site-loader[hidden] { display: none !important; }
+#site-loadgrid {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.site-loadhud {
+  position: absolute;
+  left: 20px;
+  bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
-  border-bottom: 2px solid #2B2320;
-  padding-bottom: 8px;
-}
-.start-budget-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #6B5B4F; }
-.start-budget-val { font-size: 22px; font-weight: 700; color: #2B2320; }
-.start-budget-note { font-size: 10px; color: #6B5B4F; background: #FFFBF0; border: 2px solid #2B2320; border-radius: 999px; padding: 2px 8px; }
-.start-blurb { font-size: 12px; line-height: 1.5; color: #2B2320; margin: 0; }
-.start-blurb strong { color: #E8604A; }
-.start-blurb code { background: #FFFBF0; border: 1px solid #2B2320; border-radius: 4px; padding: 1px 4px; font-size: 11px; }
-.start-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
-.start-cta {
-  flex: 1 1 auto;
-  min-height: 44px;
-  padding: 10px 16px;
-  background: #E8604A;
-  color: #fff;
+  background: #FFFBF0;
   border: 3px solid #2B2320;
-  border-radius: 12px;
-  font-weight: 700;
-  font-size: 13px;
-  letter-spacing: 0.02em;
-  cursor: pointer;
+  border-radius: 16px;
   box-shadow: 3px 3px 0 #000;
-  transition: transform 0.09s ease, box-shadow 0.09s ease, background 0.15s;
+  padding: 12px 20px 14px;
 }
-.start-cta:hover { background: #D05240; }
-.start-cta:active { transform: translateY(2px); box-shadow: 0 0 0 transparent; }
-.start-cta:focus-visible { outline: 3px solid #2B2320; outline-offset: 2px; }
-.start-ghost {
-  min-height: 44px;
-  padding: 10px 14px;
-  background: #FFFBF0;
-  color: #2B2320;
-  border: 3px solid #2B2320;
-  border-radius: 12px;
+.site-loader-pct {
+  margin: 0;
+  font-family: "Baloo 2", sans-serif;
+  font-size: 15px;
   font-weight: 700;
-  font-size: 12px;
-  cursor: pointer;
-}
-.start-ghost:hover { background: #F6EEDC; }
-.start-ghost:focus-visible { outline: 3px solid #2B2320; outline-offset: 2px; }
-.start-ghost[aria-expanded="true"] { background: #2B2320; color: #FFFBF0; }
-.start-brief-panel {
-  background: #FFFBF0;
-  border: 2px solid #2B2320;
-  border-radius: 10px;
-  padding: 10px 12px;
-  font-size: 12px;
-  line-height: 1.5;
+  letter-spacing: 0.12em;
   color: #2B2320;
 }
-.start-brief-panel ol { margin: 0 0 6px 18px; padding: 0; }
-.start-brief-panel li { margin: 4px 0; }
-.start-foot-hint { font-size: 10px; color: #6B5B4F; font-style: italic; text-align: center; }
-/* dossier subtly follows mouse — whole page feels alive, not a boxed mini-game */
-.start-dossier {
-  transition: transform 0.18s ease-out;
-  will-change: transform;
+
+@media (prefers-reduced-motion: reduce) {
+  .start-title-block,
+  .start-action-block,
+  .start-stars,
+  .start-horizon {
+    animation: none;
+  }
+  .start-enter-dot,
+  .start-enter-btn:hover::before {
+    animation: none;
+  }
+  .start-reveal,
+  .start-meteor {
+    display: none;
+  }
 }
-.start-sky {
-  transition: transform 0.25s ease-out;
-  will-change: transform;
-}
+
+/* ---- end start screen ---- */
