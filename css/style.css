@@ -564,8 +564,9 @@ button {
 .rotate-overlay {
   position: fixed;
   inset: 0;
-  /* above everything else in the game (hud: 1000, hq overlay: 1100) */
-  z-index: 9999;
+  /* topmost gate (above the title screen at 10000): portrait phones meet
+     the rotate prompt first, then get the identical title in landscape */
+  z-index: 10002;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1632,7 +1633,7 @@ body.touch-ui .rotate-enter { display: inline-flex; }
   position: fixed;
   top: 12px;
   left: 12px;
-  z-index: 1200;           /* above game UI, below rotate overlay (9999) */
+  z-index: 10001;          /* above title screen (10000), below rotate gate (10002) */
   width: 40px;
   height: 40px;
   display: flex;
