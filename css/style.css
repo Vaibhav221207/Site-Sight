@@ -1690,8 +1690,8 @@ body {
 
 /* 44px minimum touch targets on the compact mobile controls */
 body.touch-ui .fs-btn {
-  width: 44px;
-  height: 44px;
+  width: 56px;
+  height: 56px;
 }
 
 .mu-btn {
