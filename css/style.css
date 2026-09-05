@@ -18,10 +18,10 @@ body {
   height: 100%;
   overflow: hidden;
   overscroll-behavior: none; /* no pull-to-refresh / bounce-scroll on mobile */
-  /* Pure black night sky — flat fill, no gradient, lets the vivid lime
-     land (#6dd400) pop. Stars are drawn in the #sky-deco layer behind the
-     transparent canvas backdrop. */
-  background: #000000;
+  /* Same backdrop as the title screen (blueprint night-survey gradient) so
+     the game world and the title feel like one continuous place. The canvas
+     is transparent, so this shows through behind the map + star layers. */
+  background: linear-gradient(180deg, #081426 0%, #0d2342 55%, #0a1a33 82%, #060d1d 100%);
   font-family: "Baloo 2", sans-serif;
   color: #2B2320;
   overflow-x: hidden;
@@ -117,7 +117,9 @@ button {
 /* ---- tile inspection popup (chunky sticker card) ------------------------ */
 #tile-popup {
   position: fixed;
-  top: 24px;
+  /* parked below the universal fullscreen button (top-right, ~60px tall)
+     so the popup's own close button is never covered */
+  top: 76px;
   right: 24px;
   width: 288px;
   background: #FFFBF0;
@@ -914,8 +916,13 @@ body.touch-ui .hq-fs-nav-item {
    scrolls independently (min-height: 0 + overflow-y: auto flexbox fix). */
 #hq-section-data {
   height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  /* DATA tab never scrolls itself: the mini-map is fit-bound to its wrap
+     (see fitMap in js/dataMap.js) and only the side column scrolls
+     internally. Keeps all 20x20 tiles visible without outer scroll. */
+  overflow: hidden;
 }
 #hq-section-data.hq-fs-section {
   margin-top: 0;
@@ -925,18 +932,22 @@ body.touch-ui .hq-fs-nav-item {
   display: flex;
   flex-direction: row;
   flex: 1 1 auto;
+  height: 100%;
   gap: 12px;
   align-items: stretch;
   min-height: 0;
+  overflow: hidden;
 }
 
 .hq-data-minimap-col {
   flex: 1 1 62%;
   min-width: 0;
+  min-height: 0;
   max-width: 500px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  overflow: hidden;
 }
 
 .hq-data-map-header {
@@ -968,25 +979,57 @@ body.touch-ui .hq-fs-nav-item {
   overflow: hidden;
 }
 
+/* live selection count pill in the map header — the unmissable
+   "something is selected" signal next to the title */
+.hq-data-sel-count {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #2B2320;
+  background: #FFB300;
+  border: 2px solid #2B2320;
+  border-radius: 10px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}
+
+.hq-data-sel-count[hidden] {
+  display: none;
+}
+
 .hq-data-minimap-wrap {
   position: relative;
   flex: 1 1 auto;
   min-height: 0;
+  min-width: 0;
   display: flex;
+  /* NOTE: no align/justify centering here on purpose — the canvas uses
+     margin:auto instead, so when pinch-zoom overflows the frame the
+     top/left tiles stay reachable via wrap scroll (flex centering would
+     strand negative overflow). Zoom is clipped here, never in the tab. */
   background: #1a1a2e; /* dark survey void behind the world map */
   border: 3px solid #2B2320;
   border-radius: 16px;
   box-shadow: 3px 3px 0 #000;
-  overflow: auto;
+  /* hidden (not auto): no scrollbars ever; one-finger pan + pinch still
+     work because dataMap.js drives wrap.scrollLeft/Top programmatically,
+     which functions on hidden scroll containers. */
+  overflow: hidden;
   padding: 8px;
 }
 
 #data-minimap {
   display: block;
-  width: 100%;
+  flex: 0 0 auto;
+  /* fit-bound by default (pre-JS / no-JS): never exceed the wrap in either
+     axis; js/dataMap.js fitMap() then sets the exact square px size. */
+  width: auto;
   height: auto;
+  max-width: 100%;
+  max-height: 100%;
   aspect-ratio: 1 / 1;
-  margin: auto; /* centers the square map in the frame; collapses to safe top-align when zoomed/overflowing */
+  margin: auto; /* centers the square map in the frame; anchors top-left when zoomed/overflowing */
   border-radius: 2px;
   cursor: pointer;
   touch-action: none; /* mini-map handles pan/pinch itself (mobile) */
@@ -1046,6 +1089,14 @@ body.touch-ui .hq-fs-nav-item {
   padding-bottom: 6px;
   border-bottom: 2px solid rgba(43, 35, 32, 0.35);
   overflow: hidden;
+}
+
+/* Cards inside the scrolling side column must never shrink-clip their own
+   content (an overflow:hidden flex item gets min-height:auto=0 and would cut
+   off e.g. the DESIGNATE ZONE keys). They keep full height; the COLUMN is
+   the only thing that scrolls. */
+.hq-data-side-col > * {
+  flex-shrink: 0;
 }
 
 .hq-data-details {
@@ -1110,7 +1161,7 @@ body.touch-ui .hq-fs-nav-item {
 
 .hq-data-categories {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: 1fr;
   gap: 6px;
 }
 
@@ -1137,14 +1188,13 @@ body.touch-ui .hq-fs-nav-item {
 
 .hq-data-cat-label {
   flex: 1;
+  min-width: 0;
   color: #2B2320;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   font-size: 10px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .hq-data-cat-count {
@@ -1152,6 +1202,144 @@ body.touch-ui .hq-fs-nav-item {
   font-size: 11px;
   overflow: hidden;
   white-space: nowrap;
+}
+
+/* ---- DATA tab: DESIGNATE ZONE (zoning merged into tile review) ----------
+   Inline confirm flow inside the details panel: 4 zone keys in a 2x2 grid,
+   cost box with match/mismatch copy, Confirm finalizes. Chunky sticker
+   recipe matches the rest of the HQ terminal. */
+.hq-data-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 2px dashed rgba(43, 35, 32, 0.28);
+}
+
+.hq-data-zone-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6B5B4F;
+  overflow: hidden;
+}
+
+.hq-data-zone-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.hq-data-zone-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 6px 8px;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 12px;
+  box-shadow: 2px 2px 0 #000;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #2B2320;
+  cursor: pointer;
+  transition: transform 0.09s ease, box-shadow 0.09s ease;
+}
+
+.hq-data-zone-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 transparent;
+}
+
+.hq-data-zone-btn[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.hq-data-zone-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  border: 2px solid #2B2320;
+  flex-shrink: 0;
+}
+
+.hq-data-zone-note {
+  font-size: 10px;
+  line-height: 1.45;
+  color: #6B5B4F;
+  word-break: break-word;
+}
+
+.hq-data-zone-note strong {
+  color: #2B2320;
+}
+
+.hq-data-zone-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  background: #F6EEDC;
+  border: 3px solid #2B2320;
+  border-radius: 12px;
+  box-shadow: 2px 2px 0 #000;
+}
+
+.hq-data-zone-cost {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.45;
+  color: #2B2320;
+  word-break: break-word;
+}
+
+.hq-data-zone-success {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.45;
+  color: #0E8A5A;
+  padding: 6px 0;
+  word-break: break-word;
+}
+
+.hq-data-zone-confirm-btn[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Unclippable zone key labels: the text span truncates with ellipsis inside
+   the key instead of spilling past its edge (backstop for narrow columns) */
+.hq-data-zone-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* DATA tab earns a wider sheet on desktop: the map keeps its majority share
+   while the details column finally fits full key labels + survey rows
+   without squeezing. Scoped to wide viewports so mobile sheets are untouched. */
+@media (min-width: 641px) {
+  #hq-panel.hq-panel--data {
+    max-width: 920px;
+  }
+  .hq-panel--data .hq-data-minimap-col {
+    flex: 1 1 58%;
+    max-width: 520px;
+  }
+  .hq-panel--data .hq-data-side-col {
+    flex: 1 1 42%;
+  }
 }
 
 /* panel data rows — chunky cards (fix AI thin-divider flat rows) */
@@ -1272,8 +1460,8 @@ body.touch-ui .hq-fs-nav-item {
   }
 
   .hq-data-categories {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 3px;
+    grid-template-columns: 1fr;
+    gap: 4px;
   }
 
   .hq-data-cat-row {
@@ -1294,6 +1482,49 @@ body.touch-ui .hq-fs-nav-item {
   .hq-data-cat-count {
     font-size: 9px;
   }
+
+  /* DESIGNATE ZONE keys stay thumb-friendly in the narrow side column.
+     Single column here: full-width rows are always legible and tappable,
+     and the column scrolls for the rest. */
+  .hq-data-zone-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .hq-data-zone-btn {
+    min-height: 44px;
+    font-size: 10px;
+    border-radius: 10px;
+  }
+} /* close @media (max-height: 500px), (max-width: 640px) */
+
+/* Short viewports (mobile landscape ~390px height, short desktop windows):
+   squeeze the map column chrome to single rows so the wrap keeps maximum
+   square room. The legend scrolls horizontally inside its own strip only —
+   the tab itself never scrolls. */
+@media (max-height: 500px) {
+  .hq-data-map-header {
+    padding: 4px 8px;
+    gap: 6px;
+  }
+  .hq-data-map-title {
+    font-size: 10px;
+  }
+  .hq-data-minimap-legend {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 8px;
+    scrollbar-width: none;
+  }
+  .hq-data-minimap-legend::-webkit-scrollbar {
+    display: none;
+  }
+  .hq-data-minimap-col {
+    gap: 6px;
+  }
+  .hq-data-minimap-wrap {
+    padding: 6px;
+  }
 }
 
 /* ---- Mobile breakpoint: small viewports (mobile landscape especially) ----
@@ -1305,19 +1536,25 @@ body.touch-ui .hq-fs-nav-item {
 @media (max-height: 500px), (max-width: 640px) {
 
   /* HUD: compact bottom-LEFT chip so the center-bottom stays clear for the
-     HQ terminal and panels get more vertical room. */
+     HQ terminal and panels get more vertical room. Same sticker recipe as
+     the desktop pill, scaled down: thinner keyline + real gaps so the cash
+     readout and BUILD key stop looking squeezed. */
   .hud {
     height: 40px;
     min-width: 0;
     bottom: 8px;
     left: 8px;
     transform: none;
-    padding: 0 12px;
-    border-radius: 16px;
+    padding: 0 8px 0 12px;
+    gap: 10px;
+    border-width: 2px;
+    border-radius: 14px;
+    box-shadow: 2px 2px 0 #000;
   }
-  .hud-left .label { font-size: 10px; }
-  .hud-left .value { font-size: 18px; }
-  .hud-btn { padding: 6px 16px; font-size: 12px; }
+  .hud-left { gap: 8px; }
+  .hud-left .label { font-size: 9px; }
+  .hud-left .value { font-size: 17px; line-height: 1; white-space: nowrap; }
+  .hud-btn { padding: 4px 12px; font-size: 11px; border-width: 2px; border-radius: 10px; }
 
   /* HQ terminal: on small viewports use a centered floating sheet with
      a generous inset so it never touches edges or system UI and doesn't
@@ -1628,11 +1865,16 @@ body.touch-ui .hud { display: none; }
 
 body.touch-ui .rotate-enter { display: inline-flex; }
 
-/* ---- Fullscreen toggle (universal, top-left, always visible) ---- */
+/* ---- Fullscreen toggle (universal, top-right, always visible) ----
+   Same corner as the start-screen toggle: the button never jumps between
+   screens, so muscle memory + tap delivery stay identical everywhere. */
 .fs-btn {
   position: fixed;
   top: 12px;
-  left: 12px;
+  right: 12px;
+  left: auto;
+  /* explicit auto: taps must always land (immune to any inherited none) */
+  pointer-events: auto;
   z-index: 20000;
   min-width: 56px;
   height: 48px;
@@ -1680,7 +1922,8 @@ body {
 
 .fs-btn {
   top: calc(env(safe-area-inset-top, 0px) + 12px);
-  left: calc(env(safe-area-inset-left, 0px) + 12px);
+  right: calc(env(safe-area-inset-right, 0px) + 12px);
+  left: auto;
   touch-action: manipulation;
 }
 
@@ -1689,6 +1932,12 @@ body.touch-ui .fs-btn {
   width: 56px;
   height: 56px;
   touch-action: manipulation;
+}
+
+/* touch: the right-edge sidebar starts below the universal fullscreen
+   button (top-right) so its first chip is never covered */
+body.touch-ui .mu-sidebar {
+  top: calc(env(safe-area-inset-top, 0px) + 76px);
 }
 
 .mu-btn {
@@ -1702,7 +1951,8 @@ body.touch-ui .fs-btn {
 }
 
 #tile-popup {
-  top: calc(env(safe-area-inset-top, 0px) + 8px);
+  /* top edge stays below the universal fullscreen button (top-right) */
+  top: calc(env(safe-area-inset-top, 0px) + 76px);
   right: calc(env(safe-area-inset-right, 0px) + 8px);
 }
 
@@ -1743,6 +1993,8 @@ body.touch-ui #tile-popup {
   position: absolute;
   top: calc(12px + env(safe-area-inset-top, 0px));
   right: calc(12px + env(safe-area-inset-right, 0px));
+  /* same immunity as the universal button */
+  pointer-events: auto;
   z-index: 3;
   width: 48px;
   height: 48px;

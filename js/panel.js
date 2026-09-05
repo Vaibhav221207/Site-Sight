@@ -122,7 +122,7 @@ window.TilePanel = (function () {
         "Unsuitable": ["Unsuitable", "#EF5350"],
         "Commercial": ["Commercial", "#42A5F5"],
         "Residential": ["Residential", "#66BB6A"],
-        "Industrial": ["Industrial", "#8D6E63"],
+        "Industrial": ["Industrial", "#8E24AA"],
         "Mining": ["Mining", "#FFB300"]
       };
       var mapped = catMap[d.bestUse] || null;

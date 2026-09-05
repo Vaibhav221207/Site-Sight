@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <title>Site Sight</title>
   <!-- bump ?v= every time style.css changes so browsers/CDN never serve a stale cached copy -->
-  <link rel="stylesheet" href="css/style.css?v=8" />
+  <link rel="stylesheet" href="css/style.css?v=17" />
   <!-- Baloo 2 — rounded playful UI font -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -211,7 +211,6 @@
             <button id="hq-nav-data" class="hq-fs-nav-item">DATA</button>
             <button id="hq-nav-inventory" class="hq-fs-nav-item">ITEMS</button>
             <button id="hq-nav-store" class="hq-fs-nav-item hq-fs-nav-item--active">STORE</button>
-            <button id="hq-nav-zoning" class="hq-fs-nav-item">ZONING</button>
           </nav>
           <div class="hq-fs-content">
             <div id="hq-section-data" class="hq-fs-section" style="display:none">
@@ -219,7 +218,8 @@
                 <div class="hq-data-minimap-col">
                   <div class="hq-data-map-header">
                     <span class="hq-data-map-title">SITE SURVEY MAP</span>
-                    <span class="hq-data-map-hint">tap a tile for details</span>
+                    <span class="hq-data-sel-count" id="data-sel-count" hidden></span>
+                    <span class="hq-data-map-hint">tap or drag tiles to select</span>
                   </div>
                   <div class="hq-data-minimap-wrap">
                     <canvas id="data-minimap" width="400" height="400"></canvas>
@@ -274,14 +274,6 @@
                   <button id="hq-order-compactor-fs" class="hq-order-btn">Order Compactor</button>
                 </div>
               </div>
-            </div>
-            <div id="hq-section-zoning" class="hq-fs-section" style="display:none">
-              <div class="hq-fs-status">
-                <div class="hq-fs-status-label">ZONING</div>
-                <div class="hq-fs-status-text">Paint scanned land by zone type</div>
-              </div>
-              <div id="hq-zoning-buttons" class="hq-zoning-grid"></div>
-              <div id="hq-zoning-hint" class="hq-zoning-hint">Select a zone type, then Deploy to paint it onto scanned land</div>
             </div>
             <div class="hq-fs-footer" id="hq-fs-footer"></div>
           </div>
@@ -357,9 +349,9 @@
       </div>
     </div>
 
-    <!-- Fullscreen toggle: top-left corner, always accessible. Visible on
-         both desktop and mobile; icon flips between expand/compress via
-         js/fullscreen.js. -->
+    <!-- Fullscreen toggle: top-right corner (same as the title-screen
+         toggle), always accessible. Visible on both desktop and mobile;
+         icon flips between expand/compress via js/fullscreen.js. -->
     <button id="fs-btn" class="fs-btn" type="button" aria-label="Toggle fullscreen">
       <svg class="fs-icon-expand" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
@@ -373,10 +365,10 @@
     <script src="js/isoGrid.js"></script>
     <script src="js/terrain.js"></script>
     <script src="js/hqCityBuilderSVG.js"></script>
-    <script src="js/blockRender.js"></script>
-    <script src="js/input.js"></script>
-    <script src="js/panel.js"></script>
-    <script src="js/gameState.js"></script>
+    <script src="js/blockRender.js?v=3"></script>
+    <script src="js/input.js?v=2"></script>
+    <script src="js/panel.js?v=2"></script>
+    <script src="js/gameState.js?v=2"></script>
       <script src="js/ui.js"></script>
     <script src="js/landData.js"></script>
     <script src="js/gprDeploy.js"></script>
@@ -384,11 +376,12 @@
     <script src="js/compactorTool.js"></script>
     <script src="js/droneDeploy.js"></script>
     <script src="js/buildMenu.js"></script>
-    <script src="js/dataMap.js"></script>
-    <script src="js/hqPanel.js"></script>
-    <script src="js/main.js"></script>
+    <script src="js/zoningTool.js?v=3"></script>
+    <script src="js/dataMap.js?v=4"></script>
+    <script src="js/hqPanel.js?v=3"></script>
+    <script src="js/main.js?v=2"></script>
     <script src="js/mobileUI.js"></script>
-    <script src="js/fullscreen.js?v=2"></script>
+    <script src="js/fullscreen.js?v=5"></script>
     <script src="js/orientation.js"></script>
     <script src="js/startScreen.js"></script>
   </body>

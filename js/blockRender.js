@@ -152,7 +152,7 @@ window.BlockRender = (function () {
       var zd = window.GameState && window.GameState.getTileData ? window.GameState.getTileData(c, r) : null;
       var zt = zd && zd.zoneType;
       if (zt) {
-        var ZC = { residential: "#66BB6A", commercial: "#42A5F5", industrial: "#8D6E63", mining: "#FFB300" };
+        var ZC = { residential: "#66BB6A", commercial: "#42A5F5", industrial: "#8E24AA", mining: "#FFB300" };
         var zc = ZC[zt] || null;
         if (zc) {
           var zr = parseInt(zc.slice(1,3),16), zg = parseInt(zc.slice(3,5),16), zb = parseInt(zc.slice(5,7),16);
@@ -168,13 +168,15 @@ window.BlockRender = (function () {
           ctx.fill();
           ctx.restore();
         }
-        // mismatch visual cue: thin dashed amber/red border for risky zoning
+        // mismatch visual cue: thin dashed near-black border for risky zoning
+        // (deliberately NOT amber — amber already means Mining; the dash
+        // pattern carries the warning so it survives color blindness too)
         try {
           var zd2 = window.GameState && window.GameState.getTileData ? window.GameState.getTileData(c, r) : null;
           if (zd2 && zd2.zoneType && zd2.zoneMismatched) {
             ctx.save();
             ctx.setLineDash([4, 3]);
-            ctx.strokeStyle = "#FFA000";
+            ctx.strokeStyle = "#212121";
             ctx.lineWidth = 1.5;
             ctx.beginPath();
             ctx.moveTo(n.x, n.y);
@@ -1094,7 +1096,8 @@ window.BlockRender = (function () {
     if (window.DroneDeploy) window.DroneDeploy.renderMain(ctx, api.grid);
     if (window.GprDeploy) window.GprDeploy.renderMain(ctx, api.grid);
     if (window.CompactorTool) window.CompactorTool.render(ctx, api.grid);
-    if (window.ZoningTool) window.ZoningTool.render(ctx, api.grid);
+    // (no ZoningTool.render: the drag-select placement preview is gone with
+    // the standalone tool; zone tint itself renders per-tile above and stays)
     if (gc) ctx.globalCompositeOperation = gc;
   };
 

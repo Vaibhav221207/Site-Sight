@@ -5,13 +5,14 @@
  * through exactly ONE pointerdown/pointermove/pointerup triple on the
  * canvas, which dispatches to the active mode's handler and returns.
  *
- * Modes: 'idle' (default), 'placing-hq', 'compacting', 'zoning',
+ * Modes: 'idle' (default), 'placing-hq', 'compacting',
  *        'deploying-drone' (whole-map, no click target, kept for symmetry)
  * Idle is the only mode that shows HQ terminal or tile popup.
- * Any non-idle mode consumes the click entirely.
+ * Any non-idle mode consumes the click entirely. (Zoning lives in the DATA
+ * tab mini-map now — there is no canvas zoning mode anymore.)
  *
  * Pan (5px drag threshold) works in idle; drag-select preview works in
- * compacting/zoning; pinch-zoom is not handled here (DataMap owns its
+ * compacting; pinch-zoom is not handled here (DataMap owns its
  * minimap pinch, main map uses pointer-drag pan only) and is left
  * untouched so it cannot conflict.
  */
@@ -20,7 +21,7 @@ window.InputHandler = (function () {
   var DRAG_THRESHOLD = 5;
 
   // ---- single source of truth ----
-  var InteractionState = { mode: 'idle' }; // 'idle' | 'placing-hq' | 'compacting' | 'zoning' | 'deploying-drone'
+  var InteractionState = { mode: 'idle' }; // 'idle' | 'placing-hq' | 'compacting' | 'deploying-drone'
 
   var api = {
     canvas: null,
@@ -36,8 +37,6 @@ window.InputHandler = (function () {
     _lastPos: { x: 0, y: 0 },
     _compactorDragStart: null,
     _compactorSelectionEnd: null,
-    _zoningDragStart: null,
-    _zoningSelectionEnd: null,
     _cursor: "grab",
     // backward-compat mirrors (derived from InteractionState.mode, not independent)
     _placementMode: false,
@@ -47,7 +46,7 @@ window.InputHandler = (function () {
   // keep legacy booleans in sync for callers that still read them
   function syncLegacyFlags() {
     var m = InteractionState.mode;
-    api._placementMode = (m === 'placing-hq' || m === 'compacting' || m === 'zoning');
+    api._placementMode = (m === 'placing-hq' || m === 'compacting');
     api._droneMode = (m === 'deploying-drone');
     // legacy alias used by some callers
     api._compactorDragSelect = (m === 'compacting' && api._pressed && !!api._compactorDragStart);
@@ -57,7 +56,7 @@ window.InputHandler = (function () {
     InteractionState.mode = mode;
     syncLegacyFlags();
     // cursor management per mode
-    if (mode === 'placing-hq' || mode === 'compacting' || mode === 'zoning') {
+    if (mode === 'placing-hq' || mode === 'compacting') {
       api.setCursor("crosshair");
     } else if (mode === 'idle') {
       api.setCursor("grab");
@@ -70,7 +69,7 @@ window.InputHandler = (function () {
   api.isPlacementMode = function () { return api._placementMode; };
   api.setPlacementMode = function (v) {
     // true means placing-hq (BuildMenu/HQBuild path); false means idle
-    // Compactor/Zoning callers should use api.setMode('compacting'/'zoning') directly
+    // Compactor callers should use api.setMode('compacting') directly
     if (v) {
       if (InteractionState.mode === 'idle') api.setMode('placing-hq');
     } else {
@@ -154,14 +153,6 @@ window.InputHandler = (function () {
     // when mode === 'compacting'. If a click without drag occurs, do nothing.
   }
 
-  function handleZoningClick(pos, tile) {
-    // Placeholder for future zoning tool — mirrors compactor drag-select
-    // If a Zoning tool exists, delegate to it; otherwise ignore
-    if (window.ZoningTool && window.ZoningTool.attempt) {
-      window.ZoningTool.attempt(tile.col, tile.row);
-    }
-  }
-
   function handleIdleClick(pos, tile) {
     // HQ tile always opens terminal, never the small popup
     var isHq = false;
@@ -201,10 +192,6 @@ window.InputHandler = (function () {
       api._compactorDragStart = pos;
       api._compactorSelectionEnd = pos;
       window.CompactorTool.setPreview(pos, pos);
-    } else if (InteractionState.mode === 'zoning' && window.ZoningTool && window.ZoningTool.isActive) {
-      api._zoningDragStart = pos;
-      api._zoningSelectionEnd = pos;
-      if (window.ZoningTool.setPreview) window.ZoningTool.setPreview(pos, pos);
     } else if (InteractionState.mode === 'idle' && !api._droneMode) {
       api.canvas.style.cursor = "grabbing";
     }
@@ -228,13 +215,6 @@ window.InputHandler = (function () {
       if (window.BlockRender) window.BlockRender.invalidate();
       return;
     }
-    if (InteractionState.mode === 'zoning' && window.ZoningTool && window.ZoningTool.isActive) {
-      api._zoningSelectionEnd = pos;
-      if (window.ZoningTool.setPreview) window.ZoningTool.setPreview(api._zoningDragStart, pos);
-      if (window.BlockRender) window.BlockRender.invalidate();
-      return;
-    }
-
     var dx = pos.x - api._lastPos.x;
     var dy = pos.y - api._lastPos.y;
     var dist = Math.sqrt(dx * dx + dy * dy);
@@ -264,7 +244,7 @@ window.InputHandler = (function () {
     if (api.canvas.releasePointerCapture) {
       try { api.canvas.releasePointerCapture(evt.pointerId); } catch (e) {}
     }
-    if (InteractionState.mode !== 'compacting' && InteractionState.mode !== 'zoning') {
+    if (InteractionState.mode !== 'compacting') {
       api.canvas.style.cursor = api._cursor;
     }
 
@@ -311,30 +291,6 @@ window.InputHandler = (function () {
       return;
     }
 
-    // ---- zoning drag-select completion (Step 3: lock-in + cost breakdown, not immediate confirm) ----
-    if (InteractionState.mode === 'zoning' && window.ZoningTool && window.ZoningTool.isActive) {
-      var zoneStart = api._zoningDragStart;
-      api._zoningDragStart = null;
-      api._zoningSelectionEnd = null;
-      if (!zoneStart) {
-        if (window.ZoningTool.clearPreview) window.ZoningTool.clearPreview();
-        if (window.BlockRender) window.BlockRender.invalidate();
-        return;
-      }
-      var zStartTile = api.grid.screenToTile(zoneStart.x, zoneStart.y);
-      var zEndTile = api.grid.screenToTile(pos.x, pos.y);
-      if (zStartTile && zEndTile && window.ZoningTool.lockSelection) {
-        var zSel = { startCol: Math.min(zStartTile.col, zEndTile.col), endCol: Math.max(zStartTile.col, zEndTile.col),
-                     startRow: Math.min(zStartTile.row, zEndTile.row), endRow: Math.max(zStartTile.row, zEndTile.row) };
-        window.ZoningTool.lockSelection(zSel);
-        if (window.BlockRender) window.BlockRender.invalidate();
-      } else {
-        if (window.ZoningTool.clearPreview) window.ZoningTool.clearPreview();
-        if (window.BlockRender) window.BlockRender.invalidate();
-      }
-      return;
-    }
-
     if (moved >= DRAG_THRESHOLD) return; // was a pan, not a click
 
     // Dismiss popup on any tap in idle (so it never blocks map on mobile)
@@ -359,10 +315,6 @@ window.InputHandler = (function () {
     }
     if (InteractionState.mode === 'compacting') {
       handleCompactingClick(pos, tile);
-      return;
-    }
-    if (InteractionState.mode === 'zoning') {
-      handleZoningClick(pos, tile);
       return;
     }
     if (InteractionState.mode === 'deploying-drone') {
@@ -433,9 +385,6 @@ window.InputHandler = (function () {
     if (InteractionState.mode === 'compacting') {
       return !!(window.CompactorTool && window.CompactorTool.isValidTile && window.CompactorTool.isValidTile(c, r));
     }
-    if (InteractionState.mode === 'zoning') {
-      return !!(window.ZoningTool && window.ZoningTool.isValid && window.ZoningTool.isValid(c, r));
-    }
     if (InteractionState.mode === 'deploying-drone') {
       return !!(window.DroneDeploy && window.DroneDeploy.isValid && window.DroneDeploy.isValid(c, r));
     }
@@ -451,7 +400,7 @@ window.InputHandler = (function () {
     return (window.GameState.hqTile && window.GameState.hqTile.col === c && window.GameState.hqTile.row === r);
   };
   api.isScanBusy = isScanBusy;
-  api.isPlacementMode = function () { return InteractionState.mode === 'placing-hq' || InteractionState.mode === 'compacting' || InteractionState.mode === 'zoning'; };
+  api.isPlacementMode = function () { return InteractionState.mode === 'placing-hq' || InteractionState.mode === 'compacting'; };
   api.setPlacementMode = function (v) {
     if (v) { if (InteractionState.mode === 'idle') api.setMode('placing-hq'); }
     else { if (InteractionState.mode === 'placing-hq') api.setMode('idle'); }

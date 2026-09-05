@@ -128,7 +128,7 @@ window.GameState = (function () {
 
   // get (and lazily create) the data record for a tile. Record shape:
   //   droneScanned, gprScanned, surfaceStability, soilType, mineralDeposits,
-  //   bedrockDepth, bestUse
+  //   bedrockDepth, bestUse, zoneType, zoneMismatched
   api.getTileData = function (col, row) {
     if (isHqTile(col, row)) {
       // HQ replaces the tile — no survey data, just HQ sentinel (never "Not yet scanned")
@@ -155,6 +155,7 @@ window.GameState = (function () {
         bedrockDepth: null,       // "Shallow" | "Moderate" | "Deep"
         bestUse: null,            // computed, see computeBestUse
         zoneType: null,           // "residential" | "commercial" | "industrial" | "mining" | null
+        zoneMismatched: null,     // true when zoneType disagrees with bestUse (set on confirm)
       };
     }
     return api.tileData[k];

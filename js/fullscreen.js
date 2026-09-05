@@ -1,7 +1,9 @@
 /* js/fullscreen.js — fullscreen toggle for Site Sight.
  *
- * A small icon button (top-left corner) lets the user enter/exit
- * fullscreen on both desktop and mobile. After entering fullscreen,
+ * A small icon button (top-right corner, same spot as the title-screen
+ * toggle) lets the user enter/exit fullscreen on desktop and mobile.
+ * After entering fullscreen, a best-effort landscape orientation lock is
+ * attempted (fullscreen is often a prerequisite for orientation lock).
  * a best-effort landscape orientation lock is attempted (fullscreen
  * is often a prerequisite for orientation lock on iOS/Android).
  *
@@ -24,7 +26,13 @@ window.Fullscreen = (function () {
                document.msFullscreenElement);
   }
 
+  // true while a fullscreen request is awaiting its promise: extra taps in
+  // that window are ignored (a second requestFullscreen while one is pending
+  // rejects with a gesture error — harmless, but noisy).
+  var fsPending = false;
+
   function syncIcon() {
+    fsPending = false; // the platform settled: accept taps again
     api.active = isFullscreen();
     btns.forEach(function (b) {
       var ex = b.querySelector(".fs-icon-expand");
@@ -45,11 +53,28 @@ window.Fullscreen = (function () {
     }
   }
 
+  // Routine rejections (double-tap races, consumed gestures) are expected
+  // and self-heal on the next tap: console-only, never the red banner. The
+  // banner stays reserved for structural breakage (no API at all).
+  function noteRejection(err) {
+    try {
+      console.warn("[Fullscreen] enter rejected (benign, next tap retries): " +
+        (err && err.name) + " " + (err && err.message));
+    } catch (e) {}
+  }
+
   function toggle() {
     if (!docEl) { note("no docEl"); return; }
+    if (fsPending) return; // request already in flight — ignore re-entrant tap
     if (isFullscreen()) {
       if (exitFS) {
-        try { exitFS.call(document); }
+        try {
+          var q = exitFS.call(document);
+          if (q && typeof q.then === "function") {
+            fsPending = true;
+            q.then(function () { fsPending = false; }, function () { fsPending = false; });
+          }
+        }
         catch (e) { note("exit threw: " + e.message); }
       } else {
         note("no exit API");
@@ -59,10 +84,9 @@ window.Fullscreen = (function () {
       try {
         var p = enterFS.call(docEl);
         if (p && typeof p.then === "function") {
-          p.then(function () { tryLockLandscape(); })
-           .catch(function (err) {
-             note("enter rejected: " + (err && err.name) + " @" + location.protocol);
-           });
+          fsPending = true;
+          p.then(function () { fsPending = false; tryLockLandscape(); })
+           .catch(function (err) { fsPending = false; noteRejection(err); });
         } else {
           // older browsers return undefined — lock after a short delay
           setTimeout(tryLockLandscape, 300);
@@ -155,10 +179,12 @@ window.Fullscreen = (function () {
       document.body.appendChild(btn);
       bindBtn(btn);
     }
-    // Ensure it's visible and on top
+    // Ensure it's visible, tappable and on top (pointerEvents:auto defeats
+    // any stray inherited 'none' that would swallow taps silently)
     btn.style.display = 'flex';
     btn.style.opacity = '1';
     btn.style.visibility = 'visible';
+    btn.style.pointerEvents = 'auto';
     btn.style.zIndex = '20000';
     // Re-sync icon
     syncIcon();
