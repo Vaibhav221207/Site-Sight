@@ -168,10 +168,10 @@ window.Economy = (function () {
     return pickWeighted(weights, order, randFn());
   }
 
-  // No category may be stabilized past 60% of the map: a capped category
+  // No category may be stabilized past 55% of the map: a capped category
   // gets weight 0 (at most one category can ever trip the cap, but the
   // all-zero fallback keeps the roll total sane regardless).
-  var STABILIZE_CAP = 0.60;
+  var STABILIZE_CAP = 0.55;
 
   api.pickStabilized = function (col, row, randFn) {
     var rand = (typeof randFn === "function") ? randFn : Math.random;
