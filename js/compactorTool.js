@@ -27,6 +27,10 @@ window.CompactorTool = (function () {
 
   // ---- entry point from BuildMenu ----
   api.startPlacement = function () {
+    // progression-ready guard: placement needs an owned compactor (the UI
+    // only offers it to owners, so this changes no live flow — it just
+    // fails cleanly instead of arming a dead mode).
+    if (!(window.GameState && window.GameState.compactorSystemPurchased)) return false;
     api.isActive = true;
     api._selection = null;
     api._selectionStart = null;

@@ -1326,6 +1326,84 @@ body.touch-ui .hq-fs-nav-item {
   text-align: center;
 }
 
+/* ---- DATA tab: building picker cards (one step past the zone keys) ----
+   Same sticker recipe; name + price lead, stats second, blurb last. */
+.hq-data-bld-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.hq-data-bld-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+  padding: 8px 10px;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 12px;
+  box-shadow: 2px 2px 0 #000;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: transform 0.09s ease, box-shadow 0.09s ease, background 0.15s ease;
+}
+
+.hq-data-bld-card:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 transparent;
+}
+
+.hq-data-bld-card--active {
+  background: #FFE9B8;
+}
+
+.hq-data-bld-name {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #2B2320;
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.hq-data-bld-cost {
+  color: #0E8A5A;
+  white-space: nowrap;
+}
+
+.hq-data-bld-stats {
+  font-size: 10px;
+  font-weight: 700;
+  color: #6B5B4F;
+}
+
+.hq-data-bld-pips {
+  letter-spacing: 1px;
+  color: #B7791F;
+}
+
+.hq-data-bld-blurb {
+  font-size: 10px;
+  line-height: 1.4;
+  color: #6B5B4F;
+  word-break: break-word;
+}
+
+/* contradiction verdict colors: amber warns, red refuses-at-risk */
+.hq-data-verdict-mild {
+  color: #B7791F;
+  font-weight: 700;
+}
+
+.hq-data-verdict-severe {
+  color: #C0392B;
+  font-weight: 700;
+}
+
 /* DATA tab earns a wider sheet on desktop: the map keeps its majority share
    while the details column finally fits full key labels + survey rows
    without squeezing. Scoped to wide viewports so mobile sheets are untouched. */
@@ -1487,6 +1565,10 @@ body.touch-ui .hq-fs-nav-item {
      Single column here: full-width rows are always legible and tappable,
      and the column scrolls for the rest. */
   .hq-data-zone-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .hq-data-bld-grid {
     grid-template-columns: 1fr;
     gap: 6px;
   }

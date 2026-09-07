@@ -132,7 +132,10 @@ window.ZoningTool = (function () {
       var d = window.GameState.getTileData(t.col, t.row);
       d.zoneType = zone;
       d.zoneMismatched = !isMatch(zone, d.bestUse);
-      if (window.GameState.recalcBestUse) window.GameState.recalcBestUse(t.col, t.row);
+      // NOTE: no recalcBestUse here on purpose — zoning changes no scan
+      // fields, and recomputing would wipe the post-sweep clustering nudge
+      // (smoothBestUseForArea), leaving the flag disagreeing with the
+      // displayed Best Use the permit was charged against.
     }
     if (window.BlockRender) {
       window.BlockRender.invalidate();

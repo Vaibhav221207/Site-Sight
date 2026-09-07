@@ -29,6 +29,7 @@ window.DataMap = (function () {
     selected: null,   // alias: first tile of selection (compat) | null
     selection: [],    // [{ col, row }] in select order — the zoning working set
     pendingZone: null, // zone id with an open inline confirm | null
+    pendingBuilding: null, // building id picked inside the zone | null
     lastZoneMsg: "",   // success line shown once after a confirm
     drag: null,        // active mini-map drag { anchor, end, moved, select }
     suppressClick: false, // set when pointer handlers already committed a selection
@@ -223,6 +224,14 @@ window.DataMap = (function () {
           roundedRectPath(ctx, col * cell, row * cell, cell, cell, radius);
           ctx.fill();
           ctx.restore();
+          if (zd.zoneBuilding) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(col * cell + cell / 2, row * cell + cell / 2, Math.max(1.5, cell * 0.12), 0, Math.PI * 2);
+            ctx.fillStyle = "#2B2320";
+            ctx.fill();
+            ctx.restore();
+          }
           // zoned mark: inner ink border (dashed near-black when mismatched).
           // The color wash alone is invisible on matched tiles (same hue as
           // the fill), so the border carries the "this tile is zoned" signal.
@@ -236,6 +245,38 @@ window.DataMap = (function () {
           }
           ctx.lineWidth = Math.max(2, cell * 0.14);
           roundedRectPath(ctx, col * cell + 3, row * cell + 3, cell - 6, cell - 6, Math.max(1, radius * 0.6));
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+    }
+
+    // 1c) pollution stain — sickly olive wash scaled by stain level, plus a
+    // dark X on blighted tiles. Applies to any tile (spread stains even
+    // unbuilt land), drawn over zone tint so hazard always reads.
+    for (var pr = 0; pr < g; pr++) {
+      for (var pc = 0; pc < g; pc++) {
+        var pd = window.GameState.getTileData(pc, pr);
+        var stain = (pd && pd.pollution) || 0;
+        if (!pd || (!(stain > 0) && !pd.blighted)) continue;
+        var px = pc * cell, py = pr * cell;
+        if (stain > 0) {
+          ctx.save();
+          ctx.globalAlpha = 0.15 + 0.45 * Math.min(1, stain / 100);
+          ctx.fillStyle = "#7A7A2E";
+          roundedRectPath(ctx, px, py, cell, cell, radius);
+          ctx.fill();
+          ctx.restore();
+        }
+        if (pd.blighted) {
+          ctx.save();
+          ctx.strokeStyle = "#212121";
+          ctx.lineWidth = Math.max(2, cell * 0.12);
+          ctx.beginPath();
+          ctx.moveTo(px + 2, py + 2);
+          ctx.lineTo(px + cell - 2, py + cell - 2);
+          ctx.moveTo(px + cell - 2, py + 2);
+          ctx.lineTo(px + 2, py + cell - 2);
           ctx.stroke();
           ctx.restore();
         }
@@ -347,6 +388,7 @@ window.DataMap = (function () {
     api.selection = out;
     api.selected = out.length ? out[0] : null;
     api.pendingZone = null;
+    api.pendingBuilding = null;
     render();
     renderSelection();
     updateSelBadge();
@@ -397,11 +439,22 @@ window.DataMap = (function () {
     return html;
   }
 
-  // ---- DESIGNATE ZONE (zoning merged into tile review) --------------------
-  // One zone button per type in established category colors; tapping one
-  // opens an inline cost confirm (match/mismatch aware) with its own
-  // Confirm — no separate screen, no placement cursor. Re-tapping the
-  // active type cancels. Buttons disable when nothing selected is zonable.
+  // ---- DESIGNATE ZONE + BUILDINGS -----------------------------------------
+  // Zone button -> building cards (2 per zone) -> inline confirm with batch
+  // totals (permit + building − resource payout) and the worst contradiction
+  // verdict across the selection. Re-tapping cancels. No separate screen.
+
+  function pollutionPips(n) {
+    var s = "";
+    for (var i = 0; i < 3; i++) s += i < n ? "●" : "○";
+    return s;
+  }
+
+  function buildingSub(spec) {
+    if (spec.role === "booster") return "+" + Math.round(spec.boost * 100) + "% neighbors";
+    if (spec.role === "extractor") return "$" + spec.incomePerTick + "/tick + payout";
+    return "$" + spec.incomePerTick + "/tick";
+  }
 
   function zoneButtonHTML(z, enabled, active) {
     var extra = "";
@@ -437,7 +490,8 @@ window.DataMap = (function () {
       html += '<div class="hq-data-zone-note">' +
         (v.unscannedLand > 0 ? 'Complete scanning to designate a zone' : 'No zonable land in selection') + '</div>';
     } else if (api.pendingZone) {
-      html += confirmBoxHTML(sel, v);
+      html += buildingCardsHTML(sel, v);
+      if (api.pendingBuilding) html += confirmBoxHTML(sel, v);
     } else if (v.invalid > 0) {
       html += '<div class="hq-data-zone-note">' + v.invalid + ' tile(s) excluded (unscanned or unzonable)</div>';
     }
@@ -445,26 +499,85 @@ window.DataMap = (function () {
     return html;
   }
 
+  function buildingCardsHTML(sel, v) {
+    var bl = window.Buildings;
+    if (!bl) return "";
+    var cards = bl.byZone(api.pendingZone);
+    var html = '<div class="hq-data-bld-grid">';
+    for (var i = 0; i < cards.length; i++) {
+      var s = cards[i];
+      var active = api.pendingBuilding === s.id;
+      html += '<button type="button" class="hq-data-bld-card' + (active ? ' hq-data-bld-card--active' : '') +
+        '" data-building="' + s.id + '">' +
+        '<span class="hq-data-bld-name">' + s.label + ' <span class="hq-data-bld-cost">$' + s.buildCost.toLocaleString() + '</span></span>' +
+        '<span class="hq-data-bld-stats">' + buildingSub(s) + ' · <span class="hq-data-bld-pips" title="pollution">' + pollutionPips(s.pollutionPerTick) + '</span></span>' +
+        '<span class="hq-data-bld-blurb">' + s.blurb + '</span>' +
+      '</button>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function netButtonLabel(net) {
+    return net < 0 ? "Confirm +$" + Math.abs(net).toLocaleString() : "Build — $" + net.toLocaleString();
+  }
+  function netSigned(net) {
+    return net < 0 ? "+$" + Math.abs(net).toLocaleString() : "$" + net.toLocaleString();
+  }
+
+  function worstVerdict(v) {
+    var bl = window.Buildings;
+    var worst = "ok", nWorst = 0;
+    for (var i = 0; i < v.valid.length; i++) {
+      var t = v.valid[i];
+      var d = window.GameState.getTileData(t.col, t.row);
+      var vd = bl ? bl.verdictFor(api.pendingZone, d ? d.bestUse : null) : "ok";
+      if (vd === "severe") {
+        if (worst !== "severe") { worst = "severe"; nWorst = 0; }
+        nWorst++;
+      } else if (vd === "mild" && worst === "ok") {
+        worst = "mild";
+        nWorst++;
+      } else if (vd === "mild") {
+        if (worst === "mild") nWorst++;
+      }
+    }
+    return { verdict: worst, count: nWorst, total: v.valid.length };
+  }
+
   function confirmBoxHTML(sel, v) {
-    var zt = window.ZoningTool;
-    var b = zt.getCostForTiles(v.valid, api.pendingZone);
-    if (!b) return "";
+    var bl = window.Buildings;
+    var spec = bl ? bl.byId(api.pendingBuilding) : null;
+    if (!spec) return "";
+    var permit = 0, payout = 0;
+    for (var i = 0; i < v.valid.length; i++) {
+      var p = bl.priceFor(v.valid[i].col, v.valid[i].row, api.pendingZone, spec.id);
+      if (!p) continue;
+      permit += p.permit;
+      payout += p.payout;
+    }
+    var build = spec.buildCost * v.valid.length;
+    var net = permit + build - payout;
     var cash = window.GameState ? window.GameState.cash : 0;
-    var line = (sel.length === 1 && v.valid.length === 1)
-      ? zt.singleTileText(sel[0].col, sel[0].row, api.pendingZone)
-      : zt.breakdownText(b);
-    var afford = cash >= b.totalCost;
+    var w = worstVerdict(v);
+    var afford = cash >= net;
     var html = '<div class="hq-data-zone-confirm">';
-    html += '<div class="hq-data-zone-cost">' + line + '</div>';
+    html += '<div class="hq-data-zone-cost">' + spec.label + ' × ' + v.valid.length +
+      ' — permit $' + permit.toLocaleString() + ' + build $' + build.toLocaleString() + '</div>';
+    if (payout > 0) html += '<div class="hq-data-zone-cost">Resource payout −$' + payout.toLocaleString() + '</div>';
+    var vcls = w.verdict === "ok" ? "" : (w.verdict === "mild" ? " hq-data-verdict-mild" : " hq-data-verdict-severe");
+    var vtxt = bl.verdictCopy(w.verdict);
+    if (w.verdict !== "ok" && w.count < w.total) vtxt += " · " + w.count + " of " + w.total + " tiles";
+    html += '<div class="hq-data-zone-note' + vcls + '">' + vtxt + '</div>';
     if (v.invalid > 0) {
       html += '<div class="hq-data-zone-note">' + v.invalid + ' tile(s) excluded (unscanned or unzonable)</div>';
     }
     if (afford) {
-      html += '<button type="button" class="hq-order-btn hq-data-zone-confirm-btn" data-confirm="1">Confirm — $' +
-        b.totalCost.toLocaleString() + '</button>';
+      html += '<button type="button" class="hq-order-btn hq-data-zone-confirm-btn" data-confirm="1">' +
+        netButtonLabel(net) + '</button>';
     } else {
       html += '<button type="button" class="hq-order-btn hq-data-zone-confirm-btn" data-confirm="1" disabled>Insufficient funds</button>' +
-        '<div class="hq-data-zone-note">Have $' + cash.toLocaleString() + ' of $' + b.totalCost.toLocaleString() + '</div>';
+        '<div class="hq-data-zone-note">Have $' + cash.toLocaleString() + ' of $' + net.toLocaleString() + '</div>';
     }
     html += '</div>';
     return html;
@@ -479,26 +592,182 @@ window.DataMap = (function () {
           if (btn.disabled) return;
           var z = btn.getAttribute ? btn.getAttribute("data-zone") : (btn.dataset && btn.dataset.zone);
           api.pendingZone = (api.pendingZone === z) ? null : z; // re-tap cancels
+          api.pendingBuilding = null;
           renderSelection();
         });
       })(zbtns[i]);
+    }
+    var bbtns = api.detailsEl.querySelectorAll("[data-building]");
+    for (var k = 0; k < bbtns.length; k++) {
+      (function (btn) {
+        btn.addEventListener("click", function () {
+          if (btn.disabled) return;
+          var id = btn.getAttribute ? btn.getAttribute("data-building") : null;
+          api.pendingBuilding = (api.pendingBuilding === id) ? null : id; // re-tap cancels
+          renderSelection();
+        });
+      })(bbtns[k]);
+    }
+    var sbtns = api.detailsEl.querySelectorAll("[data-scrub]");
+    for (var s = 0; s < sbtns.length; s++) {
+      (function (btn) {
+        btn.addEventListener("click", function () {
+          if (btn.disabled || !window.Economy || !api.selected) return;
+          var res = window.Economy.scrubTile(api.selected.col, api.selected.row);
+          if (res && res.ok) {
+            api.lastZoneMsg = "Scrubbed " + api.selected.col + "," + api.selected.row + " clean — $" +
+              (window.Economy.SCRUB_COST || 150).toLocaleString();
+          } else if (res && res.reason === "funds") {
+            api.lastZoneMsg = "";
+          }
+          api.refresh();
+        });
+      })(sbtns[s]);
+    }
+    var bbtns2 = api.detailsEl.querySelectorAll("[data-stabilize-batch]");
+    for (var b2 = 0; b2 < bbtns2.length; b2++) {
+      (function (btn) {
+        btn.addEventListener("click", function () {
+          if (btn.disabled || !window.Economy) return;
+          var bad = unsuitableIn(api.selection);
+          if (!bad.length) return;
+          var fee = window.Economy.STABILIZE_COST || 500;
+          if ((window.GameState ? window.GameState.cash : 0) < bad.length * fee) {
+            api.lastZoneMsg = "";
+            api.refresh();
+            return;
+          }
+          var tally = {}, paid = 0, done = 0;
+          for (var i = 0; i < bad.length; i++) {
+            var res = window.Economy.stabilizeTile(bad[i].col, bad[i].row);
+            if (res && res.ok) {
+              paid += res.net;
+              done++;
+              tally[res.bestUse] = (tally[res.bestUse] || 0) + 1;
+            }
+          }
+          var parts = [];
+          for (var k in tally) {
+            if (Object.prototype.hasOwnProperty.call(tally, k)) parts.push(tally[k] + " " + k);
+          }
+          api.lastZoneMsg = "Stabilized " + done + " tile(s) (" + parts.join(", ") + ") — $" + paid.toLocaleString();
+          api.refresh();
+        });
+      })(bbtns2[b2]);
+    }
+    var tbtns = api.detailsEl.querySelectorAll("[data-stabilize]");
+    for (var t = 0; t < tbtns.length; t++) {
+      (function (btn) {
+        btn.addEventListener("click", function () {
+          if (btn.disabled || !window.Economy || !api.selected) return;
+          var res = window.Economy.stabilizeTile(api.selected.col, api.selected.row);
+          if (res && res.ok) {
+            api.lastZoneMsg = "Stabilized " + api.selected.col + "," + api.selected.row + " → " + res.bestUse +
+              " — $" + res.net.toLocaleString();
+          }
+          api.refresh();
+        });
+      })(tbtns[t]);
     }
     var cbtns = api.detailsEl.querySelectorAll("[data-confirm]");
     for (var j = 0; j < cbtns.length; j++) {
       (function (btn) {
         btn.addEventListener("click", function () {
-          if (btn.disabled || !api.pendingZone || !window.ZoningTool) return;
+          if (btn.disabled || !api.pendingZone || !api.pendingBuilding || !window.Buildings) return;
           var v = selectionValidity();
-          var res = window.ZoningTool.confirmZoning(v.valid, api.pendingZone);
+          var res = window.Buildings.confirmPurchase(v.valid, api.pendingZone, api.pendingBuilding);
           if (res && res.ok) {
-            api.lastZoneMsg = "Zoned " + res.breakdown.validTiles.length + " tile(s) as " +
-              window.ZoningTool.zoneLabelFor(api.pendingZone) + " — $" + res.breakdown.totalCost.toLocaleString();
+            api.lastZoneMsg = "Built " + res.spec.label + " ×" + res.count + " — " + netSigned(res.net);
             api.pendingZone = null;
+            api.pendingBuilding = null;
           }
           api.refresh();
         });
       })(cbtns[j]);
     }
+  }
+
+  // ground-condition readout + compactor scrub action. Single tile gets the
+  // full readout and the scrub key; multi-select only reports the count
+  // (scrubbing is one tile at a time, like a work order).
+  function conditionHTML(sel) {
+    var ec = window.Economy;
+    var html = "";
+    if (sel.length === 1) {
+      var t = sel[0];
+      var d = window.GameState.getTileData(t.col, t.row);
+      var stain = (d && d.pollution) || 0;
+      if (d && (d.blighted || stain > 0)) {
+        html += '<div class="hq-data-zone-note' + (d.blighted ? ' hq-data-verdict-severe' : '') + '">';
+        html += d.blighted ? 'Blighted — earns $0 until scrubbed'
+          : ('Ground stain ' + Math.round(stain) + '%' + (stain >= 60 ? ' — income −50%' : ''));
+        html += '</div>';
+        var owned = !!(window.GameState && window.GameState.compactorSystemPurchased);
+        var fee = (ec && ec.SCRUB_COST) || 150;
+        if (owned) {
+          html += '<button type="button" class="hq-order-btn hq-data-zone-confirm-btn" data-scrub="1">Scrub — $' +
+            fee.toLocaleString() + '</button>';
+        } else {
+          html += '<div class="hq-data-zone-note">Scrubbing needs the Dynamic Compactor (STORE)</div>';
+        }
+      }
+    } else if (sel.length > 1) {
+      var n = 0;
+      for (var i = 0; i < sel.length; i++) {
+        var dd = window.GameState.getTileData(sel[i].col, sel[i].row);
+        if (dd && (dd.blighted || (dd.pollution || 0) > 0)) n++;
+      }
+      if (n > 0) html += '<div class="hq-data-zone-note">' + n + ' selected tile(s) stained — select one to scrub</div>';
+    }
+    return html;
+  }
+
+  // stabilize box: Unsuitable tiles can be reclaimed. Single tile gets the
+  // solo work order; multi-select batches every Unsuitable tile at once
+  // (same drag flow as zoning — no tile-by-tile clicking).
+  function unsuitableIn(sel) {
+    var out = [];
+    for (var i = 0; i < sel.length; i++) {
+      var d = window.GameState.getTileData(sel[i].col, sel[i].row);
+      if (d && d.bestUse === "Unsuitable") out.push(sel[i]);
+    }
+    return out;
+  }
+  function stabilizeHTML(sel) {
+    if (!sel.length || !window.Economy) return "";
+    var fee = window.Economy.STABILIZE_COST || 500;
+    var owned = !!(window.GameState && window.GameState.compactorSystemPurchased);
+    var html = "";
+    if (sel.length === 1) {
+      var d = window.GameState.getTileData(sel[0].col, sel[0].row);
+      if (!d || d.bestUse !== "Unsuitable") return "";
+      html += '<div class="hq-data-zone-note">Unstable ground — reclaim as buildable land (outcome follows surroundings)</div>';
+      if (owned) {
+        html += '<button type="button" class="hq-order-btn hq-data-zone-confirm-btn" data-stabilize="1">Stabilize — $' +
+          fee.toLocaleString() + '</button>';
+      } else {
+        html += '<div class="hq-data-zone-note">Reclaiming needs the Dynamic Compactor (STORE)</div>';
+      }
+      return html;
+    }
+    // multi-select: batch every Unsuitable tile in one work order
+    var bad = unsuitableIn(sel);
+    if (!bad.length) return "";
+    var total = bad.length * fee;
+    var cash = window.GameState ? window.GameState.cash : 0;
+    html += '<div class="hq-data-zone-note">' + bad.length + ' unstable tile(s) — reclaim as buildable land (each outcome follows its surroundings)</div>';
+    if (owned) {
+      if (cash >= total) {
+        html += '<button type="button" class="hq-order-btn hq-data-zone-confirm-btn" data-stabilize-batch="1">Stabilize ' +
+          bad.length + ' — $' + total.toLocaleString() + '</button>';
+      } else {
+        html += '<button type="button" class="hq-order-btn hq-data-zone-confirm-btn" data-stabilize-batch="1" disabled>Insufficient funds</button>' +
+          '<div class="hq-data-zone-note">Have $' + cash.toLocaleString() + ' of $' + total.toLocaleString() + '</div>';
+      }
+    } else {
+      html += '<div class="hq-data-zone-note">Reclaiming needs the Dynamic Compactor (STORE)</div>';
+    }
+    return html;
   }
 
   function renderSelection() {
@@ -510,11 +779,15 @@ window.DataMap = (function () {
     } else if (sel.length === 1) {
       html = singleTileRows(sel[0].col, sel[0].row);
       html += zoneSectionHTML(sel, selectionValidity());
+      html += stabilizeHTML(sel);
+      html += conditionHTML(sel);
     } else {
       var v = selectionValidity();
       html += '<div class="hq-data-details-row"><span>Selected</span><strong>' + sel.length + ' tiles</strong></div>';
       html += '<div class="hq-data-details-row"><span>Zonable</span><strong>' + v.valid.length + ' tiles</strong></div>';
       html += zoneSectionHTML(sel, v);
+      html += stabilizeHTML(sel);
+      html += conditionHTML(sel);
     }
     if (api.lastZoneMsg) {
       html = '<div class="hq-data-zone-success">' + api.lastZoneMsg + '</div>' + html;
@@ -821,6 +1094,7 @@ window.DataMap = (function () {
     api._touch.zoom = PINCH_MIN;
     api._touch.baseWidth = 0; // re-measured in fitMap (rotation may change it)
     api.pendingZone = null; // fresh intent each open; the selection itself persists
+    api.pendingBuilding = null;
     render();
     renderCategories();
     renderSelection();

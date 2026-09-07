@@ -107,6 +107,8 @@ window.GameState = (function () {
   // ---------------------------------------------------------------------------
 
   // pick a value from a list of { value, w } using weighted randomness.
+  // Only used for display-only fields now (soil type) — everything that
+  // feeds Best Use comes from the smooth survey fields below.
   function weightedPick(options) {
     var total = 0, i;
     for (i = 0; i < options.length; i++) total += options[i].w;
@@ -118,6 +120,61 @@ window.GameState = (function () {
     return options[options.length - 1].value;
   }
 
+  // ---- seeded survey fields (districts, not dice) -------------------------
+  // Rolling every tile independently made the survey map salt-and-pepper
+  // noise. Instead stability/bedrock/minerals each sample a smooth
+  // value-noise field (two octaves), so attributes form natural blobs and
+  // Best Use reads in districts. Deterministic per map seed; falls back to
+  // a fixed constant (stable tests + first paint) when Terrain has no seed.
+  function surveySeed() {
+    var s = window.Terrain && window.Terrain.seed;
+    if (typeof s === "number" && isFinite(s)) return s >>> 0;
+    return 0x9E3779B9;
+  }
+
+  function rng32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  var fieldCache = {}; // "channel:seed" -> { n, lat }
+  function fieldLattice(channel, n) {
+    var key = channel + ":" + surveySeed();
+    if (!fieldCache[key]) {
+      var rand = rng32((surveySeed() ^ Math.imul(channel, 0x85EBCA6B)) >>> 0);
+      var lat = [];
+      for (var i = 0; i < n * n; i++) lat.push(rand());
+      fieldCache[key] = { n: n, lat: lat };
+    }
+    return fieldCache[key];
+  }
+
+  function smootherstep(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+
+  function sampleLattice(L, u, v) {
+    var n = L.n, lat = L.lat;
+    var x = Math.min(Math.max(u, 0), n - 1.001), y = Math.min(Math.max(v, 0), n - 1.001);
+    var x0 = Math.floor(x), y0 = Math.floor(y);
+    var fx = smootherstep(x - x0), fy = smootherstep(y - y0);
+    var a = lat[y0 * n + x0], b = lat[y0 * n + x0 + 1];
+    var c = lat[(y0 + 1) * n + x0], d = lat[(y0 + 1) * n + x0 + 1];
+    return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy;
+  }
+
+  // 0..1 smooth field value for (channel, tile). Coarse octave builds the
+  // blobs (~5-tile features), fine octave adds shoreline wobble.
+  function sampleField(channel, col, row) {
+    var g = (window.IsoGrid && window.IsoGrid.gridSize) || 20;
+    var u = (g <= 1) ? 0 : col / (g - 1), v = (g <= 1) ? 0 : row / (g - 1);
+    var coarse = sampleLattice(fieldLattice(channel, 5), u * 4, v * 4);
+    var fine = sampleLattice(fieldLattice(channel + 101, 9), u * 8, v * 8);
+    return coarse * 0.65 + fine * 0.35;
+  }
+
   // trench AND rock are "hazard" sites — surface stability is always Poor and
   // they read as Unsuitable, and the Dynamic Compactor can clear them to land.
   function isHazardTile(col, row) {
@@ -126,9 +183,20 @@ window.GameState = (function () {
     return t === "trench" || t === "rock";
   }
 
+  // river AND rock can never hold a Best Use — nothing builds on water or
+  // boulders. Survey still records the scans (fields fill in), but bestUse
+  // stays null so the DATA map reads them as unscanned ground under the
+  // river/rock overlays instead of fake zoning categories.
+  function isUnbuildable(col, row) {
+    if (!window.Terrain || !window.Terrain.typeAt) return false;
+    var t = window.Terrain.typeAt(col, row);
+    return t === "river" || t === "rock";
+  }
+
   // get (and lazily create) the data record for a tile. Record shape:
   //   droneScanned, gprScanned, surfaceStability, soilType, mineralDeposits,
-  //   bedrockDepth, bestUse, zoneType, zoneMismatched
+  //   bedrockDepth, bestUse, zoneType, zoneMismatched, zoneVerdict,
+  //   zoneBuilding
   api.getTileData = function (col, row) {
     if (isHqTile(col, row)) {
       // HQ replaces the tile — no survey data, just HQ sentinel (never "Not yet scanned")
@@ -156,6 +224,10 @@ window.GameState = (function () {
         bestUse: null,            // computed, see computeBestUse
         zoneType: null,           // "residential" | "commercial" | "industrial" | "mining" | null
         zoneMismatched: null,     // true when zoneType disagrees with bestUse (set on confirm)
+        zoneVerdict: null,        // "ok" | "mild" | "severe" (see js/buildings.js)
+        zoneBuilding: null,       // building id (see js/buildings.js) | null
+        pollution: 0,             // 0-100 ground stain (see js/economy.js)
+        blighted: false,          // true at max stain: earns $0 until scrubbed
       };
     }
     return api.tileData[k];
@@ -193,27 +265,29 @@ window.GameState = (function () {
     return d.bestUse;
   };
 
-  // Drone (aerial) scan completed for this tile: mark it scanned and generate
-  // surface stability (weighted — mostly Fair/Good, Poor/Excellent rarer; the
-  // trench is ALWAYS "Poor", matching its problem-site identity).
+  // Drone (aerial) scan completed for this tile: mark it scanned and sample
+  // surface stability from the smooth field (Poor pockets, Fair/Good ground,
+  // Excellent ridges). The trench is ALWAYS "Poor", matching its
+  // problem-site identity. Thresholds mirror the old 15/35/35/15 odds.
   api.markDroneScanned = function (col, row) {
     var d = api.getTileData(col, row);
     d.droneScanned = true;
-    d.surfaceStability = isHazardTile(col, row)
-      ? "Poor"
-      : weightedPick([
-          { value: "Poor", w: 15 },
-          { value: "Fair", w: 35 },
-          { value: "Good", w: 35 },
-          { value: "Excellent", w: 15 }
-        ]);
+    if (isHazardTile(col, row)) {
+      d.surfaceStability = "Poor";
+    } else {
+      var sv = sampleField(1, col, row);
+      d.surfaceStability = sv < 0.27 ? "Poor" : sv < 0.50 ? "Fair" : sv < 0.86 ? "Good" : "Excellent";
+    }
     api._recalcBestUse(d);
+    if (isUnbuildable(col, row)) d.bestUse = null;
     return d;
   };
 
-  // GPR (subsurface) scan completed for this tile: mark it scanned and generate
-  // soil type, mineral deposits ("Rich" is rare/notable) and bedrock depth. The
-  // trench never yields "Rich" deposits so it consistently reads as "Unsuitable".
+  // GPR (subsurface) scan completed for this tile: soil stays a per-tile
+  // roll (display-only), but minerals and bedrock sample the smooth fields —
+  // Rich ground arrives in rare pockets, bedrock in Shallow/Deep regions.
+  // The trench never yields "Rich" deposits so it consistently reads as
+  // "Unsuitable".
   api.markGprScanned = function (col, row) {
     var d = api.getTileData(col, row);
     d.gprScanned = true;
@@ -224,19 +298,16 @@ window.GameState = (function () {
       { value: "Rocky", w: 20 },
       { value: "Loam", w: 25 }
     ]);
-    d.mineralDeposits = trench
-      ? weightedPick([{ value: "None", w: 70 }, { value: "Trace", w: 30 }])
-      : weightedPick([
-          { value: "None", w: 60 },
-          { value: "Trace", w: 30 },
-          { value: "Rich", w: 10 }
-        ]);
-    d.bedrockDepth = weightedPick([
-      { value: "Shallow", w: 35 },
-      { value: "Moderate", w: 40 },
-      { value: "Deep", w: 25 }
-    ]);
+    if (trench) {
+      d.mineralDeposits = weightedPick([{ value: "None", w: 70 }, { value: "Trace", w: 30 }]);
+    } else {
+      var mv = sampleField(2, col, row);
+      d.mineralDeposits = mv > 0.73 ? "Rich" : mv > 0.45 ? "Trace" : "None";
+    }
+    var bv = sampleField(3, col, row);
+    d.bedrockDepth = bv < 0.42 ? "Shallow" : bv < 0.78 ? "Moderate" : "Deep";
     api._recalcBestUse(d);
+    if (isUnbuildable(col, row)) d.bestUse = null;
     return d;
   };
 

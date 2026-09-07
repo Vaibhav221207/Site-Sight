@@ -74,9 +74,25 @@ window.Main = (function () {
   }
 
   var _renderErrCount = 0;
+  var _lastIncomeTick = 0;
+  // economy clock: one income tick per TICK_MS of visible run time. rAF
+  // already pauses in hidden tabs; on return the clock resets instead of
+  // paying arrears (no windfall for being away — P3 save keeps it honest).
+  function economyTick(now) {
+    var TICK = (window.Economy && window.Economy.TICK_MS) || 10000;
+    if (!_lastIncomeTick) { _lastIncomeTick = now; return; }
+    if (now - _lastIncomeTick < TICK) return;
+    _lastIncomeTick = now;
+    if (!window.Economy || !window.GameState) return;
+    var res = window.Economy.collectTick();
+    if (res && res.earned > 0 && window.UI && window.UI.toast) {
+      window.UI.toast("+$" + res.earned.toLocaleString() + " income", { icon: "\uD83D\uDCB0", duration: 1800 });
+    }
+  }
   function loop() {
     try {
       window.BlockRender.tick();
+      try { economyTick(typeof performance !== "undefined" ? performance.now() : Date.now()); } catch (e) {}
       render();
       if (_renderErrCount > 0) {
         // recovered — hide the transient bar after one clean frame

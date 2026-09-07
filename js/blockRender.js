@@ -95,6 +95,129 @@ window.BlockRender = (function () {
     return BASE_H + api.terrain.elevationAt(c, r) + (rises[key(c, r)] || 0);
   }
 
+  // ---- zone buildings (P1 art): one parametric iso family ----------------
+  // Chunky ink outlines, cream walls, zone-color roofs; massing + one prop
+  // per building. Factory is the hero (twin chimneys). Same face shading
+  // factors as the terrain blocks so buildings sit in the same light.
+  var BLD_WALL = "#EDE4D3";
+  var BLD_INK = "#2B2320";
+  var BLD_MASS = { // footprint x height, in iso units
+    workshop: [0.86, 0.50], factory: [0.95, 0.95], shop: [0.80, 0.45],
+    mall: [1.00, 0.70], cottage: [0.62, 0.40], apartments: [0.66, 0.92],
+    mine: [0.80, 0.00], quarry: [0.90, 0.00]
+  };
+  var BLD_ZONE = { residential: "#66BB6A", commercial: "#42A5F5", industrial: "#8E24AA", mining: "#FFB300" };
+
+  // small axis-aligned iso box centered at (cx, baseY): fw full width, h up.
+  function isoBox(ctx, cx, baseY, fw, h, wall, roof) {
+    var hw = fw / 2, hh = fw / 4;
+    var n = { x: cx, y: baseY - h - hh }, e = { x: cx + hw, y: baseY - h },
+        s = { x: cx, y: baseY - h + hh }, w = { x: cx - hw, y: baseY - h };
+    var sb = { x: cx, y: baseY + hh }, eb = { x: cx + hw, y: baseY }, wb = { x: cx - hw, y: baseY };
+    ctx.lineWidth = Math.max(1, fw * 0.03);
+    ctx.strokeStyle = BLD_INK;
+    if (h > 0.5) {
+      ctx.beginPath();
+      ctx.moveTo(w.x, w.y); ctx.lineTo(s.x, s.y); ctx.lineTo(sb.x, sb.y); ctx.lineTo(wb.x, wb.y);
+      ctx.closePath(); ctx.fillStyle = shade(wall, LEFT_SHADE); ctx.fill(); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(s.x, s.y); ctx.lineTo(e.x, e.y); ctx.lineTo(eb.x, eb.y); ctx.lineTo(sb.x, sb.y);
+      ctx.closePath(); ctx.fillStyle = shade(wall, RIGHT_SHADE); ctx.fill(); ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.moveTo(n.x, n.y); ctx.lineTo(e.x, e.y); ctx.lineTo(s.x, s.y); ctx.lineTo(w.x, w.y);
+    ctx.closePath(); ctx.fillStyle = roof; ctx.fill(); ctx.stroke();
+    return { n: n, e: e, s: s, w: w, hw: hw, hh: hh };
+  }
+
+  function drawBuilding(ctx, c, r, cx, topY, iso) {
+    var gs = window.GameState;
+    var d = (gs && gs.getTileData) ? gs.getTileData(c, r) : null;
+    if (!d || !d.zoneBuilding) return;
+    var id = d.zoneBuilding;
+    var m = BLD_MASS[id] || [0.80, 0.50];
+    var accent = BLD_ZONE[d.zoneType] || "#42A5F5";
+    var fw = iso * m[0], h = iso * m[1];
+    ctx.save();
+    try {
+      if (id === "mine" || id === "quarry") {
+        // open pit: nested dark diamonds sunk in the tile top + derrick rig
+        var hw = fw / 2, hh = fw / 4;
+        ctx.beginPath();
+        ctx.moveTo(cx, topY - hh); ctx.lineTo(cx + hw, topY); ctx.lineTo(cx, topY + hh); ctx.lineTo(cx - hw, topY);
+        ctx.closePath(); ctx.fillStyle = "#3A3340"; ctx.fill();
+        ctx.lineWidth = Math.max(1, iso * 0.03); ctx.strokeStyle = BLD_INK; ctx.stroke();
+        var hw2 = hw * 0.55, hh2 = hh * 0.55;
+        ctx.beginPath();
+        ctx.moveTo(cx, topY - hh2); ctx.lineTo(cx + hw2, topY); ctx.lineTo(cx, topY + hh2); ctx.lineTo(cx - hw2, topY);
+        ctx.closePath(); ctx.fillStyle = "#1E1E26"; ctx.fill();
+        var apex = { x: cx, y: topY - iso * (id === "quarry" ? 0.55 : 0.75) };
+        ctx.beginPath();
+        ctx.moveTo(cx - hw * 0.7, topY); ctx.lineTo(apex.x, apex.y);
+        ctx.moveTo(cx + hw * 0.7, topY); ctx.lineTo(apex.x, apex.y);
+        ctx.moveTo(cx - hw * 0.35, topY - iso * 0.2); ctx.lineTo(cx + hw * 0.35, topY - iso * 0.2);
+        ctx.lineWidth = Math.max(1.5, iso * 0.045); ctx.strokeStyle = BLD_INK; ctx.stroke();
+        ctx.restore();
+        return;
+      }
+      var top = isoBox(ctx, cx, topY, fw, h, BLD_WALL, accent);
+      var roofY = topY - h;
+      if (id === "factory" || id === "workshop") {
+        // hero prop: twin (factory) or single (workshop) chimney stacks
+        var offs = (id === "factory") ? [-0.20, 0.18] : [0.0];
+        for (var i = 0; i < offs.length; i++) {
+          isoBox(ctx, cx + iso * offs[i], roofY + 2, iso * 0.13, iso * 0.42, "#6E6E78", "#54545E");
+        }
+      } else if (id === "shop") {
+        // awning band across both front faces (accent stripe, ink hem)
+        var f0 = 0.30, f1 = 0.62; // fractions down the walls
+        function bandPt(t, b) { return { x: t.x + (b.x - t.x) * f0, y: t.y + (b.y - t.y) * f0 }; }
+        function bandPb(t, b) { return { x: t.x + (b.x - t.x) * f1, y: t.y + (b.y - t.y) * f1 }; }
+        var sb2 = { x: cx, y: topY + top.hh }, eb2 = { x: cx + top.hw, y: topY }, wb2 = { x: cx - top.hw, y: topY };
+        ctx.fillStyle = accent;
+        ctx.lineWidth = Math.max(1, iso * 0.025); ctx.strokeStyle = BLD_INK;
+        ctx.beginPath();
+        var a = bandPt(top.w, wb2), b2 = bandPt(top.s, sb2), c2 = bandPb(top.s, sb2), d2 = bandPb(top.w, wb2);
+        ctx.moveTo(a.x, a.y); ctx.lineTo(b2.x, b2.y); ctx.lineTo(c2.x, c2.y); ctx.lineTo(d2.x, d2.y);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.beginPath();
+        var e2 = bandPt(top.e, eb2), f2 = bandPb(top.e, eb2);
+        ctx.moveTo(b2.x, b2.y); ctx.lineTo(e2.x, e2.y); ctx.lineTo(f2.x, f2.y); ctx.lineTo(c2.x, c2.y);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+      } else if (id === "mall") {
+        // rooftop sign board on two posts
+        var sw = fw * 0.55, sh = Math.max(4, iso * 0.16);
+        var sy = roofY - top.hh - sh - iso * 0.22;
+        ctx.lineWidth = Math.max(1, iso * 0.03); ctx.strokeStyle = BLD_INK;
+        ctx.beginPath();
+        ctx.moveTo(cx - sw * 0.3, roofY - top.hh); ctx.lineTo(cx - sw * 0.3, sy + sh);
+        ctx.moveTo(cx + sw * 0.3, roofY - top.hh); ctx.lineTo(cx + sw * 0.3, sy + sh);
+        ctx.stroke();
+        ctx.fillStyle = "#FFFBF0"; ctx.fillRect(cx - sw / 2, sy, sw, sh);
+        ctx.strokeRect(cx - sw / 2, sy, sw, sh);
+      } else if (id === "cottage") {
+        // pitched gable roof over the flat cap
+        var apex2 = { x: cx, y: roofY - top.hh - iso * 0.30 };
+        ctx.beginPath();
+        ctx.moveTo(top.w.x, top.w.y); ctx.lineTo(apex2.x, apex2.y); ctx.lineTo(top.s.x, top.s.y);
+        ctx.closePath(); ctx.fillStyle = shade(accent, LEFT_SHADE); ctx.fill();
+        ctx.lineWidth = Math.max(1, iso * 0.03); ctx.strokeStyle = BLD_INK; ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(top.s.x, top.s.y); ctx.lineTo(apex2.x, apex2.y); ctx.lineTo(top.e.x, top.e.y);
+        ctx.closePath(); ctx.fillStyle = shade(accent, RIGHT_SHADE); ctx.fill(); ctx.stroke();
+      } else if (id === "apartments") {
+        // lit window grid on both front faces
+        ctx.fillStyle = "#FDE68A";
+        for (var f = 0; f < 3; f++) {
+          var wy = topY - h * 0.22 - f * h * 0.24, ws = Math.max(2, fw * 0.07);
+          ctx.fillRect(cx - fw * 0.26 - ws / 2, wy - ws / 2, ws, ws);
+          ctx.fillRect(cx + fw * 0.26 - ws / 2, wy - ws / 2, ws, ws);
+        }
+      }
+    } catch (e) {}
+    ctx.restore();
+  }
+
   function drawBlock(ctx, c, r, totalH, topColor, isSelected) {
     var g = api.grid;
     var p = g.worldToScreen(c, r);
@@ -191,9 +314,42 @@ window.BlockRender = (function () {
         } catch(e2){}
       }
     } catch(e){}
+    // pollution stain + blight (P2): olive wash on the top diamond scaled by
+    // stain, dark X across blighted tiles. After tint so hazard reads last.
+    try {
+      var pz = window.GameState && window.GameState.getTileData ? window.GameState.getTileData(c, r) : null;
+      var ps = (pz && pz.pollution) || 0;
+      if (pz && (ps > 0 || pz.blighted)) {
+        if (ps > 0) {
+          ctx.save();
+          ctx.globalAlpha = 0.12 + 0.38 * Math.min(1, ps / 100);
+          ctx.fillStyle = "#7A7A2E";
+          ctx.beginPath();
+          ctx.moveTo(n.x, n.y);
+          ctx.lineTo(e.x, e.y);
+          ctx.lineTo(s.x, s.y);
+          ctx.lineTo(w.x, w.y);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        }
+        if (pz.blighted) {
+          ctx.save();
+          ctx.strokeStyle = "#212121";
+          ctx.lineWidth = Math.max(2, iso * 0.06);
+          ctx.beginPath();
+          ctx.moveTo(cx - iso, topY - half); ctx.lineTo(cx + iso, topY + half);
+          ctx.moveTo(cx + iso, topY - half); ctx.lineTo(cx - iso, topY + half);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+    } catch(e3){}
     ctx.strokeStyle = isSelected ? SELECT_STROKE : TOP_STROKE;
     ctx.lineWidth = isSelected ? 2.5 : 1;
     ctx.stroke();
+    // zone buildings rise from the tile top (static layer: rebuilt on zone)
+    try { drawBuilding(ctx, c, r, cx, topY, iso); } catch (e) {}
   }
 
   // ---- scattered rock/boulder formations (hills) ----------------------
