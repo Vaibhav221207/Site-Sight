@@ -39,12 +39,29 @@ window.Main = (function () {
   api.handleResize = onResize;
 
   api.updateHUD = function () {
+    var cash = window.GameState.cash;
     var el = document.getElementById("hud-cash");
-    if (el) {
-      el.textContent = "$" + window.GameState.cash.toLocaleString();
+    var hq = document.getElementById("hq-cash");
+    var last = (typeof api._lastCash === "number") ? api._lastCash : cash;
+    api._lastCash = cash;
+    function setCash(elm) {
+      if (!elm) return;
+      if (window.UI && window.UI.countUp && last !== cash) {
+        // cash counts up so income/spend reads as motion, not a blink
+        try { window.UI.countUp(elm, cash, { from: last, prefix: "$", group: true, duration: 400 }); return; }
+        catch (e) {}
+      }
+      elm.textContent = "$" + cash.toLocaleString();
+    }
+    setCash(el);
+    setCash(hq);
+    // STORE affordability is cash-derived: keep red-when-broke live, even
+    // mid-session while the panel sits open during income ticks
+    if (window.HqPanel && window.HqPanel.refreshStoreAfford) {
+      try { window.HqPanel.refreshStoreAfford(); } catch (e) {}
     }
     var btn = document.getElementById("hud-build-btn");
-    if (btn) btn.disabled = window.GameState.hqBuilt;
+    if (btn) btn.disabled = false;
     if (window.BuildMenu && window.BuildMenu.refresh) window.BuildMenu.refresh();
     if (window.MobileUI && window.MobileUI.update) window.MobileUI.update();
   };
@@ -141,8 +158,8 @@ window.Main = (function () {
       throw err;
     }
 
-    // initialize gameState cash display
-    window.GameState.cash = 50000;
+    // GameState owns the startup budget. Do not reset cash here: doing so
+    // makes re-initialization silently create money and breaks the ledger.
     window.Main.updateHUD();
 
     // wire up Build button: toggles the build palette (toggle bar). While a
@@ -154,9 +171,7 @@ window.Main = (function () {
           window.BuildMenu.cancel();
           return;
         }
-        if (!window.GameState.hqBuilt) {
-          window.BuildMenu.toggle();
-        }
+        window.BuildMenu.toggle();
       });
     }
 

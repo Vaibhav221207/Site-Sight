@@ -28,6 +28,8 @@ window.DataMap = (function () {
     legendEl: null,
     selected: null,   // alias: first tile of selection (compat) | null
     selection: [],    // [{ col, row }] in select order — the zoning working set
+    cursor: null,     // keyboard tile cursor { col, row } | null (arrows + Enter)
+    canvasFocused: false,
     pendingZone: null, // zone id with an open inline confirm | null
     pendingBuilding: null, // building id picked inside the zone | null
     lastZoneMsg: "",   // success line shown once after a confirm
@@ -324,6 +326,20 @@ window.DataMap = (function () {
       ctx.restore();
     }
 
+    // keyboard cursor: coral dashed outset ring, drawn only while the canvas
+    // holds focus. Outset + dash + hue all differ from the solid selection
+    // rings, the inset zone borders, and the rubber band.
+    if (api.cursor && api.canvasFocused) {
+      var kx = api.cursor.col * cell;
+      var ky = api.cursor.row * cell;
+      ctx.save();
+      ctx.strokeStyle = "#C7432B";
+      ctx.lineWidth = Math.max(2.5, cell * 0.16);
+      ctx.setLineDash([Math.max(4, cell * 0.3), Math.max(3, cell * 0.2)]);
+      ctx.strokeRect(kx - 3, ky - 3, cell + 6, cell + 6);
+      ctx.restore();
+    }
+
     // live drag rubber-band while a multi-select drag is in progress
     if (api.drag && api.drag.select && api.drag.moved && api.drag.anchor && api.drag.end) {
       var a = api.drag.anchor, b = api.drag.end;
@@ -389,6 +405,10 @@ window.DataMap = (function () {
     api.selected = out.length ? out[0] : null;
     api.pendingZone = null;
     api.pendingBuilding = null;
+    // keyboard shift-extend keeps its anchor across repeated key presses;
+    // every pointer path resets it via the flag left unset
+    if (!api._kbExtend) api._kbAnchor = null;
+    api._kbExtend = false;
     render();
     renderSelection();
     updateSelBadge();
@@ -490,39 +510,17 @@ window.DataMap = (function () {
       html += '<div class="hq-data-zone-note">' +
         (v.unscannedLand > 0 ? 'Complete scanning to designate a zone' : 'No zonable land in selection') + '</div>';
     } else if (api.pendingZone) {
-      html += buildingCardsHTML(sel, v);
-      if (api.pendingBuilding) html += confirmBoxHTML(sel, v);
+      var quote = zt.getCostForTiles(v.valid, api.pendingZone);
+      html += '<div class="hq-data-zone-note">Zone designation applies to selected land. Use the Build menu to construct one building at a time.</div>';
+      if (quote) {
+        html += '<div class="hq-data-zone-cost">Permit — $' + quote.totalCost.toLocaleString() + '</div>';
+        html += '<button type="button" class="hq-order-btn hq-data-zone-confirm-btn" data-zone-confirm="1">Confirm Zone</button>';
+      }
     } else if (v.invalid > 0) {
       html += '<div class="hq-data-zone-note">' + v.invalid + ' tile(s) excluded (unscanned or unzonable)</div>';
     }
     html += '</div>';
     return html;
-  }
-
-  function buildingCardsHTML(sel, v) {
-    var bl = window.Buildings;
-    if (!bl) return "";
-    var cards = bl.byZone(api.pendingZone);
-    var html = '<div class="hq-data-bld-grid">';
-    for (var i = 0; i < cards.length; i++) {
-      var s = cards[i];
-      var active = api.pendingBuilding === s.id;
-      html += '<button type="button" class="hq-data-bld-card' + (active ? ' hq-data-bld-card--active' : '') +
-        '" data-building="' + s.id + '">' +
-        '<span class="hq-data-bld-name">' + s.label + ' <span class="hq-data-bld-cost">$' + s.buildCost.toLocaleString() + '</span></span>' +
-        '<span class="hq-data-bld-stats">' + buildingSub(s) + ' · <span class="hq-data-bld-pips" title="pollution">' + pollutionPips(s.pollutionPerTick) + '</span></span>' +
-        '<span class="hq-data-bld-blurb">' + s.blurb + '</span>' +
-      '</button>';
-    }
-    html += '</div>';
-    return html;
-  }
-
-  function netButtonLabel(net) {
-    return net < 0 ? "Confirm +$" + Math.abs(net).toLocaleString() : "Build — $" + net.toLocaleString();
-  }
-  function netSigned(net) {
-    return net < 0 ? "+$" + Math.abs(net).toLocaleString() : "$" + net.toLocaleString();
   }
 
   function worstVerdict(v) {
@@ -545,44 +543,6 @@ window.DataMap = (function () {
     return { verdict: worst, count: nWorst, total: v.valid.length };
   }
 
-  function confirmBoxHTML(sel, v) {
-    var bl = window.Buildings;
-    var spec = bl ? bl.byId(api.pendingBuilding) : null;
-    if (!spec) return "";
-    var permit = 0, payout = 0;
-    for (var i = 0; i < v.valid.length; i++) {
-      var p = bl.priceFor(v.valid[i].col, v.valid[i].row, api.pendingZone, spec.id);
-      if (!p) continue;
-      permit += p.permit;
-      payout += p.payout;
-    }
-    var build = spec.buildCost * v.valid.length;
-    var net = permit + build - payout;
-    var cash = window.GameState ? window.GameState.cash : 0;
-    var w = worstVerdict(v);
-    var afford = cash >= net;
-    var html = '<div class="hq-data-zone-confirm">';
-    html += '<div class="hq-data-zone-cost">' + spec.label + ' × ' + v.valid.length +
-      ' — permit $' + permit.toLocaleString() + ' + build $' + build.toLocaleString() + '</div>';
-    if (payout > 0) html += '<div class="hq-data-zone-cost">Resource payout −$' + payout.toLocaleString() + '</div>';
-    var vcls = w.verdict === "ok" ? "" : (w.verdict === "mild" ? " hq-data-verdict-mild" : " hq-data-verdict-severe");
-    var vtxt = bl.verdictCopy(w.verdict);
-    if (w.verdict !== "ok" && w.count < w.total) vtxt += " · " + w.count + " of " + w.total + " tiles";
-    html += '<div class="hq-data-zone-note' + vcls + '">' + vtxt + '</div>';
-    if (v.invalid > 0) {
-      html += '<div class="hq-data-zone-note">' + v.invalid + ' tile(s) excluded (unscanned or unzonable)</div>';
-    }
-    if (afford) {
-      html += '<button type="button" class="hq-order-btn hq-data-zone-confirm-btn" data-confirm="1">' +
-        netButtonLabel(net) + '</button>';
-    } else {
-      html += '<button type="button" class="hq-order-btn hq-data-zone-confirm-btn" data-confirm="1" disabled>Insufficient funds</button>' +
-        '<div class="hq-data-zone-note">Have $' + cash.toLocaleString() + ' of $' + net.toLocaleString() + '</div>';
-    }
-    html += '</div>';
-    return html;
-  }
-
   function wireZonePanel() {
     if (!api.detailsEl || !api.detailsEl.querySelectorAll) return;
     var zbtns = api.detailsEl.querySelectorAll("[data-zone]");
@@ -597,16 +557,21 @@ window.DataMap = (function () {
         });
       })(zbtns[i]);
     }
-    var bbtns = api.detailsEl.querySelectorAll("[data-building]");
-    for (var k = 0; k < bbtns.length; k++) {
+    var zoneConfirms = api.detailsEl.querySelectorAll("[data-zone-confirm]");
+    for (var zc = 0; zc < zoneConfirms.length; zc++) {
       (function (btn) {
         btn.addEventListener("click", function () {
-          if (btn.disabled) return;
-          var id = btn.getAttribute ? btn.getAttribute("data-building") : null;
-          api.pendingBuilding = (api.pendingBuilding === id) ? null : id; // re-tap cancels
-          renderSelection();
+          if (btn.disabled || !api.pendingZone || !window.ZoningTool) return;
+          var res = window.ZoningTool.confirmZoning(selectionValidity().valid, api.pendingZone);
+          if (res && res.ok) {
+            api.lastZoneMsg = "Zoned " + res.breakdown.validTiles.length + " tile(s) as " +
+              window.ZoningTool.zoneLabelFor(api.pendingZone) + " — $" + res.breakdown.totalCost.toLocaleString();
+            api.pendingZone = null;
+            api.pendingBuilding = null;
+          }
+          api.refresh();
         });
-      })(bbtns[k]);
+      })(zoneConfirms[zc]);
     }
     var sbtns = api.detailsEl.querySelectorAll("[data-scrub]");
     for (var s = 0; s < sbtns.length; s++) {
@@ -668,22 +633,6 @@ window.DataMap = (function () {
           api.refresh();
         });
       })(tbtns[t]);
-    }
-    var cbtns = api.detailsEl.querySelectorAll("[data-confirm]");
-    for (var j = 0; j < cbtns.length; j++) {
-      (function (btn) {
-        btn.addEventListener("click", function () {
-          if (btn.disabled || !api.pendingZone || !api.pendingBuilding || !window.Buildings) return;
-          var v = selectionValidity();
-          var res = window.Buildings.confirmPurchase(v.valid, api.pendingZone, api.pendingBuilding);
-          if (res && res.ok) {
-            api.lastZoneMsg = "Built " + res.spec.label + " ×" + res.count + " — " + netSigned(res.net);
-            api.pendingZone = null;
-            api.pendingBuilding = null;
-          }
-          api.refresh();
-        });
-      })(cbtns[j]);
     }
   }
 
@@ -775,7 +724,7 @@ window.DataMap = (function () {
     var sel = api.selection;
     var html = "";
     if (!sel.length) {
-      html = '<div class="hq-data-details-empty">Select a tile on the mini-map to see its survey data</div>';
+      html = '<div class="hq-data-details-empty">Select a tile on the mini-map to see its survey data. New here? Order a Drone in STORE, deploy it from INVENTORY, then review tiles here.</div>';
     } else if (sel.length === 1) {
       html = singleTileRows(sel[0].col, sel[0].row);
       html += zoneSectionHTML(sel, selectionValidity());
@@ -802,13 +751,17 @@ window.DataMap = (function () {
   function renderCategories() {
     if (!api.categoriesEl) return;
     var counts = getCounts();
+    var g = gridSize();
+    var total = g * g;
     var html = "";
     for (var i = 0; i < CATEGORIES.length; i++) {
       var cat = CATEGORIES[i];
+      var pct = total > 0 ? Math.max(0, Math.min(100, counts[cat.id] / total * 100)) : 0;
       html += '<div class="hq-data-cat-row">' +
         '<span class="hq-data-cat-swatch" style="background:' + cat.color + '"></span>' +
         '<span class="hq-data-cat-label">' + cat.label + '</span>' +
         '<span class="hq-data-cat-count">' + counts[cat.id] + ' tiles</span>' +
+        '<span class="hq-data-cat-bar"><span style="width:' + pct.toFixed(1) + '%;background:' + cat.color + '"></span></span>' +
       '</div>';
     }
     api.categoriesEl.innerHTML = html;
@@ -824,6 +777,62 @@ window.DataMap = (function () {
     var t = tileFromClient(e.clientX, e.clientY);
     if (!t) return;
     setSelection([t]);
+  }
+
+  // ---- keyboard operation (P0 parity with pointer) -------------------------
+  // Arrows move a tile cursor (drawn as a coral dashed ring, distinct from
+  // the solid selection rings); Enter/Space selects; Shift+Arrows grows a
+  // multi-select rect live; Escape clears the selection (and stays in the
+  // panel — it must not bubble up to the HQ close handler).
+
+  function moveCursor(dx, dy, extend) {
+    var g = gridSize();
+    var cur = api.cursor || (api.selected
+      ? { col: api.selected.col, row: api.selected.row }
+      : { col: Math.floor(g / 2), row: Math.floor(g / 2) });
+    var next = {
+      col: Math.max(0, Math.min(g - 1, cur.col + dx)),
+      row: Math.max(0, Math.min(g - 1, cur.row + dy)),
+    };
+    if (extend) {
+      if (!api._kbAnchor) api._kbAnchor = { col: cur.col, row: cur.row };
+      api.cursor = next;
+      api._kbExtend = true;
+      setSelection(rectTiles(api._kbAnchor, next));
+    } else {
+      api._kbAnchor = null;
+      api.cursor = next;
+      render();
+    }
+  }
+
+  function onCanvasKey(e) {
+    if (!e || !e.key) return;
+    var k = e.key;
+    var dx = 0, dy = 0;
+    if (k === "ArrowLeft") dx = -1;
+    else if (k === "ArrowRight") dx = 1;
+    else if (k === "ArrowUp") dy = -1;
+    else if (k === "ArrowDown") dy = 1;
+    else if (k === "Enter" || k === " ") {
+      if (e.preventDefault) e.preventDefault();
+      if (api.cursor) setSelection([api.cursor]);
+      else {
+        var g = gridSize();
+        api.cursor = { col: Math.floor(g / 2), row: Math.floor(g / 2) };
+        render();
+      }
+      return;
+    } else if (k === "Escape") {
+      if (e.preventDefault) e.preventDefault();
+      if (e.stopPropagation) e.stopPropagation();
+      setSelection([]);
+      return;
+    } else {
+      return;
+    }
+    if (e.preventDefault) e.preventDefault();
+    moveCursor(dx, dy, !!(e.shiftKey));
   }
 
   // ---- compact inline legend (always-visible quick reference under the map) --
@@ -925,6 +934,7 @@ window.DataMap = (function () {
 
   function beginSelectDrag(tile, x, y) {
     api.drag = { anchor: tile, end: tile, moved: false, select: true, sx: x, sy: y };
+    api._kbAnchor = null; // pointer takes over from any keyboard gesture
   }
 
   function updateSelectDrag(tile, x, y) {
@@ -1049,6 +1059,18 @@ window.DataMap = (function () {
     api.canvas.addEventListener("pointermove", onTouchPointerMove);
     api.canvas.addEventListener("pointerup", onTouchPointerEnd);
     api.canvas.addEventListener("pointercancel", onTouchPointerEnd);
+    // keyboard operation: focusable canvas with arrow/Enter/Escape contract.
+    // No widget role: the canvas is custom-drawn, so a labelled group with
+    // live-region details is the honest mapping (not a fake grid widget).
+    if (api.canvas.setAttribute) {
+      api.canvas.setAttribute("tabindex", "0");
+      api.canvas.setAttribute("aria-label",
+        "Site survey map. Arrow keys move the tile cursor. Enter selects a tile. " +
+        "Hold Shift with arrow keys to select many tiles. Escape clears the selection.");
+    }
+    api.canvas.addEventListener("keydown", onCanvasKey);
+    api.canvas.addEventListener("focus", function () { api.canvasFocused = true; render(); });
+    api.canvas.addEventListener("blur", function () { api.canvasFocused = false; render(); });
 
     // always-visible compact legend strip (desktop under the map, mobile
     // above it in the map column — no toggle needed)
@@ -1065,8 +1087,14 @@ window.DataMap = (function () {
     }
     fitMapSoon();
 
-    // entrance animation (anime.js) for the DATA tab blocks
-    if (typeof anime !== "undefined" && anime) {
+    // entrance animation (anime.js) for the DATA tab blocks.
+    // Captures (index.html#shot=*) skip it: final state, synchronously.
+    var shot = false;
+    try {
+      shot = !!window.__SHOT ||
+        (window.location && (window.location.hash || "").indexOf("#shot") === 0);
+    } catch (e) { shot = false; }
+    if (!shot && typeof anime !== "undefined" && anime) {
       anime({
         targets: "#data-minimap",
         opacity: [0, 1],

@@ -16,8 +16,9 @@ window.HqPanel = (function () {
     orderBtn: null,
     navItems: null,
     sections: null,
-    currentSection: "store",
+    currentSection: "data",
     isOpen: false,
+    _opener: null, // element focused before open; focus returns here on close
     footerEl: null,     // fixed footer action bar (.hq-fs-footer)
     storeRow1: null,    // STORE Drone row (order button's home when not in footer)
     storeRow2: null,    // STORE GPR row (order button's home when not in footer)
@@ -58,10 +59,7 @@ window.HqPanel = (function () {
       var infoEl = infoBlock ? infoBlock.querySelector(".hq-fs-drone-info") : null;
       if (infoEl) {
         api.ownedEl = document.createElement("span");
-        api.ownedEl.className = "hq-fs-drone-owned";
-        api.ownedEl.style.fontSize = "13px";
-        api.ownedEl.style.fontWeight = "700";
-        api.ownedEl.style.color = "#E8604A";
+        api.ownedEl.className = "hq-fs-drone-owned hq-owned--drone";
         infoEl.appendChild(api.ownedEl);
       }
       api.orderBtn.addEventListener("click", function () { api.buyDrone(); });
@@ -74,10 +72,7 @@ window.HqPanel = (function () {
       var gprInfoEl = gprInfoBlock ? gprInfoBlock.querySelector(".hq-fs-drone-info") : null;
       if (gprInfoEl) {
         api.gprOwnedEl = document.createElement("span");
-        api.gprOwnedEl.className = "hq-fs-drone-owned";
-        api.gprOwnedEl.style.fontSize = "13px";
-        api.gprOwnedEl.style.fontWeight = "700";
-        api.gprOwnedEl.style.color = "#E0962A";
+        api.gprOwnedEl.className = "hq-fs-drone-owned hq-owned--gpr";
         gprInfoEl.appendChild(api.gprOwnedEl);
       }
       api.gprOrderBtn.addEventListener("click", function () { api.buyGpr(); });
@@ -85,19 +80,31 @@ window.HqPanel = (function () {
 
     // Dynamic Compactor STORE row
     api.compactorOrderBtn = document.getElementById("hq-order-compactor-fs");
+    api.storeRow3 = null;
     if (api.compactorOrderBtn) {
       var compactorInfoBlock = api.compactorOrderBtn.closest(".hq-fs-drone-row");
       var compactorInfoEl = compactorInfoBlock ? compactorInfoBlock.querySelector(".hq-fs-drone-info") : null;
       if (compactorInfoEl) {
         api.compactorOwnedEl = document.createElement("span");
-        api.compactorOwnedEl.className = "hq-fs-drone-owned";
-        api.compactorOwnedEl.style.fontSize = "13px";
-        api.compactorOwnedEl.style.fontWeight = "700";
-        api.compactorOwnedEl.style.color = "#7C7C74";
+        api.compactorOwnedEl.className = "hq-fs-drone-owned hq-owned--compactor";
         compactorInfoEl.appendChild(api.compactorOwnedEl);
       }
       api.compactorOrderBtn.addEventListener("click", function () { api.buyCompactor(); });
+      if (compactorInfoBlock && compactorInfoBlock.classList) api.storeRow3 = compactorInfoBlock;
     }
+
+    // paint the STORE system icons (procedural glyphs, no image assets)
+    try {
+      if (api.panelEl && api.panelEl.querySelectorAll && window.Icons) {
+        var icons = api.panelEl.querySelectorAll("[data-icon]");
+        for (var gi = 0; gi < icons.length; gi++) {
+          var g = icons[gi].getAttribute ? icons[gi].getAttribute("data-icon") : null;
+          if (g) icons[gi].innerHTML = window.Icons.get(g);
+        }
+      }
+    } catch (e) {}
+    api.refreshStoreAfford();
+    api.refreshNavCount();
 
     // ONE-TIME PURCHASE: reflect the permanent purchase state on the button
     // (disabled once the Drone System has been bought, even after deployment).
@@ -112,6 +119,12 @@ window.HqPanel = (function () {
         });
       }
     });
+
+    // modal keyboard contract (WAI-APG dialog pattern): Tab cycles inside,
+    // Escape closes. Bound once; handlers no-op while closed.
+    if (typeof document !== "undefined" && document.addEventListener) {
+      document.addEventListener("keydown", api._onKey);
+    }
 
     // pinned footer action bar + STORE-button relocation (all breakpoints)
     api.footerEl = document.getElementById("hq-fs-footer");
@@ -149,8 +162,25 @@ window.HqPanel = (function () {
       easing: "spring(1, 80, 10, 0)"
     });
   }
+  function isShot() {
+    try {
+      if (window.__SHOT) return true;
+      var h = (window.location && window.location.hash) || "";
+      return h.indexOf("#shot") === 0;
+    } catch (e) { return false; }
+  }
+
   function animateSectionEnter(section) {
-    if (!section || typeof anime === "undefined") return;
+    if (!section) return;
+    if (isShot()) {
+      // captures: final state, no tween (see shotEnter in startScreen.js)
+      try {
+        section.style.opacity = "1";
+        section.style.transform = "";
+      } catch (e) {}
+      return;
+    }
+    if (typeof anime === "undefined") return;
     var cards = section.querySelectorAll(".hq-fs-drone-row, .hq-fs-inventory-item-wrap, .hq-data-layout > div, .hq-fs-status");
     anime.set(section, { opacity: 0, translateY: 10 });
     if (cards.length) anime.set(cards, { opacity: 0, translateY: 8 });
@@ -179,7 +209,11 @@ window.HqPanel = (function () {
     var prevBtn = api.navItems[name];
     if (prevBtn) animateNavPress(prevBtn);
     SECTIONS.forEach(function (s) {
-      if (api.navItems[s]) api.navItems[s].classList.toggle("hq-fs-nav-item--active", s === name);
+      if (api.navItems[s]) {
+        api.navItems[s].classList.toggle("hq-fs-nav-item--active", s === name);
+        if (s === name) api.navItems[s].setAttribute("aria-current", "true");
+        else if (api.navItems[s].removeAttribute) api.navItems[s].removeAttribute("aria-current");
+      }
       if (api.sections[s]) api.sections[s].style.display = s === name ? "" : "none";
     });
     api.currentSection = name;
@@ -223,11 +257,42 @@ window.HqPanel = (function () {
   api.updateOwned = function () {
     if (api.ownedEl) {
       var n = window.GameState.inventory.droneCount;
-      api.ownedEl.textContent = "(Owned: " + n + ")";
+      api.ownedEl.textContent = "Owned: " + n;
     }
     if (api.gprOwnedEl) {
       var g = window.GameState.inventory.gprCount;
-      api.gprOwnedEl.textContent = "(Owned: " + g + ")";
+      api.gprOwnedEl.textContent = "Owned: " + g;
+    }
+    if (api.compactorOwnedEl) {
+      var hasC = !!(window.GameState && window.GameState.compactorSystemPurchased);
+      api.compactorOwnedEl.textContent = hasC ? "Owned" : "Not owned";
+    }
+    api.refreshStoreAfford();
+    api.refreshNavCount();
+  };
+
+  // INVENTORY tab badge: live fleet count on the nav key (hidden when empty)
+  api.refreshNavCount = function () {
+    var el = null;
+    try { el = document.getElementById("hq-nav-inv-count"); } catch (e) { el = null; }
+    if (!el) return;
+    var gs = window.GameState;
+    var n = gs ? ((gs.inventory.droneCount || 0) + (gs.inventory.gprCount || 0) +
+      (gs.compactorSystemPurchased ? 1 : 0)) : 0;
+    el.hidden = !(n > 0);
+    el.textContent = n > 0 ? String(n) : "";
+  };
+
+  // red-when-broke prices: unaffordable STORE rows read as unaffordable
+  // before the click, not after (no mental arithmetic, no dead taps)
+  api.refreshStoreAfford = function () {
+    if (!api.panelEl || !api.panelEl.querySelectorAll) return;
+    var gs = window.GameState;
+    var cash = gs ? gs.cash : 0;
+    var prices = api.panelEl.querySelectorAll("[data-price]");
+    for (var i = 0; i < prices.length; i++) {
+      var cost = parseFloat(prices[i].getAttribute ? prices[i].getAttribute("data-price") : 0) || 0;
+      if (prices[i].classList) prices[i].classList.toggle("cant-afford", cash < cost);
     }
   };
 
@@ -240,6 +305,8 @@ window.HqPanel = (function () {
     var purchased = !!(window.GameState && window.GameState.droneSystemPurchased);
     api.orderBtn.disabled = purchased;
     api.orderBtn.textContent = purchased ? "ORDERED" : "ORDER DRONE";
+    // owned rows collapse their teaching blurb: you know what it does now
+    if (api.storeRow1 && api.storeRow1.classList) api.storeRow1.classList.toggle("is-bought", purchased);
   };
 
   // ONE-TIME PURCHASE state for the GPR System — mirrors the Drone System.
@@ -248,6 +315,7 @@ window.HqPanel = (function () {
     var purchased = !!(window.GameState && window.GameState.gprSystemPurchased);
     api.gprOrderBtn.disabled = purchased;
     api.gprOrderBtn.textContent = purchased ? "ORDERED" : "ORDER GPR";
+    if (api.storeRow2 && api.storeRow2.classList) api.storeRow2.classList.toggle("is-bought", purchased);
   };
 
   // ONE-TIME PURCHASE state for the Dynamic Compactor — mirrors the Drone/GPR System.
@@ -257,6 +325,7 @@ window.HqPanel = (function () {
     var purchased = !!(window.GameState && window.GameState.compactorSystemPurchased);
     api.compactorOrderBtn.disabled = purchased;
     api.compactorOrderBtn.textContent = purchased ? "ORDERED" : "ORDER COMPACTOR";
+    if (api.storeRow3 && api.storeRow3.classList) api.storeRow3.classList.toggle("is-bought", purchased);
   };
 
   // (Re)builds the INVENTORY tab contents from GameState.inventory:
@@ -276,8 +345,17 @@ window.HqPanel = (function () {
 
     if ((!droneN || droneN <= 0) && (!gprN || gprN <= 0) && !compactorOwned) {
       var empty = document.createElement("div");
-      empty.className = "hq-fs-placeholder";
-      empty.textContent = "No survey equipment in inventory. Order a Drone, GPR System, or Dynamic Compactor from the STORE tab.";
+      empty.className = "hq-fs-placeholder hq-empty-inventory";
+      var emptyText = document.createElement("p");
+      emptyText.className = "hq-empty-text";
+      emptyText.textContent = "No survey equipment yet — nothing to deploy.";
+      empty.appendChild(emptyText);
+      var emptyCta = document.createElement("button");
+      emptyCta.type = "button";
+      emptyCta.className = "hq-order-btn";
+      emptyCta.textContent = "Go to STORE";
+      emptyCta.addEventListener("click", function () { api.switchSection("store"); });
+      empty.appendChild(emptyCta);
       api.inventorySection.appendChild(empty);
     } else {
       if (droneN > 0) api._buildFleet("drone", "DRONE FLEET", "Drone System", droneN);
@@ -322,14 +400,18 @@ window.HqPanel = (function () {
         "border:3px solid #2B2320;border-radius:16px;cursor:pointer;" +
         "box-shadow:4px 4px 0 #000;" +
         "transition:border-color 0.15s ease,background 0.15s ease;";
-      var accent = type === "gpr" ? "#E0962A" : "#E8604A";
+      var accent = type === "gpr" ? "#E0962A" : "#C7432B";
+      var icon = (window.Icons && window.Icons.get) ? window.Icons.get(type === "gpr" ? "gpr" : "drone") : "";
       entry.innerHTML =
-        '<span class="hq-fs-inventory-item-name" style="font-size:17px;font-weight:700;color:' + accent + '">' + name + '</span>';
+        '<span class="hq-inv-ico" aria-hidden="true">' + icon + '</span>' +
+        '<span class="hq-fs-inventory-item-name" style="font-size:17px;font-weight:700;color:' + accent + '">' + name + '</span>' +
+        '<span class="hq-inv-status" data-status>READY</span>';
       entry.addEventListener("click", function (ev) {
         ev.stopPropagation();
         var w = this.closest(".hq-fs-inventory-item-wrap");
         if (w) api.selectItem(w); else api.selectItem(this);
       });
+      api._makeSelectable(entry, name + " " + id);
       if (selectedId === id) api.markSelected(entry, true);
       var deployBtn = document.createElement("button");
       deployBtn.type = "button";
@@ -337,9 +419,9 @@ window.HqPanel = (function () {
       deployBtn.textContent = "Deploy";
       deployBtn.style.alignSelf = "flex-end";
       deployBtn.style.width = "auto";
-      deployBtn.style.padding = "7px 14px";
+      deployBtn.style.padding = "9px 20px";
       deployBtn.style.fontSize = "12px";
-      deployBtn.style.marginTop = "8px";
+      deployBtn.style.marginTop = "8px"; deployBtn.style.minHeight = "40px";
       deployBtn.style.display = selectedId === id ? "" : "none";
       deployBtn.addEventListener("click", function (ev) {
         ev.stopPropagation();
@@ -396,13 +478,17 @@ window.HqPanel = (function () {
       "border:3px solid #2B2320;border-radius:16px;cursor:pointer;" +
       "box-shadow:4px 4px 0 #000;" +
       "transition:border-color 0.15s ease,background 0.15s ease;";
+    var iconC = (window.Icons && window.Icons.get) ? window.Icons.get("compactor") : "";
     entry.innerHTML =
-      '<span class="hq-fs-inventory-item-name" style="font-size:17px;font-weight:700;color:#7C7C74">Dynamic Compactor</span>';
+      '<span class="hq-inv-ico" aria-hidden="true">' + iconC + '</span>' +
+      '<span class="hq-fs-inventory-item-name" style="font-size:17px;font-weight:700;color:#7C7C74">Dynamic Compactor</span>' +
+      '<span class="hq-inv-status" data-status>READY</span>';
     entry.addEventListener("click", function (ev) {
       ev.stopPropagation();
       var w = this.closest(".hq-fs-inventory-item-wrap");
       if (w) api.selectItem(w); else api.selectItem(this);
     });
+    api._makeSelectable(entry, "Dynamic Compactor compactor-1");
     // only show selected if this compactor is actually the selected item
     var compactorSelected = !!(window.GameState && window.GameState.inventory.selectedCompactorId === "compactor-1");
     api.markSelected(entry, compactorSelected);
@@ -413,9 +499,9 @@ window.HqPanel = (function () {
     deployBtn.textContent = "Deploy";
     deployBtn.style.alignSelf = "flex-end";
     deployBtn.style.width = "auto";
-    deployBtn.style.padding = "7px 14px";
+    deployBtn.style.padding = "9px 20px";
     deployBtn.style.fontSize = "12px";
-    deployBtn.style.marginTop = "8px";
+    deployBtn.style.marginTop = "8px"; deployBtn.style.minHeight = "40px";
     deployBtn.style.display = compactorSelected ? "" : "none";
     deployBtn.addEventListener("click", function (ev) {
       ev.stopPropagation();
@@ -426,10 +512,36 @@ window.HqPanel = (function () {
     list.appendChild(wrap);
   };
 
+  // Make a fleet entry operable without a mouse: toggle-button semantics
+  // (Enter/Space activate, like the click path).
+  api._makeSelectable = function (entry, name) {
+    entry.setAttribute("role", "button");
+    entry.setAttribute("tabindex", "0");
+    entry.setAttribute("aria-label", name + " — activate to select");
+    entry.setAttribute("aria-pressed", "false");
+    entry.addEventListener("keydown", function (ev) {
+      if (!ev) return;
+      if (ev.key === "Enter" || ev.key === " ") {
+        if (ev.preventDefault) ev.preventDefault();
+        if (ev.stopPropagation) ev.stopPropagation();
+        var w = this.closest ? this.closest(".hq-fs-inventory-item-wrap") : null;
+        api.selectItem(w || this);
+      }
+    });
+  };
+
   // Toggle the selected state of an inventory entry element.
   api.markSelected = function (entry, selected) {
-    entry.style.borderColor = selected ? "#E8604A" : "#2B2320";
+    entry.style.borderColor = selected ? "#C7432B" : "#2B2320";
     entry.style.background = selected ? "#E4F5F6" : "#FFFBF0";
+    entry.setAttribute("aria-pressed", selected ? "true" : "false");
+    try {
+      var st = entry.querySelector ? entry.querySelector("[data-status]") : null;
+      if (st) {
+        st.textContent = selected ? "SELECTED" : "READY";
+        if (st.classList) st.classList.toggle("hq-inv-status--on", !!selected);
+      }
+    } catch (e) {}
   };
 
   // Select (or deselect) a survey-unit entry. Single-select across BOTH fleets:
@@ -542,6 +654,7 @@ window.HqPanel = (function () {
     var holder = container || null;
     if (!api.msgEl) {
       api.msgEl = document.createElement("div");
+      api.msgEl.setAttribute("role", "status");
       api.msgEl.style.textAlign = "right";
       api.msgEl.style.fontSize = "12px";
       api.msgEl.style.fontWeight = "700";
@@ -566,7 +679,7 @@ window.HqPanel = (function () {
     }
     api.msgEl.textContent = text;
     // amber is reserved for warning moments; coral for positive confirmations
-    api.msgEl.style.color = success ? "#E8604A" : "#FFA000";
+    api.msgEl.style.color = success ? "#C7432B" : "#FFA000";
     api.msgEl.style.opacity = "1";
     clearTimeout(api._msgTimer);
     api._msgTimer = setTimeout(function () {
@@ -586,7 +699,7 @@ window.HqPanel = (function () {
     // button stays disabled for the rest of the session — no second purchase.
     if (gs.droneSystemPurchased) return;
     if (gs.cash >= gs.droneCost) {
-      gs.cash -= gs.droneCost;
+      if (!gs.spend(gs.droneCost, "Drone System")) return;
       gs.inventory.droneCount += 1;
       gs.droneSystemPurchased = true;
       if (window.Main && window.Main.updateHUD) window.Main.updateHUD();
@@ -613,7 +726,7 @@ window.HqPanel = (function () {
     if (!gs) return;
     if (gs.gprSystemPurchased) return;
     if (gs.cash >= gs.gprCost) {
-      gs.cash -= gs.gprCost;
+      if (!gs.spend(gs.gprCost, "GPR System")) return;
       gs.inventory.gprCount += 1;
       gs.gprSystemPurchased = true;
       if (window.Main && window.Main.updateHUD) window.Main.updateHUD();
@@ -640,7 +753,7 @@ window.HqPanel = (function () {
     if (!gs) return;
     if (gs.compactorSystemPurchased) return;
     if (gs.cash >= gs.compactorCost) {
-      gs.cash -= gs.compactorCost;
+      if (!gs.spend(gs.compactorCost, "Dynamic Compactor")) return;
       gs.compactorSystemPurchased = true;
       if (window.Main && window.Main.updateHUD) window.Main.updateHUD();
       api.updateOwned();
@@ -660,22 +773,76 @@ window.HqPanel = (function () {
     }
   };
 
+  // ---- modal keyboard contract (WAI-APG): trap Tab inside, Escape closes
+  function focusables() {
+    if (!api.panelEl || !api.panelEl.querySelectorAll) return [];
+    var list = api.panelEl.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    var out = [];
+    for (var i = 0; i < list.length; i++) {
+      var el = list[i];
+      if (el.disabled) continue;
+      // visible check that survives stub DOMs (offsetParent may be undefined)
+      if (el.offsetParent === null && el !== document.activeElement) continue;
+      out.push(el);
+    }
+    return out;
+  }
+
+  api._onKey = function (e) {
+    if (!api.isOpen || !e) return;
+    var key = e.key || "";
+    if (key === "Escape") {
+      if (e.stopPropagation) e.stopPropagation();
+      api.close();
+      return;
+    }
+    if (key !== "Tab") return;
+    var f = focusables();
+    if (!f.length) {
+      if (e.preventDefault) e.preventDefault();
+      return;
+    }
+    var first = f[0], last = f[f.length - 1];
+    var active = null;
+    try { active = document.activeElement; } catch (err) { active = null; }
+    if (e.shiftKey) {
+      if (active === first || !active || f.indexOf(active) < 0) {
+        if (e.preventDefault) e.preventDefault();
+        if (last.focus) last.focus();
+      }
+    } else {
+      if (active === last) {
+        if (e.preventDefault) e.preventDefault();
+        if (first.focus) first.focus();
+      }
+    }
+  };
+
    api.open = function () {
     if (api.isOpen) return;
     if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
     var fsBtn = document.getElementById('fs-btn');
     if (fsBtn) fsBtn.style.display = 'none';
+    try { api._opener = document.activeElement || null; } catch (e) { api._opener = null; }
     api.isOpen = true;
     api.overlayEl.style.visibility = "visible";
     api.overlayEl.style.pointerEvents = "auto";
-    api.switchSection("store");
+    // lock the page behind the modal so touch scroll can't escape under it
+    try { document.body.style.overflow = "hidden"; } catch (e) {}
+    // reopen where the player left off (DATA on first open)
+    var target = api.currentSection || "data";
+    api.currentSection = "";
+    api.switchSection(target);
     api.updateOwned();
     api.renderInventory();
     api.refreshDronePurchaseState();
     api.refreshGprPurchaseState();
     api.refreshCompactorPurchaseState();
+    // initial focus lands on the close control (visible, first in tab order)
+    try { if (api.closeBtn && api.closeBtn.focus) api.closeBtn.focus(); } catch (e) {}
 
-    if (typeof anime !== "undefined" && anime) {
+    if (!isShot() && typeof anime !== "undefined" && anime) {
       anime({
         targets: api.panelEl,
         scale: [0.85, 1],
@@ -697,6 +864,7 @@ window.HqPanel = (function () {
 
   api.close = function () {
     if (!api.isOpen) return;
+    if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
     var fsBtn2 = document.getElementById('fs-btn');
     if (fsBtn2) fsBtn2.style.display = '';
     api.isOpen = false;
@@ -706,6 +874,10 @@ window.HqPanel = (function () {
       api.overlayEl.style.pointerEvents = "none";
       api.panelEl.style.transform = "";
       api.panelEl.style.opacity = "";
+      try { document.body.style.overflow = ""; } catch (e) {}
+      // return focus to whatever opened the panel (APG close contract)
+      try { if (api._opener && api._opener.focus) api._opener.focus(); } catch (e2) {}
+      api._opener = null;
     }
 
     if (typeof anime !== "undefined" && anime) {

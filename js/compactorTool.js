@@ -648,7 +648,7 @@ window.CompactorTool = (function () {
       ctx.lineWidth = 4;
       ctx.strokeText(text, x, y);
       // fill
-      ctx.fillStyle = "#E8604A";
+      ctx.fillStyle = "#C7432B";
       ctx.fillText(text, x, y);
       ctx.globalAlpha = 1;
     }
@@ -681,7 +681,7 @@ window.CompactorTool = (function () {
     else ctx.rect(-baseW/2, hullY, baseW, hullH);
     ctx.fill(); ctx.stroke();
     // coral bottom lip
-    ctx.fillStyle = "#E8604A";
+    ctx.fillStyle = "#C7432B";
     ctx.beginPath();
     if (ctx.roundRect) ctx.roundRect(-baseW/2 + 3, hullY + hullH - 7, baseW - 6, 7, 4);
     else ctx.rect(-baseW/2 + 3, hullY + hullH - 7, baseW - 6, 7);
@@ -715,7 +715,7 @@ window.CompactorTool = (function () {
     ctx.fillStyle = "#FFFBF0";
     ctx.beginPath(); ctx.arc(cabX + cabW/2 - 2.5, cabY + 7, 2, 0, Math.PI*2); ctx.fill();
     // coral roof cap
-    ctx.fillStyle = "#E8604A"; ctx.strokeStyle = "#2B2320"; ctx.lineWidth = 2.2;
+    ctx.fillStyle = "#C7432B"; ctx.strokeStyle = "#2B2320"; ctx.lineWidth = 2.2;
     ctx.beginPath();
     if (ctx.roundRect) ctx.roundRect(cabX - 2, cabY - 4, cabW + 4, 6, 3);
     else ctx.rect(cabX - 2, cabY - 4, cabW + 4, 6);
@@ -735,7 +735,7 @@ window.CompactorTool = (function () {
     ctx.beginPath(); ctx.arc(0, mastTop + 8, 2, 0, Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.arc(0, mastTop + mastH - 10, 2, 0, Math.PI*2); ctx.fill();
     // top cap + tiny beacon
-    ctx.fillStyle = "#E8604A";
+    ctx.fillStyle = "#C7432B";
     ctx.beginPath();
     if (ctx.roundRect) ctx.roundRect(-postW/2 - 3, mastTop - 3, postW + 6, 6, 3);
     else ctx.rect(-postW/2 - 3, mastTop - 3, postW + 6, 6);
@@ -750,7 +750,7 @@ window.CompactorTool = (function () {
     ctx.save();
     ctx.translate(bx0, by0);
     ctx.rotate(boomAng);
-    ctx.fillStyle = "#E8604A";
+    ctx.fillStyle = "#C7432B";
     ctx.strokeStyle = "#2B2320"; ctx.lineWidth = 3;
     ctx.beginPath();
     if (ctx.roundRect) ctx.roundRect(0, -7, boomL, 14, 7);

@@ -12,9 +12,44 @@
   var lastPointer = 0;
   var loading = false, prog = 0, shown = 0, lastTs = 0, shownPct = -1;
   var loadTiles = [], fillOrder = [];
-  // Deterministic capture hook: index.html#shot renders the settled state
-  // (no entrance, no meteor). Zero effect on normal loads.
-  var shotMode = (window.location && window.location.hash === '#shot');
+  // Deterministic capture hooks for headless visual review:
+  //   #shot            start screen, settled (no entrance, no meteor)
+  //   #shot=game       straight into the live map, no loader
+  //   #shot=data|store|inventory   game + HQ open on that tab
+  // Zero effect on normal loads (no hash match → untouched flow).
+  var shotMode = false, shotTab = "start";
+  try {
+    var _shm = window.location && /#shot(?:=(\w+))?/.exec(window.location.hash || "");
+    if (_shm) { shotMode = true; shotTab = _shm[1] || "start"; }
+  } catch (e) { shotMode = false; }
+
+  // Instant backstage entry for captures: hide the title, then open the
+  // requested HQ tab once the game booted. All guarded — a failed capture
+  // path must never break the real enter flow.
+  function shotEnter(tab) {
+    entered = true;
+    // captures run headless under virtual time, where tween engines can
+    // stall mid-fade: every animated entrance below checks this flag and
+    // applies its final state synchronously instead. Real flow untouched.
+    try { window.__SHOT = true; } catch (e0) {}
+    if (screen) screen.classList.add('hidden');
+    function openTab() {
+      try {
+        if (!tab || tab === "game" || tab === "start") return;
+        if (window.HqPanel && window.HqPanel.open) {
+          window.HqPanel.open();
+          if (window.HqPanel.switchSection) {
+            window.HqPanel.currentSection = "";
+            window.HqPanel.switchSection(tab);
+          }
+        }
+      } catch (e2) {}
+    }
+    try {
+      if (document.readyState === "complete") setTimeout(openTab, 800);
+      else window.addEventListener("load", function () { setTimeout(openTab, 800); });
+    } catch (e3) {}
+  }
 
   // Loader build grid — reuses the main game's tile pop recipe exactly:
   // js/blockRender.js animateRise() tweens rise 0 -> POP_RISE px over
@@ -48,7 +83,12 @@
     window.addEventListener('keydown', onKey);
 
     lastPointer = now();
-    if(shotMode) { startLoop(); if(btn) btn.focus(); return; }
+    if(shotMode) {
+      startLoop();
+      if(shotTab && shotTab !== "start") { shotEnter(shotTab); return; }
+      if(btn) btn.focus();
+      return;
+    }
     entrance();
     startLoop();
     scheduleMeteor(2500);

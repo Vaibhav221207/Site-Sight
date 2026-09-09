@@ -9,8 +9,16 @@
 
 window.GameState = (function () {
   var api = {
-    cash: 50000,             // starting cash
-    hqCost: 10000,            // fixed HQ cost
+    // Startup budget covers HQ + one of every survey/stabilization tool
+    // ($20,000) and leaves a forgiving $20,000 operating reserve.
+    startingCash: 40000,
+    cash: 40000,
+    startupBudget: {
+      requiredTools: 20000,
+      starterReserve: 20000,
+      total: 40000,
+    },
+    hqCost: 5000,             // accessible early command-center unlock
     hqBuilt: false,           // has the player built an HQ yet?
     hqTile: null,             // { col, row } of the HQ tile, or null
     // ONE-TIME purchase flag: the Drone System can be bought exactly once per
@@ -59,6 +67,41 @@ window.GameState = (function () {
     // surface data; the GPR writes subsurface data; bestUse is recomputed after
     // every update (see computeBestUse).
     tileData: {},
+    roads: {},
+    cashLedger: [],
+  };
+
+  api.spend = function (amount, reason) {
+    amount = Math.max(0, Number(amount) || 0);
+    if (api.cash < amount) return false;
+    api.cash -= amount;
+    api.cashLedger.push({ type: "expense", amount: amount, reason: reason || "Purchase", at: Date.now() });
+    if (api.cashLedger.length > 100) api.cashLedger.shift();
+    return true;
+  };
+
+  api.earn = function (amount, reason) {
+    amount = Math.max(0, Number(amount) || 0);
+    if (!amount) return 0;
+    api.cash += amount;
+    api.cashLedger.push({ type: "income", amount: amount, reason: reason || "City income", at: Date.now() });
+    if (api.cashLedger.length > 100) api.cashLedger.shift();
+    return amount;
+  };
+
+  api.getStartupBudget = function () {
+    var requiredTools = api.hqCost + api.droneCost + api.gprCost + api.compactorCost;
+    return {
+      requiredTools: requiredTools,
+      starterReserve: api.startingCash - requiredTools,
+      total: api.startingCash,
+      tools: {
+        hq: api.hqCost,
+        drone: api.droneCost,
+        gpr: api.gprCost,
+        compactor: api.compactorCost,
+      },
+    };
   };
 
   // HQ tiles are never part of a scan (visual + data). The scanning
@@ -215,6 +258,8 @@ window.GameState = (function () {
     var k = col + "," + row;
     if (!api.tileData[k]) {
       api.tileData[k] = {
+          col: col,
+          row: row,
         droneScanned: false,
         gprScanned: false,
         surfaceStability: null,   // "Poor" | "Fair" | "Good" | "Excellent"
@@ -226,30 +271,35 @@ window.GameState = (function () {
         zoneMismatched: null,     // true when zoneType disagrees with bestUse (set on confirm)
         zoneVerdict: null,        // "ok" | "mild" | "severe" (see js/buildings.js)
         zoneBuilding: null,       // building id (see js/buildings.js) | null
+        buildingSprite: null,      // Kenney sprite filename for constructed building
         pollution: 0,             // 0-100 ground stain (see js/economy.js)
         blighted: false,          // true at max stain: earns $0 until scrubbed
       };
     }
+    if (api.tileData[k].col === undefined) api.tileData[k].col = col;
+    if (api.tileData[k].row === undefined) api.tileData[k].row = row;
     return api.tileData[k];
   };
 
-  // Simple rule-based best-use recommendation. Pure logic — easy to test and to
-  // extend later with a real scoring formula. Order of checks matters:
-  //   - no scans               -> null
-  //   - only one scan type     -> "Partial Data" (needs the other tier too)
-  //   - both scanned           -> one of the real categories below.
+  // Suitability scoring is deliberately deterministic. Survey facts decide the
+  // category; there is no per-tile jitter or hash-based roulette that can make
+  // adjacent, otherwise-identical tiles recommend unrelated uses.
   api.computeBestUse = function (d) {
     if (!d) return null;
     var drone = !!d.droneScanned, gpr = !!d.gprScanned;
     if (!drone && !gpr) return null;
     if (!drone || !gpr) return "Partial Data";
-    if (d.mineralDeposits === "Rich") return "Mining";
-    var goodStab = (d.surfaceStability === "Good" || d.surfaceStability === "Excellent");
-    if (d.bedrockDepth === "Shallow" && goodStab) return "Industrial";
-    if (goodStab && (d.bedrockDepth === "Moderate" || d.bedrockDepth === "Deep")) return "Residential";
-    if (d.surfaceStability === "Fair") return "Commercial";
     if (d.surfaceStability === "Poor") return "Unsuitable";
-    return null; // both scanned but fields missing — should not normally happen
+    // Use explicit planning rules instead of close floating-point scores. This
+    // keeps a tile's recommendation explainable in the DATA panel and ensures
+    // all four buildable categories remain available.
+    if (d.mineralDeposits === "Rich") return "Mining";
+    if (d.bedrockDepth === "Shallow") return "Industrial";
+    if (d.bedrockDepth === "Deep" &&
+        (d.surfaceStability === "Excellent" || d.surfaceStability === "Good")) return "Commercial";
+    if (d.bedrockDepth === "Moderate" &&
+        (d.surfaceStability === "Excellent" || d.surfaceStability === "Good")) return "Commercial";
+    return "Residential";
   };
 
   // recompute a record's bestUse in place after any data change.
@@ -330,7 +380,7 @@ window.GameState = (function () {
         }
       }
     }
-    // For each tile in the area, if 4+ of 8 neighbors share a bestUse, nudge it
+    // For each tile in the area, a clear local majority creates a district.
     var changes = [];
     for (var j = 0; j < tiles.length; j++) {
       var t = tiles[j];
@@ -348,12 +398,8 @@ window.GameState = (function () {
       }
       var best = null, bestCount = 0;
       for (var k in counts) if (counts[k] > bestCount) { bestCount = counts[k]; best = k; }
-      if (best && best !== d.bestUse && bestCount >= 4) {
-        // 70% chance to snap to neighborhood — keeps some noise, not full blur
-        var hash = (t.col * 92837111) ^ (t.row * 689287499) ^ 0x517cc1b7;
-        hash = (hash ^ (hash >>> 16)) * 0x45d9f3b;
-        var r = (hash >>> 0) % 100;
-        if (r < 70) changes.push({ col: t.col, row: t.row, bestUse: best });
+      if (best && best !== d.bestUse && bestCount >= 5) {
+        changes.push({ col: t.col, row: t.row, bestUse: best });
       }
     }
     for (var c2 = 0; c2 < changes.length; c2++) {

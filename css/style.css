@@ -1,6 +1,6 @@
 /* Site Sight — chunky tactile mobile-game UI theme.
    Chrome colors: warm cream #FFFBF0 panels, thick 3px "cartoon ink" outlines
-   #2B2320 (near-black warm brown), saturated coral #E8604A primary actions,
+   #2B2320 (near-black warm brown), saturated coral #C7432B primary actions,
    warm brown-gray #6B5B4F section labels, ink #2B2320 body text. Panels get
    hard offset shadows (ZERO blur), buttons are pressable 3D keys with a
    darker bottom "keycap" edge that collapses on press. Major titles use a
@@ -107,11 +107,11 @@ button {
 
 /* primary coral keycap button */
 .btn-coral {
-  background: #E8604A;
+  background: #C7432B;
   box-shadow: 0 2px 0 0 #000; /* darker coral bottom edge, zero blur */
 }
 .btn-coral:hover {
-  background: #D05240;
+  background: #A93226;
 }
 
 /* ---- tile inspection popup (chunky sticker card) ------------------------ */
@@ -150,7 +150,7 @@ button {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #E8604A;
+  color: #C7432B;
   /* comic game-logo outline — thinner for SITE INSPECTION */
   -webkit-text-stroke: 1.2px #2B2320;
   paint-order: stroke fill;
@@ -159,12 +159,12 @@ button {
 .panel-close {
   width: 28px;
   height: 28px;
-  background: #E8604A;
+  background: #C7432B;
   box-shadow: 0 2px 0 0 #000;
   border: 3px solid #2B2320;
   border-radius: 14px;
   color: #FFFFFF;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
@@ -172,7 +172,7 @@ button {
     background 0.15s ease;
 }
 .panel-close:hover {
-  background: #D05240;
+  background: #A93226;
 }
 .panel-close:active {
   transform: translateY(2px);
@@ -204,10 +204,11 @@ button {
 .hud {
   position: fixed;
   bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: max(12px, calc(50% - 460px));
+  right: auto;
   height: 56px;
-  min-width: 420px;
+  width: min(520px, calc(100vw - 24px));
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -223,6 +224,8 @@ button {
   display: flex;
   align-items: center;
   gap: 16px;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .hud-left .label {
@@ -240,11 +243,13 @@ button {
   color: #2B2320;
   letter-spacing: -0.01em;
   overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .hud-btn {
   padding: 8px 26px;
-  background: #E8604A;
+  background: #C7432B;
   box-shadow: 0 2px 0 0 #000;
   border: 3px solid #2B2320;
   border-radius: 14px;
@@ -255,12 +260,13 @@ button {
   letter-spacing: 0.04em;
   cursor: pointer;
   will-change: transform;
+  flex: 0 0 auto;
   transition: transform 0.09s ease, box-shadow 0.09s ease,
     background 0.15s ease;
 }
 
 .hud-btn:hover {
-  background: #D05240;
+  background: #A93226;
   transform: translateY(-1px);
   box-shadow: 0 3px 0 0 #000;
 }
@@ -273,6 +279,14 @@ button {
 #hud-stop-btn {
   background: #C0392B;
   box-shadow: 0 2px 0 0 #000;
+}
+
+.hud-cancel-btn {
+  background: #C0392B;
+}
+
+.hud-cancel-btn:hover {
+  background: #A03020;
 }
 
 #hud-stop-btn:hover {
@@ -301,30 +315,58 @@ button {
   outline: none;
 }
 
+/* ---- HQ terminal keyboard focus (same ink-ring language as the HUD) ----
+   Every HQ control shares one visible focus ring; mouse focus stays clean. */
+.hq-fs-nav-item:focus-visible,
+.hq-fs-close:focus-visible,
+.hq-order-btn:focus-visible,
+.hq-data-zone-btn:focus-visible,
+.hq-data-bld-card:focus-visible,
+.hq-fs-inventory-item:focus-visible,
+.panel-close:focus-visible,
+#data-minimap:focus-visible {
+  outline: 3px solid #2B2320;
+  outline-offset: 2px;
+}
+
+.hq-fs-nav-item:focus,
+.hq-fs-close:focus,
+.hq-order-btn:focus,
+.hq-data-zone-btn:focus,
+.hq-data-bld-card:focus,
+.hq-fs-inventory-item:focus,
+.panel-close:focus,
+#data-minimap:focus {
+  outline: none;
+}
+
 /* ---- Build palette ---- */
 .build-bar {
   position: fixed;
   bottom: 92px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 12px;
+  right: 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12px;
   padding: 16px 18px 18px;
+  width: min(920px, calc(100vw - 24px));
+  max-height: min(70vh, 520px);
+  box-sizing: border-box;
   background: #FFFBF0;
   border: 3px solid #2B2320;
   border-radius: 16px;
   box-shadow: 3px 3px 0 #000;
   z-index: 1001;
-  overflow: visible;
+  overflow: hidden;
   transition: transform 0.16s ease-out, opacity 0.16s ease-out;
   will-change: transform, opacity;
 }
 
 .build-bar.hidden {
   opacity: 0;
-  transform: translateX(-50%) translateY(12px);
+  transform: translateY(12px);
   pointer-events: none;
 }
 
@@ -337,9 +379,47 @@ button {
   overflow: hidden;
 }
 
-.build-items {
+.build-bar-head {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+}
+
+.build-cancel-btn {
+  padding: 6px 10px;
+  border: 2px solid #2B2320;
+  border-radius: 9px;
+  background: #C7432B;
+  color: #FFFFFF;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 #000;
+}
+
+.build-cancel-btn:hover {
+  background: #A93226;
+}
+
+.build-cancel-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 transparent;
+}
+
+.build-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr));
   gap: 10px;
+  width: 100%;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 2px 4px 4px 2px;
+  box-sizing: border-box;
 }
 
 .build-item {
@@ -347,7 +427,8 @@ button {
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
-  min-width: 170px;
+  min-width: 0;
+  width: 100%;
   background: #FFFBF0;
   border: 3px solid #2B2320;
   border-radius: 14px;
@@ -366,7 +447,7 @@ button {
 }
 
 .build-item.selected {
-  background: #E8604A;
+  background: #C7432B;
   color: #FFFFFF;
   box-shadow: 0 2px 0 0 #000; /* selected = raised keycap look */
 }
@@ -402,6 +483,14 @@ button {
   flex: 0 0 auto;
 }
 
+.build-item-icon img {
+  display: block;
+  max-width: 44px;
+  max-height: 44px;
+  width: auto;
+  height: auto;
+}
+
 .build-item-icon svg {
   display: block;
 }
@@ -422,7 +511,7 @@ button {
 }
 
 .build-item-cost {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: #2B2320;
   overflow: hidden;
@@ -501,7 +590,7 @@ button {
 }
 
 .hq-drone-name {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   color: #2B2320;
   overflow: hidden;
@@ -518,12 +607,12 @@ button {
 
 .hq-order-btn {
   padding: 8px 22px;
-  background: #E8604A;
+  background: #C7432B;
   box-shadow: 0 2px 0 0 #000;
   border: 3px solid #2B2320;
   border-radius: 14px;
   color: #FFFFFF;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -533,8 +622,15 @@ button {
     background 0.15s ease;
 }
 
-.hq-order-btn:hover {
-  background: #D05240;
+.hq-order-btn:hover:not([disabled]) {
+  background: #A93226;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 0 0 #000;
+}
+
+.hq-order-btn[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .hq-order-btn:active {
@@ -633,7 +729,7 @@ button {
   background: #FFFBF0;
   border: 3px solid #2B2320;
   border-radius: 16px;
-  box-shadow: 3px 3px 0 #000;
+  box-shadow: 4px 4px 0 #000;
   position: relative;
   overflow: hidden;
   opacity: 0;
@@ -647,32 +743,48 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 24px;
+  gap: 12px;
+  padding: 20px 26px;
   border-bottom: 3px solid #2B2320;
   background-color: #F6EEDC;
   overflow: hidden;
+  min-height: 78px;
 }
 
 .hq-fs-title {
-  font-size: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 24px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #E8604A;
+  letter-spacing: 0.06em;
+  color: #C7432B;
   /* comic game-logo outline on major titles only */
   -webkit-text-stroke: 2px #2B2320;
   paint-order: stroke fill;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* survey-pin logo mark riding with the terminal title */
+.hq-title-mark {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
 }
 
 .hq-fs-close {
   width: 38px;
   height: 38px;
-  background: #E8604A;
+  background: #C7432B;
   box-shadow: 0 2px 0 0 #000;
   border: 3px solid #2B2320;
   border-radius: 14px;
   color: #FFFFFF;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
@@ -681,7 +793,7 @@ button {
 }
 
 .hq-fs-close:hover {
-  background: #D05240;
+  background: #A93226;
 }
 
 .hq-fs-close:active {
@@ -712,6 +824,8 @@ button {
   border-top: 3px solid #2B2320;
   background: #F6EEDC;
 }
+
+
 .hq-fs-footer:empty {
   display: none;
 }
@@ -741,15 +855,22 @@ button {
   flex: 0 0 auto;
   width: 100%;
   min-width: 0;
+  min-height: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
   padding: 10px 6px;
   background: #FFFBF0;
   border: 3px solid #2B2320;
   border-radius: 14px;
+  box-shadow: 2px 2px 0 #000;
   color: #2B2320;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   line-height: 1.2;
   text-align: center;
   white-space: nowrap;
@@ -763,8 +884,15 @@ button {
 
 .hq-fs-nav-item:hover {
   transform: translateY(-1px);
-  background: #F6EEDC;
-  box-shadow: 2px 2px 0 #000;
+  background: #FFF4DE;
+  box-shadow: 3px 3px 0 #000;
+}
+
+/* tab glyphs ride currentColor: ink at rest, white on the active coral key */
+.hq-nav-ico {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
 }
 
 .hq-fs-content {
@@ -779,7 +907,7 @@ button {
 /* active tab = filled coral key (currently selected, looks pressed in) */
 .hq-fs-nav-item--active {
   color: #FFFFFF;
-  background: #E8604A;
+  background: #C7432B;
   box-shadow: 0 2px 0 0 #000;
 }
 
@@ -787,12 +915,17 @@ body.touch-ui .hq-fs-nav-item {
   min-height: 44px;
 }
 
-/* content area */
+/* content area: faint blueprint grid underneath everything — the survey
+   table reads as one instrument, cards floating over graph paper */
 .hq-fs-content {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   padding: 28px;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(43, 35, 32, 0.055) 0 1px, transparent 1px 22px),
+    repeating-linear-gradient(90deg, rgba(43, 35, 32, 0.055) 0 1px, transparent 1px 22px);
+  overscroll-behavior: contain;
 }
 
 .hq-fs-section {
@@ -805,7 +938,7 @@ body.touch-ui .hq-fs-nav-item {
 }
 
 .hq-fs-placeholder {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   color: #6B5B4F;
   padding: 36px 0;
@@ -814,13 +947,57 @@ body.touch-ui .hq-fs-nav-item {
   word-break: break-word;
 }
 
+/* designed inventory empty state: centered stack, breathing room, one CTA */
+.hq-empty-inventory {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 44px 20px;
+}
+
+.hq-empty-text {
+  margin: 0;
+  max-width: 300px;
+  line-height: 1.5;
+}
+
 .hq-fs-status {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding-bottom: 22px;
+  gap: 4px;
+  padding-bottom: 16px;
   border-bottom: 3px solid #2B2320;
   overflow: hidden;
+}
+
+/* clickable inventory cards need a hover answer, not just selected/idle.
+   filter (not background): selection colors are set inline by JS, and the
+   hover must never wash out the selected state — it only deepens it. */
+.hq-fs-inventory-item:hover {
+  filter: brightness(0.96);
+}
+
+/* thin scrollbars inside the terminal scroll regions (brand-neutral) */
+.hq-fs-content,
+.hq-data-side-col,
+.hq-data-minimap-legend {
+  scrollbar-width: thin;
+  scrollbar-color: #6B5B4F transparent;
+}
+
+.hq-fs-content::-webkit-scrollbar,
+.hq-data-side-col::-webkit-scrollbar,
+.hq-data-minimap-legend::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.hq-fs-content::-webkit-scrollbar-thumb,
+.hq-data-side-col::-webkit-scrollbar-thumb,
+.hq-data-minimap-legend::-webkit-scrollbar-thumb {
+  background: #6B5B4F;
+  border-radius: 8px;
 }
 
 .hq-fs-section {
@@ -854,6 +1031,8 @@ body.touch-ui .hq-fs-nav-item {
 }
 
 .hq-fs-section-header {
+  display: flex;
+  align-items: center;
   font-size: 14px;
   font-weight: 700;
   text-transform: uppercase;
@@ -865,32 +1044,255 @@ body.touch-ui .hq-fs-nav-item {
   overflow: hidden;
 }
 
+/* amber survey-marker squares lead every section header: one rhythm,
+   zero extra markup, readable even before the words */
+.hq-fs-section-header::before,
+.hq-data-section-header::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  flex-shrink: 0;
+  margin-right: 8px;
+  background: #FFB300;
+  border: 2px solid #2B2320;
+  border-radius: 3px;
+}
+
 .hq-fs-drone-row {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 12px;
-  padding: 16px 18px;
-  background: #FFFBF0;
-  border: 3px solid #2B2320;
-  border-radius: 16px;
-  box-shadow: 3px 3px 0 #000;
-  overflow: hidden;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding: 14px 6px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  border-bottom: 2px solid rgba(43, 35, 32, 0.18);
+  overflow: visible;
+  transition: background 0.15s ease;
 }
 
 .hq-fs-drone-row .hq-order-btn {
-  align-self: flex-end;
+  align-self: center;
+  flex-shrink: 0;
   width: auto;
   padding: 7px 14px;
   font-size: 12px;
-  margin-top: 2px;
+  margin-top: 0;
+  margin-left: auto;
+}
+
+/* whole-row hover answers before the button does: quiet wash, not motion
+   (list rows have no keycap to press, so they tint instead of lifting) */
+.hq-fs-drone-row:hover {
+  background: #FFF9EC;
+  border-radius: 12px;
 }
 
 .hq-fs-drone-info {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 4px;
   overflow: hidden;
+  flex: 1 1 auto;
+  min-width: 140px;
+}
+
+/* owned-count pills: ink chips with a system-color underline */
+.hq-fs-drone-owned {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #FFFBF0;
+  background: #2B2320;
+  border-radius: 10px;
+  padding: 2px 10px;
+  white-space: nowrap;
+}
+
+.hq-owned--drone {
+  box-shadow: inset 0 -2px 0 #C7432B;
+}
+
+.hq-owned--gpr {
+  box-shadow: inset 0 -2px 0 #E0962A;
+}
+
+.hq-owned--compactor {
+  box-shadow: inset 0 -2px 0 #7C7C74;
+}
+
+/* ---- HQ icon-led rows (STORE + INVENTORY + picker cards) ---------------
+   Every buyable/selectable carries a procedural glyph: silhouette-first
+   shapes that read at slot size, one accent each, ink outlines. */
+
+.hq-store-ico {
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  align-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
+  box-shadow: 2px 2px 0 #000;
+  transition: transform 0.15s ease-out;
+}
+
+/* system-tinted glyph tiles: the color tells you which row at a glance.
+   Tints run deep enough that white glyphs separate; every glyph carries an
+   ink drop-shadow so raster and vector read as one sticker family. */
+.hq-store-ico[data-icon="drone"] { background: #EDC9BE; }
+.hq-store-ico[data-icon="gpr"] { background: #F0D6A8; }
+.hq-store-ico[data-icon="compactor"] { background: #D8D5CB; }
+
+.hq-store-ico svg,
+.hq-store-ico img,
+.hq-inv-ico svg,
+.hq-inv-ico img,
+.hq-data-bld-ico svg {
+  filter: drop-shadow(1px 1px 0 rgba(43, 35, 32, 0.9));
+}
+
+.hq-store-ico svg,
+.hq-store-ico img {
+  width: 36px;
+  height: 36px;
+  display: block;
+  pointer-events: none;
+}
+
+/* row hover gives its glyph a nudge — the row feels alive, not printed */
+.hq-fs-drone-row:hover .hq-store-ico {
+  transform: rotate(-5deg) scale(1.07);
+}
+
+.hq-store-blurb {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #6B5B4F;
+  overflow: hidden;
+}
+
+/* progressive disclosure: once bought, the teaching blurb retires and the
+   row compacts to icon + name + price + owned + action */
+.hq-fs-drone-row.is-bought .hq-store-blurb {
+  display: none;
+}
+
+/* red-when-broke: unaffordable prices read as unaffordable pre-click */
+.hq-fs-drone-cost.cant-afford {
+  color: #C0392B;
+  font-weight: 700;
+}
+
+/* header cash strip: balance stays visible inside every tab */
+.hq-fs-head-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.hq-cash {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #2B2320;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* live fleet count on the INVENTORY nav key */
+.hq-nav-count {
+  display: inline-block;
+  min-width: 22px;
+  padding: 1px 6px;
+  margin-left: 4px;
+  background: #C7432B;
+  color: #FFFFFF;
+  border-radius: 11px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.hq-nav-count[hidden] {
+  display: none;
+}
+
+/* inventory entry internals: glyph + growing name + status pill */
+.hq-fs-inventory-item > .hq-fs-inventory-item-name {
+  flex: 1;
+  margin: 0 10px;
+}
+
+.hq-inv-ico {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+}
+
+.hq-inv-ico svg,
+.hq-inv-ico img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+
+.hq-inv-status {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #6B5B4F;
+  border: 2px solid #6B5B4F;
+  border-radius: 10px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.hq-inv-status--on {
+  color: #FFFFFF;
+  background: #C7432B;
+  border-color: #2B2320;
+}
+
+/* building picker card head row: glyph + name share one line */
+.hq-data-bld-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hq-data-bld-ico {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+}
+
+.hq-data-bld-ico svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.hq-data-bld-head .hq-data-bld-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .hq-fs-drone-name {
@@ -954,6 +1356,7 @@ body.touch-ui .hq-fs-nav-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   padding: 8px 12px;
   background: #F6EEDC;
   border: 3px solid #2B2320;
@@ -963,7 +1366,7 @@ body.touch-ui .hq-fs-nav-item {
 }
 
 .hq-data-map-title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -1081,6 +1484,8 @@ body.touch-ui .hq-fs-nav-item {
 }
 
 .hq-data-section-header {
+  display: flex;
+  align-items: center;
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
@@ -1202,6 +1607,34 @@ body.touch-ui .hq-fs-nav-item {
   font-size: 11px;
   overflow: hidden;
   white-space: nowrap;
+  /* numeric column: right-aligned tabular figures scan faster than labels */
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  min-width: 52px;
+}
+
+/* share-of-map bar pinned to the row's bottom edge: composition reads
+   without reading numbers, in the row's own category color */
+.hq-data-cat-row {
+  position: relative;
+  padding-bottom: 9px;
+}
+
+.hq-data-cat-bar {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 4px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(43, 35, 32, 0.10);
+  overflow: hidden;
+}
+
+.hq-data-cat-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
 }
 
 /* ---- DATA tab: DESIGNATE ZONE (zoning merged into tile review) ----------
@@ -1257,6 +1690,11 @@ body.touch-ui .hq-fs-nav-item {
   box-shadow: 0 0 0 transparent;
 }
 
+.hq-data-zone-btn:hover:not([disabled]),
+.hq-data-bld-card:hover {
+  background: #FFF4DE;
+}
+
 .hq-data-zone-btn[disabled] {
   opacity: 0.45;
   cursor: not-allowed;
@@ -1305,7 +1743,7 @@ body.touch-ui .hq-fs-nav-item {
   font-size: 11px;
   font-weight: 700;
   line-height: 1.45;
-  color: #0E8A5A;
+  color: #0B6E48;
   padding: 6px 0;
   word-break: break-word;
 }
@@ -1371,7 +1809,7 @@ body.touch-ui .hq-fs-nav-item {
 }
 
 .hq-data-bld-cost {
-  color: #0E8A5A;
+  color: #0B6E48;
   white-space: nowrap;
 }
 
@@ -1543,9 +1981,15 @@ body.touch-ui .hq-fs-nav-item {
   }
 
   .hq-data-cat-row {
-    padding: 4px 6px;
+    padding: 4px 6px 8px;
     font-size: 9px;
     gap: 4px;
+  }
+  .hq-data-cat-bar {
+    left: 6px;
+    right: 6px;
+    bottom: 3px;
+    height: 3px;
   }
 
   .hq-data-cat-swatch {
@@ -1670,30 +2114,50 @@ body.touch-ui .hq-fs-nav-item {
     padding: 10px 16px;
   }
   .hq-fs-header { padding: 4px 8px; }
-  .hq-fs-title { font-size: 13px; -webkit-text-stroke: 1px #2B2320; }
+  .hq-fs-title { font-size: 12px; -webkit-text-stroke: 1px #2B2320; }
   .hq-fs-close { width: 26px; height: 26px; font-size: 14px; }
   body.touch-ui .hq-fs-close { width: 32px; height: 32px; }
-  /* compact sidebar: narrower rail */
+  /* compact sidebar: narrower rail, full-height 44px touch targets.
+     Labels wrap to two lines inside the tall keys instead of shrinking
+     below legibility. */
   .hq-fs-nav {
-    flex: 0 0 52px;
-    gap: 3px;
+    flex: 0 0 60px;
+    gap: 6px;
     padding: 6px 4px;
   }
   .hq-fs-nav-item {
-    padding: 6px 2px;
-    font-size: 7px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 2px;
+    font-size: 8px;
+    line-height: 1.25;
     letter-spacing: 0.01em;
     border-radius: 10px;
+    white-space: normal;
+  }
+  .hq-nav-ico {
+    width: 16px;
+    height: 16px;
   }
   .hq-fs-content { padding: 6px 8px; }
   .hq-fs-status { padding-bottom: 4px; }
   .hq-fs-status-text { font-size: 11px; }
   .hq-fs-section { margin-top: 4px; }
   .hq-fs-section-header { font-size: 9px; padding-bottom: 3px; margin-bottom: 3px; }
-  .hq-fs-drone-row { padding: 4px 6px; gap: 3px; }
+  .hq-fs-drone-row { padding: 4px 6px; gap: 3px; flex-direction: column; align-items: stretch; }
+  .hq-fs-drone-row .hq-order-btn { align-self: flex-end; margin-left: 0; }
   .hq-fs-drone-name { font-size: 11px; }
   .hq-fs-drone-cost { font-size: 10px; }
-  .hq-order-btn { padding: 4px 8px; font-size: 9px; }
+  .hq-store-blurb { font-size: 10px; }
+  .hq-store-ico { width: 36px; height: 36px; border-width: 2px; border-radius: 10px; }
+  .hq-store-ico svg, .hq-store-ico img { width: 24px; height: 24px; }
+  .hq-title-mark { width: 16px; height: 16px; }
+  .hq-cash { font-size: 14px; }
+  .hq-order-btn { padding: 4px 8px; font-size: 9px; min-height: 40px; }
+  .hq-fs-inventory-item { cursor: pointer; }
+  .panel-close { width: 28px; height: 28px; font-size: 14px; }
 
   /* Tile info popup: bottom-left chip on mobile — compact single column */
   #tile-popup {
@@ -1746,9 +2210,9 @@ body.touch-ui .hq-fs-nav-item {
     border-radius: 8px;
     box-shadow: 1px 1px 0 #000;
   }
-  .panel-data-label { font-size: 7px; }
+  .panel-data-label { font-size: 8px; }
   .panel-data-value { font-size: 9px; max-width: 100%; }
-  .panel-data-badge { font-size: 7px; padding: 1px 5px; border-width: 2px; }
+  .panel-data-badge { font-size: 8px; padding: 1px 5px; border-width: 2px; }
 
   /* INVENTORY rows are authored with inline styles in hqPanel.js — compact
      them at this breakpoint only (desktop keeps the authored sizes). */
@@ -1757,22 +2221,23 @@ body.touch-ui .hq-fs-nav-item {
     margin-bottom: 6px !important;
     border-radius: 16px !important;
   }
-  .hq-fs-inventory-item-name { font-size: 15px !important; }
+  .hq-fs-inventory-item-name { font-size: 14px !important; }
 
   /* Build palette sits above the HUD chip; compact so it doesn't dominate. */
-  .build-bar { bottom: 48px; padding: 8px 10px; gap: 6px; }
-  .build-item { padding: 6px 8px; min-width: 100px; }
+  .build-bar { bottom: 48px; padding: 8px 10px; gap: 6px; max-height: 68vh; }
+  .build-items { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .build-item { padding: 6px 8px; }
   .build-item-name { font-size: 12px; }
   .build-item-cost { font-size: 11px; }
   .build-item-icon { width: 32px; height: 32px; }
 
-  .hq-fs-placeholder { padding: 12px 0; font-size: 13px; }
+  .hq-fs-placeholder { padding: 12px 0; font-size: 12px; }
 
   /* Right-edge rail: slightly more compact on very short viewports */
   .mu-sidebar { width: 56px; gap: 6px; top: 8px; right: 8px; bottom: 8px; }
   .mu-chip { padding: 6px 4px; }
   .mu-label { font-size: 8px; }
-  .mu-value { font-size: 13px; }
+  .mu-value { font-size: 12px; }
   .mu-btn { padding: 8px 4px; font-size: 12px; min-height: 36px; }
 }
 
@@ -1871,7 +2336,7 @@ body.touch-ui .hud { display: none; }
 }
 
 .mu-value {
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 700;
   color: #2B2320;
   overflow: hidden;
@@ -1879,7 +2344,7 @@ body.touch-ui .hud { display: none; }
 
 .mu-btn {
   padding: 12px 6px;
-  background: #E8604A;
+  background: #C7432B;
   box-shadow: 0 2px 0 0 #000;
   border: 3px solid #2B2320;
   border-radius: 14px;
@@ -1894,7 +2359,7 @@ body.touch-ui .hud { display: none; }
 }
 
 .mu-btn:hover {
-  background: #D05240;
+  background: #A93226;
 }
 
 .mu-btn:active {
@@ -1922,7 +2387,7 @@ body.touch-ui .hud { display: none; }
   align-items: center;
   justify-content: center;
   padding: 12px 22px;
-  background: #E8604A;
+  background: #C7432B;
   box-shadow: 0 2px 0 0 #000;
   border: 3px solid #2B2320;
   border-radius: 14px;
@@ -1937,7 +2402,7 @@ body.touch-ui .hud { display: none; }
 }
 
 .rotate-enter:hover {
-  background: #D05240;
+  background: #A93226;
 }
 
 .rotate-enter:active {
@@ -1971,7 +2436,7 @@ body.touch-ui .rotate-enter { display: inline-flex; }
   box-shadow: 0 3px 0 #2B2320;
   color: #2B2320;
   font-family: "Baloo 2", sans-serif;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -2215,6 +2680,8 @@ body.touch-ui #tile-popup {
   animation: start-title-float 7s ease-in-out infinite;
   will-change: transform;
 }
+
+
 @keyframes start-title-float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-5px); }
@@ -2227,7 +2694,7 @@ body.touch-ui #tile-popup {
   letter-spacing: 0.01em;
   line-height: 1;
   color: #FFFBF0;
-  text-shadow: 4px 4px 0 #E8604A, 9px 9px 0 rgba(0,172,193,0.85);
+  text-shadow: 4px 4px 0 #C7432B, 9px 9px 0 rgba(0,172,193,0.85);
   transform: rotate(-2deg);
 }
 /* Split letters — each one wobbles when touched by the cursor. */
@@ -2282,7 +2749,7 @@ body.touch-ui #tile-popup {
   right: 0;
   bottom: 0;
   height: 14px;
-  background: repeating-linear-gradient(-45deg, #E8604A 0 9px, #FFFBF0 9px 18px);
+  background: repeating-linear-gradient(-45deg, #C7432B 0 9px, #FFFBF0 9px 18px);
   border-top: 3px solid #2B2320;
   border-radius: 0 0 15px 15px;
   pointer-events: none;
@@ -2383,7 +2850,7 @@ body.touch-ui #tile-popup {
 .site-loader-pct {
   margin: 0;
   font-family: "Baloo 2", sans-serif;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.12em;
   color: #2B2320;
@@ -2395,6 +2862,9 @@ body.touch-ui #tile-popup {
   .start-stars,
   .start-horizon {
     animation: none;
+  }
+  .hq-fs-drone-row:hover .hq-store-ico {
+    transform: none;
   }
   .start-enter-dot,
   .start-enter-btn:hover::before {

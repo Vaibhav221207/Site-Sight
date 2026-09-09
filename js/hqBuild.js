@@ -28,7 +28,7 @@ window.HQBuild = (function () {
       return false;
     }
 
-    window.GameState.cash -= window.GameState.hqCost;
+    if (!window.GameState.spend(window.GameState.hqCost, "ConTech HQ")) return false;
     window.GameState.hqBuilt = true;
     window.GameState.hqTile = { col, row };
 

@@ -5,7 +5,7 @@
  * through exactly ONE pointerdown/pointermove/pointerup triple on the
  * canvas, which dispatches to the active mode's handler and returns.
  *
- * Modes: 'idle' (default), 'placing-hq', 'compacting',
+ * Modes: 'idle' (default), 'placing-hq', 'placing-building', 'placing-road', 'compacting',
  *        'deploying-drone' (whole-map, no click target, kept for symmetry)
  * Idle is the only mode that shows HQ terminal or tile popup.
  * Any non-idle mode consumes the click entirely. (Zoning lives in the DATA
@@ -21,7 +21,7 @@ window.InputHandler = (function () {
   var DRAG_THRESHOLD = 5;
 
   // ---- single source of truth ----
-  var InteractionState = { mode: 'idle' }; // 'idle' | 'placing-hq' | 'compacting' | 'deploying-drone'
+  var InteractionState = { mode: 'idle' }; // 'idle' | 'placing-hq' | 'placing-building' | 'placing-road' | 'compacting' | 'deploying-drone'
 
   var api = {
     canvas: null,
@@ -46,7 +46,7 @@ window.InputHandler = (function () {
   // keep legacy booleans in sync for callers that still read them
   function syncLegacyFlags() {
     var m = InteractionState.mode;
-    api._placementMode = (m === 'placing-hq' || m === 'compacting');
+    api._placementMode = (m === 'placing-hq' || m === 'placing-building' || m === 'placing-road' || m === 'compacting');
     api._droneMode = (m === 'deploying-drone');
     // legacy alias used by some callers
     api._compactorDragSelect = (m === 'compacting' && api._pressed && !!api._compactorDragStart);
@@ -56,7 +56,7 @@ window.InputHandler = (function () {
     InteractionState.mode = mode;
     syncLegacyFlags();
     // cursor management per mode
-    if (mode === 'placing-hq' || mode === 'compacting') {
+    if (mode === 'placing-hq' || mode === 'placing-building' || mode === 'placing-road' || mode === 'compacting') {
       api.setCursor("crosshair");
     } else if (mode === 'idle') {
       api.setCursor("grab");
@@ -98,6 +98,12 @@ window.InputHandler = (function () {
     canvas.addEventListener("pointerup", onPointerUp);
     canvas.addEventListener("pointercancel", onPointerUp);
     canvas.addEventListener("dragstart", function (e) { e.preventDefault(); });
+    canvas.addEventListener("contextmenu", function (e) {
+      if (InteractionState.mode === 'placing-building' || InteractionState.mode === 'placing-road' || InteractionState.mode === 'placing-hq') {
+        e.preventDefault();
+        if (window.BuildMenu && window.BuildMenu.cancel) window.BuildMenu.cancel();
+      }
+    });
   }
 
   function nearestTile(sx, sy) {
@@ -152,6 +158,9 @@ window.InputHandler = (function () {
     // while compacting is active. The drag flow is handled in pointerDown/Move/Up
     // when mode === 'compacting'. If a click without drag occurs, do nothing.
   }
+  function handleBuildingClick(tile) {
+    if (tile && window.BuildMenu) window.BuildMenu.attempt(tile.col, tile.row);
+  }
 
   function handleIdleClick(pos, tile) {
     // HQ tile always opens terminal, never the small popup
@@ -200,6 +209,10 @@ window.InputHandler = (function () {
   function onPointerMove(evt) {
     if (api._pressed && evt.pointerId !== api._activePointer) return;
     var pos = pointerPos(evt);
+    if ((InteractionState.mode === 'placing-building' || InteractionState.mode === 'placing-road') && window.BuildMenu) {
+      var hover = api.grid.screenToTile(pos.x, pos.y);
+      window.BuildMenu.setHover(hover);
+    }
     // Drone hover preview (whole-map, no placement) — still gated by mode
     if (InteractionState.mode === 'deploying-drone' && window.DroneDeploy) {
       var hoverTile = api.grid.screenToTile(pos.x, pos.y);
@@ -244,6 +257,12 @@ window.InputHandler = (function () {
     if (api.canvas.releasePointerCapture) {
       try { api.canvas.releasePointerCapture(evt.pointerId); } catch (e) {}
     }
+
+    document.addEventListener("keydown", function (evt) {
+      if (evt.key === "Escape" && (InteractionState.mode === 'placing-building' || InteractionState.mode === 'placing-road' || InteractionState.mode === 'placing-hq')) {
+        if (window.BuildMenu && window.BuildMenu.cancel) window.BuildMenu.cancel();
+      }
+    });
     if (InteractionState.mode !== 'compacting') {
       api.canvas.style.cursor = api._cursor;
     }
@@ -311,6 +330,10 @@ window.InputHandler = (function () {
     // Any non-idle mode consumes the click entirely and returns — idle popup logic never runs
     if (InteractionState.mode === 'placing-hq') {
       handlePlacingHq(pos, tile);
+      return;
+    }
+    if (InteractionState.mode === 'placing-building' || InteractionState.mode === 'placing-road') {
+      handleBuildingClick(tile);
       return;
     }
     if (InteractionState.mode === 'compacting') {
@@ -382,6 +405,12 @@ window.InputHandler = (function () {
     if (InteractionState.mode === 'placing-hq') {
       return !!(window.HQBuild && window.HQBuild.isValid(c, r));
     }
+    if (InteractionState.mode === 'placing-building') {
+      return !!(window.BuildMenu && window.BuildMenu.isValid(c, r));
+    }
+    if (InteractionState.mode === 'placing-road') {
+      return !!(window.RoadTool && window.RoadTool.isValid(c, r));
+    }
     if (InteractionState.mode === 'compacting') {
       return !!(window.CompactorTool && window.CompactorTool.isValidTile && window.CompactorTool.isValidTile(c, r));
     }
@@ -400,7 +429,7 @@ window.InputHandler = (function () {
     return (window.GameState.hqTile && window.GameState.hqTile.col === c && window.GameState.hqTile.row === r);
   };
   api.isScanBusy = isScanBusy;
-  api.isPlacementMode = function () { return InteractionState.mode === 'placing-hq' || InteractionState.mode === 'compacting'; };
+  api.isPlacementMode = function () { return InteractionState.mode === 'placing-hq' || InteractionState.mode === 'placing-building' || InteractionState.mode === 'placing-road' || InteractionState.mode === 'compacting'; };
   api.setPlacementMode = function (v) {
     if (v) { if (InteractionState.mode === 'idle') api.setMode('placing-hq'); }
     else { if (InteractionState.mode === 'placing-hq') api.setMode('idle'); }

@@ -47,6 +47,7 @@ window.TilePanel = (function () {
 
   api.init = function () {
     api.panel = document.getElementById("tile-popup");
+    api.panel.style.pointerEvents = "none";
     api.coordsEl = document.getElementById("tile-coords");
     api.placeholderEl = document.getElementById("tile-placeholder");
     api.hqContent = document.getElementById("hq-content");
@@ -85,6 +86,7 @@ window.TilePanel = (function () {
   // position off-screen to the right and hide (no animation)
   api._placeHidden = function () {
     api.panel.style.visibility = "hidden";
+    api.panel.style.pointerEvents = "none";
     api._setPos(api._offscreenX(), false);
   };
 
@@ -191,6 +193,7 @@ window.TilePanel = (function () {
       api.panel.style.transition = "opacity 0.1s ease-out";
       api.panel.style.opacity = "0";
       api.panel.style.visibility = "visible";
+      api.panel.style.pointerEvents = "auto";
       void api.panel.offsetWidth;
       api.panel.style.opacity = "1";
       api.isOpen = true;
@@ -200,6 +203,7 @@ window.TilePanel = (function () {
     } else {
       api._setPos(api._offscreenX(), false);
       api.panel.style.visibility = "visible";
+      api.panel.style.pointerEvents = "auto";
       api.panel.style.opacity = "1";
       void api.panel.offsetWidth;
       api._setPos(0, true, SHOW_DUR, "ease-out");
@@ -224,6 +228,7 @@ window.TilePanel = (function () {
         if (done) return;
         done = true;
         api.panel.style.visibility = "hidden";
+        api.panel.style.pointerEvents = "none";
         api.panel.style.opacity = "1";
         api.currentTile = null;
         api.isHQ = false;
@@ -239,6 +244,7 @@ window.TilePanel = (function () {
         api._clearHideEnd();
         api._setPos(api._offscreenX(), false);
         api.panel.style.visibility = "hidden";
+        api.panel.style.pointerEvents = "none";
         api.currentTile = null;
         api.isHQ = false;
         if (typeof onComplete === "function") onComplete();

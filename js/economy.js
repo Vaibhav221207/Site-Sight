@@ -233,7 +233,7 @@ window.Economy = (function () {
     var d = gs.getTileData(col, row);
     if (!d || d.bestUse !== "Unsuitable") return { ok: false, reason: "notunsuitable" };
     if (gs.cash < STABILIZE_COST) return { ok: false, reason: "funds", cash: gs.cash };
-    gs.cash -= STABILIZE_COST;
+    if (!gs.spend(STABILIZE_COST, "Land stabilization")) return { ok: false, reason: "funds" };
     var pick = api.pickStabilized(col, row, randFn);
     applyArchetype(d, pick.bestUse, (typeof randFn === "function") ? randFn : Math.random);
     if (d.zoneType && window.Buildings) {
@@ -257,7 +257,7 @@ window.Economy = (function () {
     var d = gs.getTileData(col, row);
     if (!d || (!(d.pollution > 0) && !d.blighted)) return { ok: false, reason: "clean" };
     if (gs.cash < SCRUB_COST) return { ok: false, reason: "funds", cash: gs.cash };
-    gs.cash -= SCRUB_COST;
+    if (!gs.spend(SCRUB_COST, "Pollution cleanup")) return { ok: false, reason: "funds" };
     d.pollution = 0;
     d.blighted = false;
     if (window.Main && window.Main.updateHUD) window.Main.updateHUD();
@@ -285,7 +285,7 @@ window.Economy = (function () {
       }
     }
     if (earned > 0) {
-      gs.cash += earned;
+      gs.earn(earned, "Building income");
       if (window.Main && window.Main.updateHUD) window.Main.updateHUD();
       if (window.MobileUI && window.MobileUI.update) window.MobileUI.update();
     }

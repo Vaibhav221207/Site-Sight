@@ -10,6 +10,7 @@ window.BuildMenu = (function () {
   var api = {
     isOpen: false,
     selected: null, // id of the building currently in placement mode
+    hoverTile: null,
   };
 
   // ---- building registry (framework) ----------------------------------
@@ -39,16 +40,37 @@ var ITEMS = [
         '</svg>',
       module: function () { return window.HQBuild; },
     },
+    { id: "road", name: "Road", desc: "Connects zoned land to the city network.", cost: 75,
+      icon: '<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M5 31L35 9" stroke="#2B2320" stroke-width="10"/><path d="M5 31L35 9" stroke="#D8C7A8" stroke-width="6"/><path d="M10 28L15 24M21 20L26 16M31 13L35 10" stroke="#FFF7D6" stroke-width="2"/></svg>',
+      road: true, module: function () { return window.RoadTool; } },
+    { id: "small-house", name: "Small House", zone: "residential", cost: 150, sprite: "buildingTiles_000.png", icon: '<img src="assets/kenney-buildings/PNG/buildingTiles_000.png" alt="">', module: function () { return window.BuildMenu; } },
+    { id: "townhouse", name: "Townhouse", zone: "residential", cost: 250, sprite: "buildingTiles_008.png", icon: '<img src="assets/kenney-buildings/PNG/buildingTiles_008.png" alt="">', module: function () { return window.BuildMenu; } },
+    { id: "apartment-block", name: "Apartment Block", zone: "residential", cost: 450, sprite: "buildingTiles_009.png", icon: '<img src="assets/kenney-buildings/PNG/buildingTiles_009.png" alt="">', module: function () { return window.BuildMenu; } },
+    { id: "corner-shop", name: "Corner Shop", zone: "commercial", cost: 200, sprite: "buildingTiles_030.png", icon: '<img src="assets/kenney-buildings/PNG/buildingTiles_030.png" alt="">', module: function () { return window.BuildMenu; } },
+    { id: "market", name: "Market", zone: "commercial", cost: 350, sprite: "buildingTiles_080.png", icon: '<img src="assets/kenney-buildings/PNG/buildingTiles_080.png" alt="">', module: function () { return window.BuildMenu; } },
+    { id: "retail-center", name: "Retail Center", zone: "commercial", cost: 600, sprite: "buildingTiles_090.png", icon: '<img src="assets/kenney-buildings/PNG/buildingTiles_090.png" alt="">', module: function () { return window.BuildMenu; } },
+    { id: "workshop", name: "Workshop", zone: "industrial", cost: 250, sprite: "buildingTiles_100.png", icon: '<img src="assets/kenney-buildings/PNG/buildingTiles_100.png" alt="">', module: function () { return window.BuildMenu; } },
+    { id: "factory", name: "Factory", zone: "industrial", cost: 500, sprite: "buildingTiles_110.png", icon: '<img src="assets/kenney-buildings/PNG/buildingTiles_110.png" alt="">', module: function () { return window.BuildMenu; } },
+    { id: "industrial-plant", name: "Industrial Plant", zone: "industrial", cost: 750, sprite: "buildingTiles_120.png", icon: '<img src="assets/kenney-buildings/PNG/buildingTiles_120.png" alt="">', module: function () { return window.BuildMenu; } },
+    { id: "mine-shaft", name: "Mine Shaft", zone: "mining", cost: 300, sprite: "buildingTiles_085.png", icon: '<img src="assets/kenney-buildings/PNG/buildingTiles_085.png" alt="">', module: function () { return window.BuildMenu; } },
+    { id: "open-pit-mine", name: "Open Pit Mine", zone: "mining", cost: 500, sprite: "buildingTiles_092.png", icon: '<img src="assets/kenney-buildings/PNG/buildingTiles_092.png" alt="">', module: function () { return window.BuildMenu; } },
+    { id: "quarry", name: "Quarry", zone: "mining", cost: 700, sprite: "buildingTiles_106.png", icon: '<img src="assets/kenney-buildings/PNG/buildingTiles_106.png" alt="">', module: function () { return window.BuildMenu; } },
   ];
 
   var barEl = null;
   var itemsEl = null;
+  var cancelEl = null;
+  var hudCancelEl = null;
 
   function itemById(id) {
     for (var i = 0; i < ITEMS.length; i++) {
       if (ITEMS[i].id === id) return ITEMS[i];
     }
     return null;
+  }
+
+  function sameZone(left, right) {
+    return String(left || "").toLowerCase() === String(right || "").toLowerCase();
   }
 
   function buildCard(item) {
@@ -74,14 +96,22 @@ var ITEMS = [
 
     card.appendChild(icon);
     card.appendChild(info);
-    card.addEventListener("click", function () { api.select(item.id); });
+    card.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      api.select(item.id);
+    });
     return card;
   }
 
   api.init = function () {
     barEl = document.getElementById("build-bar");
     itemsEl = document.getElementById("build-items");
+    cancelEl = document.getElementById("build-cancel-btn");
+    hudCancelEl = document.getElementById("hud-cancel-btn");
     if (!barEl || !itemsEl) return;
+    if (cancelEl) cancelEl.addEventListener("click", function () { api.cancel(); });
+    if (hudCancelEl) hudCancelEl.addEventListener("click", function () { api.cancel(); });
     itemsEl.innerHTML = "";
     for (var i = 0; i < ITEMS.length; i++) itemsEl.appendChild(buildCard(ITEMS[i]));
     api.refresh();
@@ -97,7 +127,9 @@ var ITEMS = [
     api.selected = id;
     api.close();
     module.startPlacement();
-    if (window.InputHandler && window.InputHandler.setMode) window.InputHandler.setMode('placing-hq');
+    if (window.InputHandler && window.InputHandler.setMode) {
+      window.InputHandler.setMode(item.road ? 'placing-road' : (item.zone ? 'placing-building' : 'placing-hq'));
+    }
     else if (window.InputHandler) window.InputHandler.setPlacementMode(true);
     api.refresh();
   };
@@ -107,17 +139,20 @@ var ITEMS = [
     var item = api.selected ? itemById(api.selected) : null;
     if (item) {
       var module = item.module && item.module();
-      if (module && typeof module.cancel === "function") module.cancel();
+      if (module && module !== api && typeof module.cancel === "function") module.cancel();
     }
     api.selected = null;
+    api.hoverTile = null;
     if (window.InputHandler && window.InputHandler.setMode) window.InputHandler.setMode('idle');
     else if (window.InputHandler) window.InputHandler.setPlacementMode(false);
     api.close();
+    api.refresh();
   };
 
   // called after a building is successfully placed
   api.onBuildSuccess = function () {
     api.selected = null;
+    api.hoverTile = null;
     api.isOpen = false;
     if (barEl) {
       if (typeof anime !== "undefined" && anime) anime.remove(barEl);
@@ -132,6 +167,37 @@ var ITEMS = [
   };
 
   api.isPlacing = function () { return api.selected !== null; };
+  api.setHover = function (tile) {
+    api.hoverTile = tile || null;
+    if (window.BlockRender) window.BlockRender.invalidate();
+  };
+  api.startPlacement = function () {};
+  api.items = function () { return ITEMS.slice(); };
+  api.hasAvailableTiles = function () {
+    for (var k in (window.GameState && window.GameState.tileData || {})) {
+      if (window.GameState.tileData[k].zoneType && !window.GameState.tileData[k].zoneBuilding) return true;
+    }
+    return false;
+  };
+  api.isValid = function (c, r) {
+    var item = itemById(api.selected), d = window.GameState && window.GameState.getTileData(c, r);
+    var connected = !window.ZoningTool || !window.ZoningTool.hasRoadAccess ||
+      window.ZoningTool.hasRoadAccess(c, r);
+    return !!(item && item.zone && d && sameZone(d.zoneType, item.zone) && !d.zoneBuilding &&
+      !(window.GameState.roads && window.GameState.roads[c + "," + r]) && connected);
+  };
+  api.attempt = function (c, r) {
+    var item = itemById(api.selected);
+    if (item && item.road) return window.RoadTool && window.RoadTool.attempt(c, r);
+    if (!item || !api.isValid(c, r) || !window.GameState || window.GameState.cash < item.cost) return false;
+    if (!window.GameState.spend(item.cost, item.name)) return false;
+    window.GameState.getTileData(c, r).zoneBuilding = item.id;
+    window.GameState.getTileData(c, r).buildingSprite = item.sprite;
+    if (window.Main && window.Main.updateHUD) window.Main.updateHUD();
+    if (window.BlockRender) window.BlockRender.invalidate();
+    api.onBuildSuccess();
+    return true;
+  };
 
   api.open = function () {
     if (!barEl) return;
@@ -193,11 +259,21 @@ var ITEMS = [
   // once the HQ is built (future buildings will add their own rules)
   api.refresh = function () {
     if (!itemsEl) return;
-    var hqBuilt = !!(window.GameState && window.GameState.hqBuilt);
+    if (cancelEl) cancelEl.hidden = !api.isPlacing();
+    if (hudCancelEl) hudCancelEl.style.display = api.isPlacing() ? "" : "none";
     var cards = itemsEl.querySelectorAll(".build-item");
     for (var i = 0; i < cards.length; i++) {
       var card = cards[i];
-      card.disabled = !!hqBuilt;
+      var item = itemById(card.dataset.id);
+      var hasZone = false;
+      if (item.zone && window.GameState && window.GameState.tileData) {
+        for (var k in window.GameState.tileData) {
+          var d = window.GameState.tileData[k];
+          if (sameZone(d.zoneType, item.zone) && !d.zoneBuilding) { hasZone = true; break; }
+        }
+      }
+      card.hidden = !!item.zone && !hasZone;
+      card.disabled = item.zone ? !hasZone : (!!(window.GameState && window.GameState.hqBuilt) && !item.road);
       card.classList.toggle("selected", api.selected === card.dataset.id);
     }
   };

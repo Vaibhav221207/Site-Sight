@@ -3,8 +3,8 @@
  * Pure game-logic module: NO placement mode, NO drag-select, NO DOM of its
  * own. The DATA tab mini-map (js/dataMap.js) owns tile selection and renders
  * the inline DESIGNATE ZONE UI; this module answers "what does it cost?"
- * ($50 matched / $100 mismatched: priced so half the map is zonable from a
- * starting budget, with the 2:1 mismatch penalty kept) and applies
+ * ($10 matched / $25 mismatched: a light planning fee that leaves room for
+ * roads and construction, with a meaningful mismatch penalty) and applies
  * confirmed zoning to game state + map rendering.
  */
 
@@ -16,8 +16,8 @@ window.ZoningTool = (function () {
     { id: "mining",      label: "Mining",      color: "#FFB300" }
   ];
 
-  var BASE_COST = 50;
-  var MISMATCH_COST = 100;
+  var BASE_COST = 10;
+  var MISMATCH_COST = 25;
 
   var api = {};
 
@@ -47,6 +47,8 @@ window.ZoningTool = (function () {
 
   // Only flat, FULLY-scanned land tiles can be zoned. HQ/river/rock/trench
   // are never zonable; partially-scanned land must finish surveying first.
+  // Zoning itself does not require a road; road access is checked when a
+  // building is constructed on the designated tile.
   api.isValidTile = function (col, row) {
     if (!window.Terrain || !window.GameState) return false;
     var t = window.Terrain.typeAt(col, row);
@@ -56,6 +58,19 @@ window.ZoningTool = (function () {
     if (!d || !d.droneScanned || !d.gprScanned) return false;
     return true;
   };
+
+  function hasRoadAccess(col, row) {
+    var roads = window.GameState && window.GameState.roads;
+    if (!roads) return false;
+    if (roads[col + "," + row]) return true;
+    var neighbors = [[-1,0],[1,0],[0,-1],[0,1]];
+    for (var i = 0; i < neighbors.length; i++) {
+      if (roads[(col + neighbors[i][0]) + "," + (row + neighbors[i][1])]) return true;
+    }
+    var hq = window.GameState.hqTile;
+    return !!(hq && Math.abs(hq.col - col) + Math.abs(hq.row - row) === 1);
+  }
+  api.hasRoadAccess = hasRoadAccess;
 
   api.isValid = function (col, row) { return api.isValidTile(col, row); };
 
@@ -99,8 +114,8 @@ window.ZoningTool = (function () {
     return parts.join(" + ") + " = " + money(b.totalCost);
   };
 
-  // Single-tile confirm line, e.g. "Zone as Residential — $500
-  // (matches Best Use)" or "Zone as Industrial — $1,000
+  // Single-tile confirm line, e.g. "Zone as Residential — $10
+  // (matches Best Use)" or "Zone as Industrial — $25
   // (mismatch — land suited for Residential)".
   api.singleTileText = function (col, row, zone) {
     var d = window.GameState ? window.GameState.getTileData(col, row) : null;
@@ -124,7 +139,9 @@ window.ZoningTool = (function () {
     if (cash < b.totalCost) {
       return { ok: false, reason: "funds", breakdown: b, cash: cash };
     }
-    window.GameState.cash -= b.totalCost;
+    if (!window.GameState.spend(b.totalCost, "Zone permits")) {
+      return { ok: false, reason: "funds", breakdown: b, cash: window.GameState.cash };
+    }
     if (window.Main && window.Main.updateHUD) window.Main.updateHUD();
     if (window.MobileUI && window.MobileUI.update) window.MobileUI.update();
     for (var i = 0; i < b.validTiles.length; i++) {

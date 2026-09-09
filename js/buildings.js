@@ -35,6 +35,15 @@ window.Buildings = (function () {
       blurb: "Strip it fast and big. The land will remember.",
       buildCost: 500, incomePerTick: 3,  pollutionPerTick: 2,
       payout: { Rich: 1500, Trace: 600, other: 200 } },
+    { id: "small-house", zone: "residential", label: "Small House", role: "booster", buildCost: 150, incomePerTick: 0, pollutionPerTick: 0, boost: 0.15 },
+    { id: "townhouse", zone: "residential", label: "Townhouse", role: "booster", buildCost: 250, incomePerTick: 0, pollutionPerTick: 0, boost: 0.20 },
+    { id: "apartment-block", zone: "residential", label: "Apartment Block", role: "booster", buildCost: 450, incomePerTick: 0, pollutionPerTick: 0, boost: 0.30 },
+    { id: "corner-shop", zone: "commercial", label: "Corner Shop", role: "earner", buildCost: 200, incomePerTick: 5, pollutionPerTick: 0 },
+    { id: "market", zone: "commercial", label: "Market", role: "earner", buildCost: 350, incomePerTick: 8, pollutionPerTick: 0 },
+    { id: "retail-center", zone: "commercial", label: "Retail Center", role: "earner", buildCost: 600, incomePerTick: 15, pollutionPerTick: 1 },
+    { id: "industrial-plant", zone: "industrial", label: "Industrial Plant", role: "earner", buildCost: 750, incomePerTick: 16, pollutionPerTick: 3 },
+    { id: "mine-shaft", zone: "mining", label: "Mine Shaft", role: "extractor", buildCost: 300, incomePerTick: 2, pollutionPerTick: 1, payout: { Rich: 800, Trace: 300, other: 100 } },
+    { id: "open-pit-mine", zone: "mining", label: "Open Pit Mine", role: "extractor", buildCost: 500, incomePerTick: 3, pollutionPerTick: 2, payout: { Rich: 1200, Trace: 500, other: 150 } },
   ];
 
   var MULT = { ok: 1, mild: 0.75, severe: 0.5 };
@@ -81,7 +90,7 @@ window.Buildings = (function () {
     return "Not suitable — allowed at risk (−50% income)";
   };
 
-  // Full price for ONE tile: permit (existing $50/$100 match logic) +
+  // Full price for ONE tile: permit ($10/$25 match logic) +
   // building cost + extractor payout. Returns null when tile unzonable.
   api.priceFor = function (col, row, zone, buildingId) {
     var spec = api.byId(buildingId);
@@ -106,52 +115,6 @@ window.Buildings = (function () {
       mult: mult,
       spec: spec,
     };
-  };
-
-  // Batch purchase across tiles (permit math per tile via priceFor).
-  // Sets zoneType/zoneMismatched/zoneVerdict/zoneBuilding, deducts net cash,
-  // refreshes maps + HUD. Pure result object, no DOM.
-  api.confirmPurchase = function (tiles, zone, buildingId) {
-    var spec = api.byId(buildingId);
-    if (!spec || !tiles || !tiles.length) return { ok: false, reason: "empty" };
-    if (!window.GameState) return { ok: false, reason: "empty" };
-    var items = [], total = 0, payoutSum = 0;
-    for (var i = 0; i < tiles.length; i++) {
-      var p = api.priceFor(tiles[i].col, tiles[i].row, zone, buildingId);
-      if (!p) continue; // skip unzonable tiles (reported via skipped)
-      items.push({ col: tiles[i].col, row: tiles[i].row, price: p });
-      total += p.total;
-      payoutSum += p.payout;
-    }
-    if (!items.length) return { ok: false, reason: "empty" };
-    var net = total - payoutSum;
-    if (window.GameState.cash < net) {
-      return { ok: false, reason: "funds", total: total, payout: payoutSum, net: net, cash: window.GameState.cash, count: items.length };
-    }
-    window.GameState.cash -= net;
-    for (var j = 0; j < items.length; j++) {
-      var t = items[j];
-      var d = window.GameState.getTileData(t.col, t.row);
-      d.zoneType = zone;
-      d.zoneBuilding = buildingId;
-      d.zoneVerdict = t.price.verdict;
-      d.zoneMismatched = t.price.verdict !== "ok";
-      // NOTE: no recalcBestUse here (see zoningTool) — flags stay consistent
-      // with the Best Use the price was computed from.
-    }
-    if (window.Main && window.Main.updateHUD) window.Main.updateHUD();
-    if (window.MobileUI && window.MobileUI.update) window.MobileUI.update();
-    if (window.BlockRender) {
-      window.BlockRender.invalidate();
-      if (window.BlockRender.popTiles) {
-        window.BlockRender.popTiles(items.map(function (t) { return { col: t.col, row: t.row }; }));
-      }
-    }
-    try {
-      console.log("[Buildings] Built " + buildingId + " x" + items.length + " in " + zone +
-        " — paid $" + net + " (permit $" + total + " − payout $" + payoutSum + ")");
-    } catch (e) {}
-    return { ok: true, total: total, payout: payoutSum, net: net, cash: window.GameState.cash, count: items.length, spec: spec };
   };
 
   return api;

@@ -81,7 +81,9 @@ window.MobileUI = (function () {
     var cash = document.getElementById("mu-cash");
     if (cash) cash.textContent = "$" + (window.GameState.cash || 0).toLocaleString();
     var build = document.getElementById("mu-build");
-    if (build) build.disabled = !!(window.GameState.hqBuilt);
+    // The mobile Build button must remain available after HQ placement; the
+    // palette itself handles which entries are currently valid.
+    if (build) build.disabled = false;
   };
 
   api.init = function () {

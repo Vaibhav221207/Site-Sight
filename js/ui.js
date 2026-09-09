@@ -33,7 +33,7 @@ window.UI = (function () {
     opts = opts || {};
     var s = stack();
     var t = document.createElement("div");
-    var color = opts.color || "#E8604A";
+    var color = opts.color || "#C7432B";
     t.style.cssText =
       "pointer-events:none;max-width:80vw;padding:10px 18px;border-radius:16px;" +
       "background:#2B2320;color:#fff;font-family:'Baloo 2',sans-serif;" +
@@ -77,6 +77,12 @@ window.UI = (function () {
     opts = opts || {};
     var from = typeof opts.from === "number" ? opts.from : 0;
     var suffix = opts.suffix || "";
+    var prefix = opts.prefix || "";
+    var group = !!opts.group; // thousands separators while counting
+    function fmt(v) {
+      var n = Math.round(v);
+      return prefix + (group ? n.toLocaleString() : n) + suffix;
+    }
     var obj = { v: from };
     if (typeof anime !== "undefined" && anime) {
       anime({
@@ -85,11 +91,11 @@ window.UI = (function () {
         duration: opts.duration || 600,
         easing: opts.easing || "easeOutCubic",
         update: function () {
-          el.textContent = Math.round(obj.v) + suffix;
+          el.textContent = fmt(obj.v);
         },
       });
     } else {
-      el.textContent = to + suffix;
+      el.textContent = fmt(to);
     }
   }
 

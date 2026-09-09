@@ -135,6 +135,10 @@ window.BlockRender = (function () {
     var d = (gs && gs.getTileData) ? gs.getTileData(c, r) : null;
     if (!d || !d.zoneBuilding) return;
     var id = d.zoneBuilding;
+    if (d.buildingSprite && window.BuildingSprites) {
+      window.BuildingSprites.draw(ctx, d.buildingSprite, cx, topY + iso * 0.42, iso * 1.35);
+      return;
+    }
     var m = BLD_MASS[id] || [0.80, 0.50];
     var accent = BLD_ZONE[d.zoneType] || "#42A5F5";
     var fw = iso * m[0], h = iso * m[1];
@@ -348,8 +352,204 @@ window.BlockRender = (function () {
     ctx.strokeStyle = isSelected ? SELECT_STROKE : TOP_STROKE;
     ctx.lineWidth = isSelected ? 2.5 : 1;
     ctx.stroke();
-    // zone buildings rise from the tile top (static layer: rebuilt on zone)
+    // zone buildings rise above the road surface.
     try { drawBuilding(ctx, c, r, cx, topY, iso); } catch (e) {}
+  }
+
+  function drawRoadTile(ctx, c, r, cx, topY, iso) {
+    var roads = window.GameState && window.GameState.roads;
+    if (!roads || !roads[c + "," + r]) return;
+    var half = iso * 0.5;
+    // The asphalt uses the tile's true four corners. Centerline connection
+    // points are separate: they sit at the midpoint of each shared edge.
+    var top = { x: cx, y: topY - half };
+    var right = { x: cx + iso, y: topY };
+    var bottom = { x: cx, y: topY + half };
+    var left = { x: cx - iso, y: topY };
+    var n = { x: cx + iso * 0.5, y: topY - half * 0.5 };
+    var e = { x: cx + iso * 0.5, y: topY + half * 0.5 };
+    var s = { x: cx - iso * 0.5, y: topY + half * 0.5 };
+    var w = { x: cx - iso * 0.5, y: topY - half * 0.5 };
+    ctx.save();
+    var connection = window.RoadTool && window.RoadTool.connections ?
+      window.RoadTool.connections(c, r) : {};
+    var neighbors = [
+      { key: "north", c: c, r: r - 1 },
+      { key: "east", c: c + 1, r: r },
+      { key: "south", c: c, r: r + 1 },
+      { key: "west", c: c - 1, r: r }
+    ];
+    var links = [];
+    for (var i = 0; i < neighbors.length; i++) {
+      var isHqNeighbor = window.Terrain && window.Terrain.isHQ &&
+        window.Terrain.isHQ(neighbors[i].c, neighbors[i].r);
+      if (connection[neighbors[i].key] || isHqNeighbor) {
+        var neighborPoint = api.grid.worldToScreen(neighbors[i].c, neighbors[i].r);
+        var neighborCenter = {
+          x: neighborPoint.x,
+          y: neighborPoint.y - totalHeight(neighbors[i].c, neighbors[i].r)
+        };
+        neighbors[i].edge = {
+          x: (cx + neighborCenter.x) * 0.5,
+          y: (topY + neighborCenter.y) * 0.5
+        };
+        links.push(neighbors[i]);
+      }
+    }
+    // A manually restored or newly placed standalone tile still needs a
+    // visible footprint before it has a neighbor to connect to.
+    var standalone = false;
+    if (!links.length) {
+      standalone = true;
+      links = [];
+    }
+    // Use explicit branch polygons instead of thick clipped strokes. The
+    // shared center node guarantees continuous asphalt at every junction.
+    var outerWidth = Math.max(11, iso * 0.36);
+    var innerWidth = Math.max(7, iso * 0.26);
+    var center = { x: cx, y: topY };
+    if (standalone) {
+      drawRoadDiamond(ctx, center, iso * 2, iso, "#111827");
+      drawRoadDiamond(ctx, center, iso * 1.96, iso * 0.96, "#4B5563");
+    }
+    for (var outerIndex = 0; outerIndex < links.length; outerIndex++) {
+      drawRoadBranch(ctx, center, links[outerIndex].edge, outerWidth, "#111827");
+    }
+    for (var innerIndex = 0; innerIndex < links.length; innerIndex++) {
+      drawRoadBranch(ctx, center, links[innerIndex].edge, innerWidth, "#4B5563");
+    }
+    ctx.fillStyle = "#4B5563";
+    ctx.beginPath();
+    ctx.arc(cx, topY, Math.max(7, iso * 0.16), 0, Math.PI * 2);
+    ctx.fill();
+    if (links.length === 1 || links.length === 2) {
+      ctx.save();
+      ctx.strokeStyle = "#FDE68A";
+      ctx.lineWidth = Math.max(1.5, iso * 0.03);
+      ctx.lineCap = "butt";
+      ctx.setLineDash([Math.max(4, iso * 0.10), Math.max(3, iso * 0.07)]);
+      if (links.length === 1) {
+        drawRoadPath(ctx, [center, links[0].edge]);
+      } else {
+        var straight = (links[0].key === "north" && links[1].key === "south") ||
+          (links[0].key === "south" && links[1].key === "north") ||
+          (links[0].key === "east" && links[1].key === "west") ||
+          (links[0].key === "west" && links[1].key === "east");
+        if (straight) drawRoadPath(ctx, [links[0].edge, links[1].edge]);
+        else drawRoadCorner(ctx, links[0].edge, center, links[1].edge, iso);
+      }
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+    ctx.restore();
+    return;
+
+    var markingLinks = [];
+    for (var markIndex = 0; markIndex < links.length; markIndex++) {
+      var markLink = links[markIndex];
+      var remote = window.RoadTool && window.RoadTool.connections ?
+        window.RoadTool.connections(markLink.c, markLink.r) : {};
+      var remoteCount = 0;
+      for (var remoteKey in remote) if (remote[remoteKey]) remoteCount++;
+      if (remoteCount < 3) markingLinks.push(markLink);
+    }
+    ctx.strokeStyle = "#374151";
+    ctx.lineWidth = Math.max(8, iso * 0.56);
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    if (markingLinks.length === 1) {
+      drawRoadPath(ctx, [{ x: cx, y: topY }, markingLinks[0].edge]);
+    } else if (markingLinks.length === 2) {
+      var straightSurface = (markingLinks[0].key === "north" && markingLinks[1].key === "south") ||
+        (markingLinks[0].key === "south" && markingLinks[1].key === "north") ||
+        (markingLinks[0].key === "east" && markingLinks[1].key === "west") ||
+        (markingLinks[0].key === "west" && markingLinks[1].key === "east");
+      if (straightSurface) drawRoadPath(ctx, [markingLinks[0].edge, markingLinks[1].edge]);
+      else drawRoadCorner(ctx, markingLinks[0].edge, { x: cx, y: topY }, markingLinks[1].edge, iso);
+    } else if (markingLinks.length >= 3) {
+      for (var surfaceBranch = 0; surfaceBranch < links.length; surfaceBranch++) {
+        drawRoadPath(ctx, [{ x: cx, y: topY }, links[surfaceBranch].edge]);
+      }
+    }
+    ctx.setLineDash([]);
+    // The marking follows the projected isometric road path: edge -> center ->
+    // edge for a turn, and edge -> edge for a straight. This keeps the
+    // incoming direction from the previous tile instead of inventing a
+    // horizontal/vertical line in screen space.
+    ctx.strokeStyle = "#FDE68A";
+    ctx.lineWidth = Math.max(1.5, iso * 0.032);
+    ctx.lineCap = "butt";
+    ctx.lineJoin = "miter";
+    ctx.setLineDash([Math.max(5, iso * 0.11), Math.max(4, iso * 0.08)]);
+    if (links.length === 1) {
+      drawRoadPath(ctx, [{ x: cx, y: topY }, links[0].edge]);
+    } else if (links.length === 2) {
+      var straight = (links[0].key === "north" && links[1].key === "south") ||
+        (links[0].key === "south" && links[1].key === "north") ||
+        (links[0].key === "east" && links[1].key === "west") ||
+        (links[0].key === "west" && links[1].key === "east");
+      if (straight) {
+        drawRoadPath(ctx, [links[0].edge, links[1].edge]);
+      } else {
+        drawRoadCorner(ctx, links[0].edge, { x: cx, y: topY }, links[1].edge, iso);
+      }
+    } else if (links.length >= 3) {
+      // Junctions use a clean asphalt node without decorative lane dots.
+    }
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  function drawRoadBranch(ctx, from, to, width, fill) {
+    var dx = to.x - from.x;
+    var dy = to.y - from.y;
+    var length = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+    var px = -dy / length * width * 0.5;
+    var py = dx / length * width * 0.5;
+    ctx.fillStyle = fill;
+    ctx.beginPath();
+    ctx.moveTo(from.x + px, from.y + py);
+    ctx.lineTo(to.x + px, to.y + py);
+    ctx.lineTo(to.x - px, to.y - py);
+    ctx.lineTo(from.x - px, from.y - py);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function drawRoadDiamond(ctx, center, width, height, fill) {
+    ctx.fillStyle = fill;
+    ctx.beginPath();
+    ctx.moveTo(center.x, center.y - height * 0.5);
+    ctx.lineTo(center.x + width * 0.5, center.y);
+    ctx.lineTo(center.x, center.y + height * 0.5);
+    ctx.lineTo(center.x - width * 0.5, center.y);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function drawRoadPath(ctx, points) {
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    ctx.lineTo(points[1].x, points[1].y);
+    ctx.stroke();
+  }
+
+  function drawRoadCorner(ctx, from, center, to, iso) {
+    var inset = iso * 0.2;
+    var a = {
+      x: center.x + (from.x - center.x) * inset / Math.max(1, Math.abs(from.x - center.x) + Math.abs(from.y - center.y)),
+      y: center.y + (from.y - center.y) * inset / Math.max(1, Math.abs(from.x - center.x) + Math.abs(from.y - center.y))
+    };
+    var b = {
+      x: center.x + (to.x - center.x) * inset / Math.max(1, Math.abs(to.x - center.x) + Math.abs(to.y - center.y)),
+      y: center.y + (to.y - center.y) * inset / Math.max(1, Math.abs(to.x - center.x) + Math.abs(to.y - center.y))
+    };
+    ctx.beginPath();
+    ctx.moveTo(from.x, from.y);
+    ctx.lineTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.lineTo(to.x, to.y);
+    ctx.stroke();
   }
 
   // ---- scattered rock/boulder formations (hills) ----------------------
@@ -1055,6 +1255,18 @@ window.BlockRender = (function () {
         }
       }
     }
+    // Roads are rendered in a second pass so a branch can bridge the
+    // elevation seam between neighboring tiles without being painted over by
+    // a later terrain block.
+    for (var ri = 0; ri < ORDER.length; ri++) {
+      var roadTile = ORDER[ri];
+      if (!api.terrain.isHQ(roadTile.c, roadTile.r) &&
+          api.terrain.typeAt(roadTile.c, roadTile.r) !== "trench") {
+        var roadPoint = api.grid.worldToScreen(roadTile.c, roadTile.r);
+        drawRoadTile(layer, roadTile.c, roadTile.r, roadPoint.x,
+          roadPoint.y - totalHeight(roadTile.c, roadTile.r), api.grid.isoSize);
+      }
+    }
   };
 
   // river — simple flat water, no pattern. Base is solid RIVER_BASE at
@@ -1247,6 +1459,7 @@ window.BlockRender = (function () {
     ctx.globalCompositeOperation = "source-over";
     drawShimmer(ctx);
     drawBeaconPulse(ctx);
+    drawBuildingPreview(ctx);
     // placement preview + deployed drone marker (drawn on top, per-frame so
     // the drop-in animation and the cursor-following preview stay smooth)
     if (window.DroneDeploy) window.DroneDeploy.renderMain(ctx, api.grid);
@@ -1256,6 +1469,56 @@ window.BlockRender = (function () {
     // the standalone tool; zone tint itself renders per-tile above and stays)
     if (gc) ctx.globalCompositeOperation = gc;
   };
+
+  function drawBuildingPreview(ctx) {
+    if (!window.BuildMenu || !window.BuildMenu.isPlacing || !window.BuildMenu.isPlacing()) return;
+    var tile = window.BuildMenu.hoverTile;
+    var item = window.BuildMenu.selected && window.BuildMenu.items ? window.BuildMenu.items().filter(function (x) {
+      return x.id === window.BuildMenu.selected;
+    })[0] : null;
+    if (!tile || !item) return;
+    if (item.road) {
+      var roadValid = window.RoadTool && window.RoadTool.isValid(tile.col, tile.row);
+      var roadPoint = api.grid.worldToScreen(tile.col, tile.row);
+      var roadY = roadPoint.y - totalHeight(tile.col, tile.row);
+      ctx.save();
+      var roadHalf = api.grid.isoSize * 0.5;
+      ctx.fillStyle = roadValid ? "rgba(55,65,81,0.85)" : "rgba(127,29,29,0.72)";
+      ctx.strokeStyle = roadValid ? "#86EFAC" : "#FCA5A5";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(roadPoint.x, roadY - roadHalf);
+      ctx.lineTo(roadPoint.x + api.grid.isoSize, roadY);
+      ctx.lineTo(roadPoint.x, roadY + roadHalf);
+      ctx.lineTo(roadPoint.x - api.grid.isoSize, roadY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
+    if (!item.zone || !window.BuildingSprites) return;
+    var d = window.GameState && window.GameState.getTileData ? window.GameState.getTileData(tile.col, tile.row) : null;
+    var valid = !!(d && d.zoneType === item.zone && !d.zoneBuilding &&
+      (!window.ZoningTool || !window.ZoningTool.hasRoadAccess ||
+       window.ZoningTool.hasRoadAccess(tile.col, tile.row)));
+    var p = api.grid.worldToScreen(tile.col, tile.row);
+    var topY = p.y - totalHeight(tile.col, tile.row);
+    ctx.save();
+    ctx.globalAlpha = 0.65;
+    window.BuildingSprites.draw(ctx, item.sprite, p.x, topY + api.grid.isoSize * 0.42, api.grid.isoSize * 1.35, 0.72);
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = valid ? "#22C55E" : "#EF4444";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(p.x, topY - api.grid.isoSize / 2);
+    ctx.lineTo(p.x + api.grid.isoSize, topY);
+    ctx.lineTo(p.x, topY + api.grid.isoSize / 2);
+    ctx.lineTo(p.x - api.grid.isoSize, topY);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
+  }
 
   function animateRise(c, r, targetRise) {
     var k = key(c, r);
