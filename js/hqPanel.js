@@ -339,7 +339,7 @@ window.HqPanel = (function () {
     if (!api.orderBtn) return;
     var purchased = !!(window.GameState && window.GameState.droneSystemPurchased);
     api.orderBtn.disabled = purchased;
-    api.orderBtn.textContent = purchased ? "ORDERED" : "ORDER DRONE";
+    api.orderBtn.textContent = purchased ? "OWNED" : "BUY";
     // owned rows collapse their teaching blurb: you know what it does now
     if (api.storeRow1 && api.storeRow1.classList) api.storeRow1.classList.toggle("is-bought", purchased);
   };
@@ -349,7 +349,7 @@ window.HqPanel = (function () {
     if (!api.gprOrderBtn) return;
     var purchased = !!(window.GameState && window.GameState.gprSystemPurchased);
     api.gprOrderBtn.disabled = purchased;
-    api.gprOrderBtn.textContent = purchased ? "ORDERED" : "ORDER GPR";
+    api.gprOrderBtn.textContent = purchased ? "OWNED" : "BUY";
     if (api.storeRow2 && api.storeRow2.classList) api.storeRow2.classList.toggle("is-bought", purchased);
   };
 
@@ -359,7 +359,7 @@ window.HqPanel = (function () {
     if (!api.compactorOrderBtn) return;
     var purchased = !!(window.GameState && window.GameState.compactorSystemPurchased);
     api.compactorOrderBtn.disabled = purchased;
-    api.compactorOrderBtn.textContent = purchased ? "ORDERED" : "ORDER COMPACTOR";
+    api.compactorOrderBtn.textContent = purchased ? "OWNED" : "BUY";
     if (api.storeRow3 && api.storeRow3.classList) api.storeRow3.classList.toggle("is-bought", purchased);
   };
 
@@ -746,7 +746,7 @@ window.HqPanel = (function () {
           setTimeout(function () {
             if (!api.orderBtn) return;
             var stillPurchased = !!(window.GameState && window.GameState.droneSystemPurchased);
-            api.orderBtn.textContent = stillPurchased ? "ORDERED" : "ORDER DRONE";
+            api.orderBtn.textContent = stillPurchased ? "OWNED" : "BUY";
             api.orderBtn.classList.remove("hq-order-btn--flash");
           }, 900);
       }
@@ -773,7 +773,7 @@ window.HqPanel = (function () {
         setTimeout(function () {
           if (!api.gprOrderBtn) return;
           var stillPurchased = !!(window.GameState && window.GameState.gprSystemPurchased);
-          api.gprOrderBtn.textContent = stillPurchased ? "ORDERED" : "ORDER GPR";
+          api.gprOrderBtn.textContent = stillPurchased ? "OWNED" : "BUY";
           api.gprOrderBtn.classList.remove("hq-order-btn--flash");
         }, 900);
       }
@@ -799,7 +799,7 @@ window.HqPanel = (function () {
         setTimeout(function () {
           if (!api.compactorOrderBtn) return;
           var stillPurchased = !!(window.GameState && window.GameState.compactorSystemPurchased);
-          api.compactorOrderBtn.textContent = stillPurchased ? "ORDERED" : "ORDER COMPACTOR";
+          api.compactorOrderBtn.textContent = stillPurchased ? "OWNED" : "BUY";
           api.compactorOrderBtn.classList.remove("hq-order-btn--flash");
         }, 900);
       }

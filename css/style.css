@@ -506,6 +506,12 @@ button {
   background: #E3DCCB;
 }
 
+/* Author styles on .build-item otherwise override the browser's hidden
+   attribute, leaving filtered cards in the grid as empty overlapping slots. */
+.build-item[hidden] {
+  display: none !important;
+}
+
 .build-item-icon {
   display: flex;
   align-items: center;
@@ -696,6 +702,287 @@ button {
 
 .hq-order-btn:disabled:hover {
   background: #E3DCCB;
+}
+
+/* ---- management panel polish --------------------------------------------
+   Keep the build palette as a compact Skyline-style tool tray: categories
+   remain the primary navigation and cards are small selectable tools. */
+.build-bar {
+  left: 50%;
+  right: auto;
+  bottom: 82px;
+  width: min(980px, calc(100vw - 32px));
+  height: min(34vh, 300px);
+  max-height: min(34vh, 300px);
+  padding: 10px 12px 12px;
+  gap: 7px;
+  border-radius: 14px;
+  transform: translateX(-50%);
+}
+
+.build-bar.hidden {
+  transform: translate(-50%, 12px);
+}
+
+.build-bar-head {
+  min-height: 22px;
+}
+
+.build-categories {
+  gap: 5px;
+  padding: 0 1px 3px;
+}
+
+.build-category {
+  min-height: 27px;
+  padding: 4px 9px;
+  border-radius: 8px;
+  font-size: 9px;
+}
+
+.build-items {
+  flex: 1 1 0;
+  min-height: 0;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-auto-rows: minmax(70px, auto);
+  gap: 7px;
+  max-height: 190px;
+  padding: 1px 3px 3px 1px;
+}
+
+.build-item {
+  min-height: 70px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 5px;
+  border-width: 2px;
+  border-radius: 10px;
+  box-shadow: 2px 2px 0 #000;
+  text-align: center;
+}
+
+.build-item[data-zone] {
+  border-top-width: 4px;
+}
+
+.build-item-icon {
+  width: 34px;
+  height: 34px;
+}
+
+.build-item-icon img {
+  max-width: 34px;
+  max-height: 34px;
+}
+
+.build-item-info {
+  align-items: center;
+  gap: 0;
+  min-width: 0;
+  width: 100%;
+}
+
+.build-item-name {
+  width: 100%;
+  font-size: 11px;
+  line-height: 1.1;
+}
+
+.build-item-cost {
+  font-size: 10px;
+  line-height: 1.1;
+}
+
+/* The map is the primary DATA interaction. Give it most of the work area
+   while keeping details available in a narrower inspector column. */
+#hq-panel {
+  max-width: 1080px;
+}
+
+.hq-data-minimap-col {
+  flex-basis: 68%;
+  max-width: 680px;
+}
+
+.hq-data-side-col {
+  flex-basis: 32%;
+}
+
+.hq-data-minimap-wrap {
+  min-height: 280px;
+}
+
+/* Store uses a light inventory-list treatment: one-line purpose, price, and
+   a small action key. Descriptive copy is available on the item title but
+   does not compete with the purchase action. */
+#hq-section-store .hq-fs-status {
+  display: none;
+}
+
+#hq-section-store .hq-fs-section {
+  margin-top: 12px;
+}
+
+#hq-section-store .hq-fs-section-header {
+  font-size: 11px;
+  padding-bottom: 5px;
+  margin-bottom: 2px;
+}
+
+#hq-section-store .hq-fs-drone-row {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 9px 4px;
+  align-items: center;
+}
+
+#hq-section-store .hq-store-ico {
+  width: 40px;
+  height: 40px;
+  border-width: 2px;
+  border-radius: 10px;
+}
+
+#hq-section-store .hq-store-ico svg,
+#hq-section-store .hq-store-ico img {
+  width: 30px;
+  height: 30px;
+}
+
+#hq-section-store .hq-fs-drone-info {
+  min-width: 0;
+  gap: 1px;
+}
+
+#hq-section-store .hq-fs-drone-name {
+  font-size: 14px;
+}
+
+#hq-section-store .hq-fs-drone-cost {
+  font-size: 12px;
+}
+
+#hq-section-store .hq-store-blurb {
+  display: none;
+}
+
+#hq-section-store .hq-fs-drone-row .hq-order-btn {
+  grid-column: auto;
+  min-height: 30px;
+  padding: 4px 10px;
+  border-width: 2px;
+  border-radius: 8px;
+  font-size: 10px;
+}
+
+@media (max-width: 900px) {
+  .build-bar {
+    left: 8px;
+    right: calc(env(safe-area-inset-right, 0px) + 78px);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+    width: auto;
+    height: min(52dvh, 230px);
+    max-height: min(52dvh, 230px);
+    transform: none;
+  }
+
+  .build-bar.hidden {
+    transform: translateY(12px);
+  }
+
+  .build-items {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: 58px;
+    max-height: 126px;
+    gap: 5px;
+  }
+
+  .build-item {
+    min-height: 58px;
+    padding: 3px 4px;
+  }
+
+  .build-item-icon {
+    width: 27px;
+    height: 27px;
+  }
+
+  .build-item-icon img {
+    max-width: 27px;
+    max-height: 27px;
+  }
+
+  .build-item-name {
+    font-size: 9px;
+  }
+
+  .build-item-cost {
+    font-size: 9px;
+  }
+
+  .hq-data-minimap-col {
+    flex-basis: 64%;
+    max-width: none;
+  }
+
+  .hq-data-side-col {
+    flex-basis: 36%;
+  }
+}
+
+@media (max-width: 640px) {
+  .build-bar {
+    right: calc(env(safe-area-inset-right, 0px) + 70px);
+    padding: 6px 7px 7px;
+  }
+
+  .build-bar-title {
+    font-size: 10px;
+  }
+
+  .build-cancel-btn {
+    min-height: 26px;
+    padding: 3px 7px;
+    font-size: 9px;
+  }
+
+  .hq-data-minimap-wrap {
+    min-height: 220px;
+    padding: 4px;
+  }
+
+  #hq-section-store .hq-fs-drone-row {
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    gap: 6px;
+    padding: 7px 2px;
+  }
+
+  #hq-section-store .hq-store-ico {
+    width: 34px;
+    height: 34px;
+  }
+
+  #hq-section-store .hq-store-ico svg,
+  #hq-section-store .hq-store-ico img {
+    width: 25px;
+    height: 25px;
+  }
+
+  #hq-section-store .hq-fs-drone-name {
+    font-size: 11px;
+  }
+
+  #hq-section-store .hq-fs-drone-cost {
+    font-size: 10px;
+  }
+
+  #hq-section-store .hq-fs-drone-row .hq-order-btn {
+    min-height: 27px;
+    padding: 3px 7px;
+    font-size: 9px;
+  }
 }
 
 /* ---- Mobile shell: portrait rotate overlay (touch devices only) ---- */
@@ -3251,3 +3538,107 @@ body.touch-ui #tile-popup {
 }
 
 /* ---- end start screen ---- */
+
+/* Final management layout overrides: these intentionally sit after the
+   breakpoint rules so the compact tray and larger survey map cannot regress
+   when a later responsive rule is added. */
+.build-item[hidden] { display: none !important; }
+
+.build-bar {
+  left: 50%;
+  right: auto;
+  bottom: 82px;
+  width: min(980px, calc(100vw - 32px));
+  max-height: min(34vh, 300px);
+  padding: 10px 12px 12px;
+  gap: 7px;
+  transform: translateX(-50%);
+}
+.build-bar.hidden { transform: translate(-50%, 12px); }
+.build-items {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-auto-rows: minmax(70px, auto);
+  max-height: 190px;
+  gap: 7px;
+}
+.build-item {
+  min-height: 70px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 5px;
+  border-width: 2px;
+  border-radius: 10px;
+  box-shadow: 2px 2px 0 #000;
+  text-align: center;
+}
+.build-item-icon { width: 34px; height: 34px; }
+.build-item-icon img { max-width: 34px; max-height: 34px; }
+.build-item-info { align-items: center; gap: 0; min-width: 0; width: 100%; }
+.build-item-name { width: 100%; font-size: 11px; line-height: 1.1; }
+.build-item-cost { font-size: 10px; line-height: 1.1; }
+
+#hq-panel { max-width: 1080px; }
+.hq-data-minimap-col { flex-basis: 68%; max-width: 680px; }
+.hq-data-side-col { flex-basis: 32%; }
+.hq-data-minimap-wrap { min-height: 280px; }
+
+#hq-section-store .hq-fs-status { display: none; }
+#hq-section-store .hq-fs-section { margin-top: 12px; }
+#hq-section-store .hq-fs-drone-row {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 9px 4px;
+  align-items: center;
+}
+#hq-section-store .hq-store-ico { width: 40px; height: 40px; border-width: 2px; border-radius: 10px; }
+#hq-section-store .hq-store-ico svg,
+#hq-section-store .hq-store-ico img { width: 30px; height: 30px; }
+#hq-section-store .hq-fs-drone-info { min-width: 0; gap: 1px; }
+#hq-section-store .hq-fs-drone-name { font-size: 14px; }
+#hq-section-store .hq-fs-drone-cost { font-size: 12px; }
+#hq-section-store .hq-store-blurb { display: none; }
+#hq-section-store .hq-fs-drone-row .hq-order-btn {
+  grid-column: auto;
+  min-height: 30px;
+  padding: 4px 10px;
+  border-width: 2px;
+  border-radius: 8px;
+  font-size: 10px;
+}
+
+@media (max-width: 900px) {
+  .build-bar {
+    left: 8px;
+    right: calc(env(safe-area-inset-right, 0px) + 78px);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+    width: auto;
+    max-height: min(52dvh, 230px);
+    transform: none;
+  }
+  .build-bar.hidden { transform: translateY(12px); }
+  .build-items {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: 58px;
+    max-height: 126px;
+    gap: 5px;
+  }
+  .build-item { min-height: 58px; padding: 3px 4px; }
+  .build-item-icon { width: 27px; height: 27px; }
+  .build-item-icon img { max-width: 27px; max-height: 27px; }
+  .build-item-name, .build-item-cost { font-size: 9px; }
+  .hq-data-minimap-col { flex-basis: 64%; max-width: none; }
+  .hq-data-side-col { flex-basis: 36%; }
+}
+
+@media (max-width: 640px) {
+  .build-bar { right: calc(env(safe-area-inset-right, 0px) + 70px); padding: 6px 7px 7px; }
+  .hq-data-minimap-wrap { min-height: 220px; padding: 4px; }
+  #hq-section-store .hq-fs-drone-row { grid-template-columns: 34px minmax(0, 1fr) auto; gap: 6px; padding: 7px 2px; }
+  #hq-section-store .hq-store-ico { width: 34px; height: 34px; }
+  #hq-section-store .hq-store-ico svg, #hq-section-store .hq-store-ico img { width: 25px; height: 25px; }
+  #hq-section-store .hq-fs-drone-name { font-size: 11px; }
+  #hq-section-store .hq-fs-drone-cost { font-size: 10px; }
+  #hq-section-store .hq-fs-drone-row .hq-order-btn { min-height: 27px; padding: 3px 7px; font-size: 9px; }
+}
