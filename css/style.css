@@ -2713,52 +2713,52 @@ body.touch-ui .fs-btn {
     right: calc(env(safe-area-inset-right, 0px) + 78px);
     bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
     width: auto;
-    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 76px);
-    padding: 8px 10px 10px;
+    max-height: min(42dvh, 132px);
+    padding: 5px 8px 7px;
     gap: 6px;
     border-radius: 14px;
   }
 
   body.touch-ui .build-bar-head {
-    min-height: 32px;
+    min-height: 24px;
   }
 
   body.touch-ui .build-cancel-btn {
-    min-height: 36px;
-    padding: 6px 10px;
+    min-height: 30px;
+    padding: 4px 8px;
   }
 
   body.touch-ui .build-items {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 6px;
     padding: 2px 3px 4px 2px;
   }
 
   body.touch-ui .build-item {
-    min-height: 52px;
-    padding: 6px 8px;
-    gap: 7px;
+    min-height: 42px;
+    padding: 4px 6px;
+    gap: 5px;
     border-width: 2px;
     border-radius: 11px;
     box-shadow: 2px 2px 0 #000;
   }
 
   body.touch-ui .build-item-icon {
-    width: 32px;
-    height: 32px;
+    width: 26px;
+    height: 26px;
   }
 
   body.touch-ui .build-item-icon img {
-    max-width: 32px;
-    max-height: 32px;
+    max-width: 26px;
+    max-height: 26px;
   }
 
   body.touch-ui .build-item-name {
-    font-size: 11px;
+    font-size: 10px;
   }
 
   body.touch-ui .build-item-cost {
-    font-size: 10px;
+    font-size: 9px;
   }
 }
 
