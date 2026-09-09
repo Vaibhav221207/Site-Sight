@@ -2224,7 +2224,22 @@ body.touch-ui .hq-fs-nav-item {
   .hq-fs-inventory-item-name { font-size: 14px !important; }
 
   /* Build palette sits above the HUD chip; compact so it doesn't dominate. */
-  .build-bar { bottom: 48px; padding: 8px 10px; gap: 6px; max-height: 68vh; }
+  .build-bar {
+    bottom: 48px;
+    padding: 8px 10px;
+    gap: 6px;
+    max-height: calc(100dvh - 58px);
+    min-height: 0;
+  }
+  body.touch-ui .build-bar {
+    bottom: 12px;
+    max-height: calc(100dvh - 76px);
+  }
+  .build-items {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: 100%;
+  }
   .build-items { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
   .build-item { padding: 6px 8px; }
   .build-item-name { font-size: 12px; }
@@ -2260,6 +2275,41 @@ body.touch-ui #hq-panel {
   box-shadow: 3px 3px 0 #000;
   padding-top: 0;
   padding-bottom: 0;
+}
+
+/* On short touch landscape screens the DATA sheet must never grow wider than
+   the usable viewport. Both columns are allowed to shrink, while the details
+   column owns the vertical scroll. */
+@media (max-height: 500px) {
+  body.touch-ui #hq-overlay {
+    padding: 6px;
+  }
+
+  body.touch-ui #hq-panel {
+    width: calc(100vw - 12px);
+    height: calc(100dvh - 12px);
+    max-height: calc(100dvh - 12px);
+  }
+
+  body.touch-ui .hq-data-layout {
+    gap: 6px;
+  }
+
+  body.touch-ui .hq-data-minimap-col {
+    flex: 0 1 54%;
+    max-width: none;
+  }
+
+  body.touch-ui .hq-data-side-col {
+    flex: 1 1 46%;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  body.touch-ui .hq-data-zone-btn,
+  body.touch-ui .hq-data-bld-card {
+    min-width: 0;
+  }
 }
 
 /* Desktop short-window exception: mouse-based windows keep floating card */
@@ -2484,7 +2534,7 @@ body.touch-ui .fs-btn {
 /* Landscape phones have a short viewport and very little room for chrome.
    Keep the palette clear of the right-hand control rail and make the title
    screen fit without relying on browser zoom. */
-@media (pointer: coarse) and (max-width: 900px) {
+@media (max-width: 900px) {
   #start-screen {
     gap: clamp(24px, 8vh, 56px);
     padding-left: max(12px, env(safe-area-inset-left, 0px));
@@ -2523,9 +2573,9 @@ body.touch-ui .fs-btn {
   body.touch-ui .build-bar {
     left: 8px;
     right: calc(env(safe-area-inset-right, 0px) + 78px);
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
     width: auto;
-    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 92px);
+    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 76px);
     padding: 8px 10px 10px;
     gap: 6px;
     border-radius: 14px;
@@ -2574,7 +2624,7 @@ body.touch-ui .fs-btn {
   }
 }
 
-@media (pointer: coarse) and (min-width: 641px) and (max-height: 500px) {
+@media (min-width: 641px) and (max-height: 500px) {
   body.touch-ui .build-items {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }

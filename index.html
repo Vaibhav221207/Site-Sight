@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <title>Site Sight</title>
   <!-- bump ?v= every time style.css changes so browsers/CDN never serve a stale cached copy -->
-  <link rel="stylesheet" href="css/style.css?v=29" />
+  <link rel="stylesheet" href="css/style.css?v=30" />
   <!-- Baloo 2 — rounded playful UI font -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -96,7 +96,7 @@
             var el=document.getElementById('debug-overlay');
             if(el){ el.style.display='none'; el.textContent=info; el.dataset.info=info; }
           }
-        }, 1400);
+        }, 900);
         setTimeout(function(){
           var el=document.getElementById('debug-overlay');
           var c=document.getElementById('game-canvas');
@@ -112,7 +112,7 @@
               el.style.display='none';
             }
           }
-        }, 2600);
+        }, 1400);
       })();
     </script>
     <!-- Night sky stars (behind the transparent canvas backdrop) -->
