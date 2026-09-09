@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <title>Site Sight</title>
   <!-- bump ?v= every time style.css changes so browsers/CDN never serve a stale cached copy -->
-  <link rel="stylesheet" href="css/style.css?v=32" />
+  <link rel="stylesheet" href="css/style.css?v=33" />
   <!-- Baloo 2 — rounded playful UI font -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -187,6 +187,15 @@
         <span class="build-bar-title">BUILD MENU</span>
         <button id="build-cancel-btn" class="build-cancel-btn" type="button" hidden>Cancel placement</button>
       </div>
+      <div id="build-categories" class="build-categories" role="tablist" aria-label="Build categories">
+        <button type="button" class="build-category is-active" data-category="all" role="tab" aria-selected="true">All</button>
+        <button type="button" class="build-category" data-category="essentials" role="tab" aria-selected="false">HQ</button>
+        <button type="button" class="build-category" data-category="transport" role="tab" aria-selected="false">Roads</button>
+        <button type="button" class="build-category" data-category="residential" role="tab" aria-selected="false">Homes</button>
+        <button type="button" class="build-category" data-category="commercial" role="tab" aria-selected="false">Shops</button>
+        <button type="button" class="build-category" data-category="industrial" role="tab" aria-selected="false">Industry</button>
+        <button type="button" class="build-category" data-category="mining" role="tab" aria-selected="false">Mining</button>
+      </div>
       <div id="build-items" class="build-items"></div>
     </div>
 
@@ -219,6 +228,11 @@
           </nav>
           <div class="hq-fs-content">
             <div id="hq-section-data" class="hq-fs-section" role="tabpanel" aria-label="Survey data and zoning">
+              <div class="hq-data-overview" aria-label="Survey overview">
+                <div><strong id="data-overview-scanned">0%</strong><span>SCANNED</span></div>
+                <div><strong id="data-overview-zoned">0</strong><span>ZONED</span></div>
+                <div><strong id="data-overview-built">0</strong><span>BUILT</span></div>
+              </div>
               <div class="hq-data-layout">
                 <div class="hq-data-minimap-col">
                   <div class="hq-data-map-header">
@@ -249,7 +263,7 @@
                 <div class="hq-fs-status-label">STATUS</div>
                 <div class="hq-fs-status-text">Site command center — operational</div>
               </div>
-              <div class="hq-fs-section">
+              <div class="hq-fs-section hq-store-group" data-store-category="survey">
                 <div class="hq-fs-section-header">DRONE FLEET</div>
                 <div class="hq-fs-drone-row">
                   <span class="hq-store-ico" data-icon="drone" aria-hidden="true"></span>
@@ -261,7 +275,7 @@
                   <button id="hq-order-drone-fs" class="hq-order-btn">Order Drone</button>
                 </div>
               </div>
-              <div class="hq-fs-section">
+              <div class="hq-fs-section hq-store-group" data-store-category="survey">
                 <div class="hq-fs-section-header">GROUND SURVEY</div>
                 <div class="hq-fs-drone-row">
                   <span class="hq-store-ico" data-icon="gpr" aria-hidden="true"></span>
@@ -273,7 +287,7 @@
                   <button id="hq-order-gpr-fs" class="hq-order-btn">Order GPR</button>
                 </div>
               </div>
-              <div class="hq-fs-section">
+              <div class="hq-fs-section hq-store-group" data-store-category="stabilize">
                 <div class="hq-fs-section-header">STABILIZATION</div>
                 <div class="hq-fs-drone-row">
                   <span class="hq-store-ico" data-icon="compactor" aria-hidden="true"></span>

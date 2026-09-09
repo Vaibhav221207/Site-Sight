@@ -387,6 +387,38 @@ button {
   width: 100%;
 }
 
+.build-categories {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  overflow-x: auto;
+  padding: 1px 2px 4px;
+  scrollbar-width: none;
+}
+.build-categories::-webkit-scrollbar { display: none; }
+.build-category,
+.hq-store-filter {
+  flex: 0 0 auto;
+  min-height: 30px;
+  padding: 5px 10px;
+  border: 2px solid #2B2320;
+  border-radius: 10px;
+  background: #F6EEDC;
+  color: #6B5B4F;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.build-category.is-active,
+.hq-store-filter.is-active {
+  background: #C7432B;
+  color: #FFF;
+  box-shadow: 2px 2px 0 #000;
+}
+
 .build-cancel-btn {
   padding: 6px 10px;
   border: 2px solid #2B2320;
@@ -1338,6 +1370,34 @@ body.touch-ui .hq-fs-nav-item {
   margin-top: 0;
 }
 
+.hq-data-overview {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.hq-data-overview > div {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 7px 10px;
+  background: #F6EEDC;
+  border: 3px solid #2B2320;
+  border-radius: 12px;
+  box-shadow: 2px 2px 0 #000;
+}
+.hq-data-overview strong { font-size: 18px; line-height: 1; color: #2B2320; }
+.hq-data-overview span { font-size: 9px; font-weight: 700; color: #6B5B4F; letter-spacing: .06em; }
+.hq-store-categories {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.hq-store-categories::-webkit-scrollbar { display: none; }
+.hq-store-group[hidden] { display: none; }
+
 .hq-data-layout {
   display: flex;
   flex-direction: row;
@@ -2268,6 +2328,33 @@ body.touch-ui .hq-fs-nav-item {
    tabs, then a scrollable work area. A vertical desktop rail wastes the most
    valuable dimension on a phone. */
 @media (max-height: 500px) and (max-width: 900px) {
+  body.touch-ui .build-categories {
+    gap: 4px;
+    padding-bottom: 2px;
+  }
+  body.touch-ui .build-category {
+    min-height: 26px;
+    padding: 3px 8px;
+    font-size: 9px;
+  }
+  body.touch-ui .hq-data-overview {
+    gap: 4px;
+    margin-bottom: 6px;
+  }
+  body.touch-ui .hq-data-overview > div {
+    padding: 5px 7px;
+    border-width: 2px;
+  }
+  body.touch-ui .hq-data-overview strong { font-size: 14px; }
+  body.touch-ui .hq-data-overview span { font-size: 8px; }
+  body.touch-ui .hq-store-categories {
+    margin-bottom: 6px;
+  }
+  body.touch-ui .hq-store-filter {
+    min-height: 28px;
+    padding: 3px 8px;
+    font-size: 9px;
+  }
   body.touch-ui #hq-panel {
     width: calc(100vw - 12px);
     height: calc(100dvh - 12px);

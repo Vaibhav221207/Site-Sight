@@ -104,6 +104,7 @@ window.HqPanel = (function () {
       }
     } catch (e) {}
     api.refreshStoreAfford();
+    api.initStoreCategories();
     api.refreshNavCount();
 
     // ONE-TIME PURCHASE: reflect the permanent purchase state on the button
@@ -131,6 +132,26 @@ window.HqPanel = (function () {
     api.storeRow1 = api.orderBtn ? api.orderBtn.closest(".hq-fs-drone-row") : null;
     api.storeRow2 = api.gprOrderBtn ? api.gprOrderBtn.closest(".hq-fs-drone-row") : null;
     api.refreshFooter();
+  };
+
+  api.initStoreCategories = function () {
+    var store = api.sections && api.sections.store;
+    if (!store || store.querySelector(".hq-store-categories")) return;
+    var tabs = document.createElement("div");
+    tabs.className = "hq-store-categories";
+    tabs.innerHTML = '<button type="button" class="hq-store-filter is-active" data-store-filter="all">ALL</button>' +
+      '<button type="button" class="hq-store-filter" data-store-filter="survey">SURVEY</button>' +
+      '<button type="button" class="hq-store-filter" data-store-filter="stabilize">STABILIZE</button>';
+    store.insertBefore(tabs, store.firstChild);
+    tabs.addEventListener("click", function (event) {
+      var button = event.target.closest(".hq-store-filter");
+      if (!button) return;
+      var filter = button.dataset.storeFilter || "all";
+      var buttons = tabs.querySelectorAll(".hq-store-filter");
+      for (var i = 0; i < buttons.length; i++) buttons[i].classList.toggle("is-active", buttons[i] === button);
+      var groups = store.querySelectorAll(".hq-store-group");
+      for (var g = 0; g < groups.length; g++) groups[g].hidden = filter !== "all" && groups[g].dataset.storeCategory !== filter;
+    });
   };
 
   // ---- fixed-footer layout (all breakpoints) ------------------------------
@@ -252,6 +273,20 @@ window.HqPanel = (function () {
 
   api.refreshDataMap = function () {
     if (window.DataMap) window.DataMap.refresh();
+    var data = window.GameState && window.GameState.tileData || {};
+    var total = window.IsoGrid && window.IsoGrid.gridSize ? window.IsoGrid.gridSize * window.IsoGrid.gridSize : 0;
+    var scanned = 0, zoned = 0, built = 0;
+    for (var key in data) {
+      if (data[key].bestUse || data[key].surfaceStability) scanned++;
+      if (data[key].zoneType) zoned++;
+      if (data[key].zoneBuilding) built++;
+    }
+    var scanEl = document.getElementById("data-overview-scanned");
+    var zoneEl = document.getElementById("data-overview-zoned");
+    var builtEl = document.getElementById("data-overview-built");
+    if (scanEl) scanEl.textContent = (total ? Math.round(scanned / total * 100) : 0) + "%";
+    if (zoneEl) zoneEl.textContent = String(zoned);
+    if (builtEl) builtEl.textContent = String(built);
   };
 
   api.updateOwned = function () {

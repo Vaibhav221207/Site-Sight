@@ -61,6 +61,14 @@ var ITEMS = [
   var itemsEl = null;
   var cancelEl = null;
   var hudCancelEl = null;
+  var categoryEl = null;
+  var activeCategory = "all";
+
+  function categoryFor(item) {
+    if (item.road) return "transport";
+    if (item.zone) return item.zone;
+    return "essentials";
+  }
 
   function itemById(id) {
     for (var i = 0; i < ITEMS.length; i++) {
@@ -110,9 +118,24 @@ var ITEMS = [
     itemsEl = document.getElementById("build-items");
     cancelEl = document.getElementById("build-cancel-btn");
     hudCancelEl = document.getElementById("hud-cancel-btn");
+    categoryEl = document.getElementById("build-categories");
     if (!barEl || !itemsEl) return;
     if (cancelEl) cancelEl.addEventListener("click", function () { api.cancel(); });
     if (hudCancelEl) hudCancelEl.addEventListener("click", function () { api.cancel(); });
+    if (categoryEl) {
+      categoryEl.addEventListener("click", function (event) {
+        var button = event.target.closest(".build-category");
+        if (!button) return;
+        activeCategory = button.dataset.category || "all";
+        var tabs = categoryEl.querySelectorAll(".build-category");
+        for (var t = 0; t < tabs.length; t++) {
+          var selected = tabs[t] === button;
+          tabs[t].classList.toggle("is-active", selected);
+          tabs[t].setAttribute("aria-selected", selected ? "true" : "false");
+        }
+        api.refresh();
+      });
+    }
     itemsEl.innerHTML = "";
     for (var i = 0; i < ITEMS.length; i++) itemsEl.appendChild(buildCard(ITEMS[i]));
     api.refresh();
@@ -266,6 +289,7 @@ var ITEMS = [
     for (var i = 0; i < cards.length; i++) {
       var card = cards[i];
       var item = itemById(card.dataset.id);
+      var categoryVisible = activeCategory === "all" || categoryFor(item) === activeCategory;
       var hasZone = false;
       if (item.zone && window.GameState && window.GameState.tileData) {
         for (var k in window.GameState.tileData) {
@@ -273,7 +297,7 @@ var ITEMS = [
           if (sameZone(d.zoneType, item.zone) && !d.zoneBuilding) { hasZone = true; break; }
         }
       }
-      card.hidden = !!item.zone && !hasZone;
+      card.hidden = !categoryVisible || (!!item.zone && !hasZone);
       card.disabled = item.zone ? !hasZone : (!!(window.GameState && window.GameState.hqBuilt) && !item.road);
       if (item.zone && !hasZone) {
         card.title = "Zone land first to unlock " + item.name;
