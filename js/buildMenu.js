@@ -78,6 +78,7 @@ var ITEMS = [
     card.type = "button";
     card.className = "build-item";
     card.dataset.id = item.id;
+    if (item.zone) card.dataset.zone = item.zone;
 
     var icon = document.createElement("span");
     icon.className = "build-item-icon";
@@ -274,6 +275,13 @@ var ITEMS = [
       }
       card.hidden = !!item.zone && !hasZone;
       card.disabled = item.zone ? !hasZone : (!!(window.GameState && window.GameState.hqBuilt) && !item.road);
+      if (item.zone && !hasZone) {
+        card.title = "Zone land first to unlock " + item.name;
+        card.setAttribute("aria-label", item.name + ", " + Number(item.cost).toLocaleString() + " dollars, zone land required");
+      } else {
+        card.removeAttribute("title");
+        card.setAttribute("aria-label", item.name + ", " + Number(item.cost).toLocaleString() + " dollars");
+      }
       card.classList.toggle("selected", api.selected === card.dataset.id);
     }
   };
