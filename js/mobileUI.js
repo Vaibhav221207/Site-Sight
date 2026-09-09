@@ -67,6 +67,18 @@ window.MobileUI = (function () {
     // the Build button reuses the desktop toggle wiring (including the
     // placement-cancel path) with a plain programmatic click
     build.addEventListener("click", function () {
+      var mode = window.InputHandler && window.InputHandler.getMode
+        ? window.InputHandler.getMode()
+        : "idle";
+      if (mode !== "idle") {
+        if (mode === "compacting" && window.CompactorTool && window.CompactorTool.cancel) {
+          window.CompactorTool.cancel();
+        } else if (window.BuildMenu && window.BuildMenu.cancel) {
+          window.BuildMenu.cancel();
+        }
+        api.update();
+        return;
+      }
       var btn = document.getElementById("hud-build-btn");
       if (btn) btn.click();
     });
@@ -81,9 +93,16 @@ window.MobileUI = (function () {
     var cash = document.getElementById("mu-cash");
     if (cash) cash.textContent = "$" + (window.GameState.cash || 0).toLocaleString();
     var build = document.getElementById("mu-build");
-    // The mobile Build button must remain available after HQ placement; the
-    // palette itself handles which entries are currently valid.
-    if (build) build.disabled = false;
+    // Keep a one-tap escape hatch visible while a placement mode is active.
+    if (build) {
+      var mode = window.InputHandler && window.InputHandler.getMode
+        ? window.InputHandler.getMode()
+        : "idle";
+      build.textContent = mode === "idle" ? "Build" : "Cancel";
+      build.classList.toggle("mu-btn--stop", mode !== "idle");
+      build.disabled = false;
+      build.setAttribute("aria-label", mode === "idle" ? "Open build menu" : "Cancel placement");
+    }
   };
 
   api.init = function () {

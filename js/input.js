@@ -61,6 +61,7 @@ window.InputHandler = (function () {
     } else if (mode === 'idle') {
       api.setCursor("grab");
     }
+    if (window.MobileUI && window.MobileUI.update) window.MobileUI.update();
   };
 
   api.getMode = function () { return InteractionState.mode; };

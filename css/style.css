@@ -2481,6 +2481,105 @@ body.touch-ui .fs-btn {
   touch-action: manipulation;
 }
 
+/* Landscape phones have a short viewport and very little room for chrome.
+   Keep the palette clear of the right-hand control rail and make the title
+   screen fit without relying on browser zoom. */
+@media (pointer: coarse) and (max-width: 900px) {
+  #start-screen {
+    gap: clamp(24px, 8vh, 56px);
+    padding-left: max(12px, env(safe-area-inset-left, 0px));
+    padding-right: max(12px, env(safe-area-inset-right, 0px));
+  }
+
+  .start-title {
+    font-size: clamp(40px, 14vw, 96px);
+    text-shadow: 3px 3px 0 #C7432B, 6px 6px 0 rgba(0,172,193,0.85);
+  }
+
+  .start-enter-btn {
+    min-height: 64px;
+    padding: 18px 30px;
+    font-size: 17px;
+  }
+
+  body.touch-ui .mu-sidebar {
+    top: calc(env(safe-area-inset-top, 0px) + 76px);
+    right: calc(env(safe-area-inset-right, 0px) + 8px);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+    width: 62px;
+    gap: 8px;
+  }
+
+  body.touch-ui .mu-chip {
+    padding: 8px 5px;
+  }
+
+  body.touch-ui .mu-value {
+    max-width: 100%;
+    font-size: 14px;
+    letter-spacing: -0.03em;
+  }
+
+  body.touch-ui .build-bar {
+    left: 8px;
+    right: calc(env(safe-area-inset-right, 0px) + 78px);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+    width: auto;
+    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 92px);
+    padding: 8px 10px 10px;
+    gap: 6px;
+    border-radius: 14px;
+  }
+
+  body.touch-ui .build-bar-head {
+    min-height: 32px;
+  }
+
+  body.touch-ui .build-cancel-btn {
+    min-height: 36px;
+    padding: 6px 10px;
+  }
+
+  body.touch-ui .build-items {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    padding: 2px 3px 4px 2px;
+  }
+
+  body.touch-ui .build-item {
+    min-height: 52px;
+    padding: 6px 8px;
+    gap: 7px;
+    border-width: 2px;
+    border-radius: 11px;
+    box-shadow: 2px 2px 0 #000;
+  }
+
+  body.touch-ui .build-item-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  body.touch-ui .build-item-icon img {
+    max-width: 32px;
+    max-height: 32px;
+  }
+
+  body.touch-ui .build-item-name {
+    font-size: 11px;
+  }
+
+  body.touch-ui .build-item-cost {
+    font-size: 10px;
+  }
+}
+
+@media (pointer: coarse) and (min-width: 641px) and (max-height: 500px) {
+  body.touch-ui .build-items {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 /* touch: the right-edge sidebar starts below the universal fullscreen
    button (top-right) so its first chip is never covered */
 body.touch-ui .mu-sidebar {
