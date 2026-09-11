@@ -2595,7 +2595,7 @@ body.touch-ui .hq-fs-nav-item {
     min-height: 0;
     max-height: 100%;
   }
-  .build-items { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .build-items { gap: 6px; }
   .build-item { padding: 6px 8px; }
   .build-item-name { font-size: 12px; }
   .build-item-cost { font-size: 11px; }
@@ -3078,8 +3078,14 @@ body.touch-ui .fs-btn {
 
   body.touch-ui .mu-value {
     max-width: 100%;
-    font-size: 14px;
+    width: 100%;
+    min-width: 0;
+    font-size: 13px;
     letter-spacing: -0.03em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
   }
 
   body.touch-ui .build-bar {
@@ -3087,7 +3093,7 @@ body.touch-ui .fs-btn {
     right: calc(env(safe-area-inset-right, 0px) + 78px);
     bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
     width: auto;
-    max-height: min(42dvh, 132px);
+    max-height: min(46dvh, 190px);
     padding: 5px 8px 7px;
     gap: 6px;
     border-radius: 14px;
@@ -3103,15 +3109,28 @@ body.touch-ui .fs-btn {
   }
 
   body.touch-ui .build-items {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    overflow-x: auto;
+    overflow-y: hidden;
+    height: 64px;
+    flex: 0 0 auto;
     gap: 6px;
     padding: 2px 3px 4px 2px;
   }
 
   body.touch-ui .build-item {
-    min-height: 42px;
+    flex: 0 0 104px;
+    width: 104px;
+    min-height: 56px;
+    height: 60px;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
     padding: 4px 6px;
-    gap: 5px;
+    gap: 2px;
     border-width: 2px;
     border-radius: 11px;
     box-shadow: 2px 2px 0 #000;
@@ -3138,7 +3157,7 @@ body.touch-ui .fs-btn {
 
 @media (min-width: 641px) and (max-height: 500px) {
   body.touch-ui .build-items {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    display: flex;
   }
 }
 
@@ -3632,7 +3651,7 @@ body.touch-ui #tile-popup {
   }
   .build-bar.hidden { transform: translateY(12px); }
   .build-items {
-    flex: 0 0 56px;
+    flex: 0 0 auto;
     height: 66px;
     flex-basis: 66px;
     max-height: none;
