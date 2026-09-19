@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <title>Site Sight</title>
   <!-- bump ?v= every time style.css changes so browsers/CDN never serve a stale cached copy -->
-  <link rel="stylesheet" href="css/style.css?v=34" />
+  <link rel="stylesheet" href="css/style.css?v=55" />
   <!-- Baloo 2 — rounded playful UI font -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -179,6 +179,8 @@
 
     <!-- Game canvas: extruded 3D isometric blocks, fills the browser window -->
     <canvas id="game-canvas"></canvas>
+    <!-- Modern hazard layer — DOM badges positioned over canvas, styled with 2025 CSS -->
+    <div id="hazard-layer" aria-hidden="true"></div>
 
     <!-- Build palette: toggle bar that slides up above the HUD when
          "Build" is clicked; cards are generated from the BuildMenu registry -->
@@ -186,6 +188,11 @@
       <div class="build-bar-head">
         <span class="build-bar-title">BUILD MENU</span>
         <button id="build-cancel-btn" class="build-cancel-btn" type="button" hidden>Cancel placement</button>
+      </div>
+      <div class="build-strip">
+        <button id="build-prev" class="build-arrow" type="button" aria-label="Scroll tools left">&#8249;</button>
+        <div id="build-items" class="build-items"></div>
+        <button id="build-next" class="build-arrow" type="button" aria-label="Scroll tools right">&#8250;</button>
       </div>
       <div id="build-categories" class="build-categories" role="tablist" aria-label="Build categories">
         <button type="button" class="build-category is-active" data-category="all" role="tab" aria-selected="true">All</button>
@@ -196,7 +203,6 @@
         <button type="button" class="build-category" data-category="industrial" role="tab" aria-selected="false">Industry</button>
         <button type="button" class="build-category" data-category="mining" role="tab" aria-selected="false">Mining</button>
       </div>
-      <div id="build-items" class="build-items"></div>
     </div>
 
     <!-- HUD: always visible at the top, includes cash balance and build button -->
@@ -263,8 +269,8 @@
                 <div class="hq-fs-status-label">STATUS</div>
                 <div class="hq-fs-status-text">Site command center — operational</div>
               </div>
+              <div class="hq-store-grid">
               <div class="hq-fs-section hq-store-group" data-store-category="survey">
-                <div class="hq-fs-section-header">DRONE FLEET</div>
                 <div class="hq-fs-drone-row">
                   <span class="hq-store-ico" data-icon="drone" aria-hidden="true"></span>
                   <div class="hq-fs-drone-info">
@@ -276,7 +282,6 @@
                 </div>
               </div>
               <div class="hq-fs-section hq-store-group" data-store-category="survey">
-                <div class="hq-fs-section-header">GROUND SURVEY</div>
                 <div class="hq-fs-drone-row">
                   <span class="hq-store-ico" data-icon="gpr" aria-hidden="true"></span>
                   <div class="hq-fs-drone-info">
@@ -288,7 +293,6 @@
                 </div>
               </div>
               <div class="hq-fs-section hq-store-group" data-store-category="stabilize">
-                <div class="hq-fs-section-header">STABILIZATION</div>
                 <div class="hq-fs-drone-row">
                   <span class="hq-store-ico" data-icon="compactor" aria-hidden="true"></span>
                   <div class="hq-fs-drone-info">
@@ -298,6 +302,18 @@
                   </div>
                   <button id="hq-order-compactor-fs" class="hq-order-btn">BUY</button>
                 </div>
+              </div>
+              <div class="hq-fs-section hq-store-group" data-store-category="stabilize">
+                <div class="hq-fs-drone-row">
+                  <span class="hq-store-ico" data-icon="repair" aria-hidden="true"></span>
+                  <div class="hq-fs-drone-info">
+                    <span class="hq-fs-drone-name">Repair Rig</span>
+                    <span class="hq-fs-drone-cost" data-price="5000">$5,000</span>
+                    <span class="hq-store-blurb">Autonomous swarm — fixes hazard-flagged buildings, restores income.</span>
+                  </div>
+                  <button id="hq-order-repair-fs" class="hq-order-btn">BUY</button>
+                </div>
+              </div>
               </div>
             </div>
             <div class="hq-fs-footer" id="hq-fs-footer"></div>
@@ -388,32 +404,35 @@
 
     <!-- Scripts loaded in dependency order (no bundler) -->
     <script src="js/isoGrid.js"></script>
-    <script src="js/terrain.js"></script>
+    <script src="js/terrain.js?v=5"></script>
     <script src="js/hqCityBuilderSVG.js"></script>
     <script src="js/buildingSprites.js"></script>
-    <script src="js/roadTool.js"></script>
-    <script src="js/blockRender.js?v=5"></script>
-    <script src="js/input.js?v=2"></script>
-    <script src="js/panel.js?v=2"></script>
-    <script src="js/gameState.js?v=6"></script>
+    <script src="js/roadTool.js?v=3"></script>
+    <script src="js/construction.js?v=10"></script>
+    <script src="js/blockRender.js?v=39"></script>
+    <script src="js/input.js?v=5"></script>
+    <script src="js/panel.js?v=4"></script>
+    <script src="js/gameState.js?v=8"></script>
+    <script src="js/hazards.js?v=4"></script>
     <script src="js/progress.js"></script>
       <script src="js/ui.js?v=2"></script>
     <script src="js/landData.js"></script>
-    <script src="js/gprDeploy.js"></script>
-    <script src="js/hqBuild.js"></script>
-    <script src="js/compactorTool.js?v=2"></script>
-    <script src="js/droneDeploy.js"></script>
-    <script src="js/buildMenu.js"></script>
+    <script src="js/gprDeploy.js?v=4"></script>
+    <script src="js/hqBuild.js?v=4"></script>
+    <script src="js/compactorTool.js?v=4"></script>
+    <script src="js/repairTool.js?v=6"></script>
+    <script src="js/droneDeploy.js?v=4"></script>
+    <script src="js/buildMenu.js?v=6"></script>
     <script src="js/zoningTool.js?v=3"></script>
     <script src="js/buildings.js?v=2"></script>
-    <script src="js/economy.js?v=4"></script>
-    <script src="js/icons.js?v=4"></script>
-    <script src="js/dataMap.js?v=12"></script>
-    <script src="js/hqPanel.js?v=8"></script>
-    <script src="js/main.js?v=4"></script>
+    <script src="js/economy.js?v=6"></script>
+    <script src="js/icons.js?v=5"></script>
+    <script src="js/dataMap.js?v=14"></script>
+    <script src="js/hqPanel.js?v=11"></script>
+    <script src="js/main.js?v=15"></script>
     <script src="js/mobileUI.js"></script>
     <script src="js/fullscreen.js?v=5"></script>
     <script src="js/orientation.js"></script>
-    <script src="js/startScreen.js"></script>
+    <script src="js/startScreen.js?v=4"></script>
   </body>
 </html>

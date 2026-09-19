@@ -26,7 +26,9 @@ window.BlockRender = (function () {
   var LEFT_SHADE = 0.62;   // brightness factor of the left side face
   var RIGHT_SHADE = 0.42;  // brightness factor of the right side face
   var SELECT_STROKE = "rgba(41, 182, 246, 0.95)";
-  var TOP_STROKE = "rgba(8, 10, 22, 0.4)";
+  // NOTE: there is deliberately NO dark tile-grid stroke. Per selective-outline
+  // practice, seams use a darker tone OF THE TILE ITSELF (see drawBlock) —
+  // near-black on every tile reads as a harsh grid and fights the accents.
 
   var api = {
     ctx: null,
@@ -43,8 +45,8 @@ window.BlockRender = (function () {
   // HQ beacon — subtle pulse (just a little)
   var beaconPulse = { v: 0 };
   // river — simple flat water, single gentle global shimmer
-  var RIVER_BASE = "#5B6FA8";
-  var RIVER_LIGHT = "#7A90C8";
+  var RIVER_BASE = "#3d80a3";
+  var RIVER_LIGHT = "#63c4cc";
   var RIVER_ALPHA = 0.85;
   var riverShimmer = { v: 0 };
 
@@ -101,10 +103,10 @@ window.BlockRender = (function () {
   // factors as the terrain blocks so buildings sit in the same light.
   var BLD_WALL = "#EDE4D3";
   var BLD_INK = "#2B2320";
-  var BLD_MASS = { // footprint x height, in iso units
-    workshop: [0.86, 0.50], factory: [0.95, 0.95], shop: [0.80, 0.45],
-    mall: [1.00, 0.70], cottage: [0.62, 0.40], apartments: [0.66, 0.92],
-    mine: [0.80, 0.00], quarry: [0.90, 0.00]
+  var BLD_MASS = { // footprint x height, in iso units — bumped ~15% per your "bigger" ask, still fits tile
+    workshop: [0.98, 0.58], factory: [1.08, 1.08], shop: [0.92, 0.52],
+    mall: [1.12, 0.80], cottage: [0.72, 0.46], apartments: [0.76, 1.04],
+    mine: [0.92, 0.00], quarry: [1.02, 0.00]
   };
   var BLD_ZONE = { residential: "#66BB6A", commercial: "#42A5F5", industrial: "#8E24AA", mining: "#FFB300" };
 
@@ -130,16 +132,37 @@ window.BlockRender = (function () {
     return { n: n, e: e, s: s, w: w, hw: hw, hh: hh };
   }
 
+  // Kenney-only: every zone building must be a Kenney sprite. Legacy + current ids all map.
+  var KENNEY_BY_ID = {
+    workshop: "buildingTiles_100.png", factory: "buildingTiles_110.png", shop: "buildingTiles_030.png",
+    mall: "buildingTiles_090.png", cottage: "buildingTiles_000.png", apartments: "buildingTiles_009.png",
+    mine: "buildingTiles_085.png", quarry: "buildingTiles_106.png",
+    "small-house": "buildingTiles_000.png", townhouse: "buildingTiles_008.png", "apartment-block": "buildingTiles_009.png",
+    "corner-shop": "buildingTiles_030.png", market: "buildingTiles_080.png", "retail-center": "buildingTiles_090.png",
+    "industrial-plant": "buildingTiles_120.png", "mine-shaft": "buildingTiles_085.png", "open-pit-mine": "buildingTiles_092.png"
+  };
+  function buildingScale(iso) {
+    // Responsive: larger tiles (desktop) can carry slightly larger sprites without overflow.
+    // Keeps the Kenney art inside its tile on mobile.
+    if (iso > 34) return 1.34;
+    if (iso > 26) return 1.28;
+    return 1.22;
+  }
   function drawBuilding(ctx, c, r, cx, topY, iso) {
     var gs = window.GameState;
     var d = (gs && gs.getTileData) ? gs.getTileData(c, r) : null;
     if (!d || !d.zoneBuilding) return;
     var id = d.zoneBuilding;
-    if (d.buildingSprite && window.BuildingSprites) {
-      window.BuildingSprites.draw(ctx, d.buildingSprite, cx, topY + iso * 0.42, iso * 1.35);
-      return;
+    var sprite = d.buildingSprite || KENNEY_BY_ID[id] || null;
+    if (sprite && window.BuildingSprites) {
+      var img = window.BuildingSprites.load(sprite);
+      if (img.complete && img.naturalWidth) {
+        var sc = buildingScale(iso);
+        window.BuildingSprites.draw(ctx, sprite, cx, topY + iso * 0.42, iso * sc);
+        return;
+      }
     }
-    var m = BLD_MASS[id] || [0.80, 0.50];
+    var m = BLD_MASS[id] || [0.86, 0.50];
     var accent = BLD_ZONE[d.zoneType] || "#42A5F5";
     var fw = iso * m[0], h = iso * m[1];
     ctx.save();
@@ -274,17 +297,19 @@ window.BlockRender = (function () {
     ctx.fillStyle = topColor;
     ctx.fill();
     if (isRiverTile) ctx.restore();
-    // zone tint overlay (0.4 opacity) — flat land zoned tiles show category color
+    // zone tint overlay — flat land zoned tiles show category color, but
+    // once a building is placed the tile reverts to its original land color
+    // so the building doesn't sit on a stained zone wash (user feedback: dirt look)
     try {
       var zd = window.GameState && window.GameState.getTileData ? window.GameState.getTileData(c, r) : null;
-      var zt = zd && zd.zoneType;
+      var zt = zd && zd.zoneType && !zd.zoneBuilding && !zd.construction && !zd.curtain ? zd.zoneType : null;
       if (zt) {
         var ZC = { residential: "#66BB6A", commercial: "#42A5F5", industrial: "#8E24AA", mining: "#FFB300" };
         var zc = ZC[zt] || null;
         if (zc) {
           var zr = parseInt(zc.slice(1,3),16), zg = parseInt(zc.slice(3,5),16), zb = parseInt(zc.slice(5,7),16);
           ctx.save();
-          ctx.globalAlpha = 0.4;
+          ctx.globalAlpha = 0.55;
           ctx.fillStyle = "rgba(" + zr + "," + zg + "," + zb + ",1)";
           ctx.beginPath();
           ctx.moveTo(n.x, n.y);
@@ -293,6 +318,20 @@ window.BlockRender = (function () {
           ctx.lineTo(w.x, w.y);
           ctx.closePath();
           ctx.fill();
+          ctx.restore();
+          // zoned edge: darker tone OF THE ZONE COLOR (never near-black) so
+          // a zoned tile pops by hue while the map stays soft. Mismatched
+          // tiles keep their dashed warning edge below.
+          ctx.save();
+          ctx.strokeStyle = shade(zc, 0.55);
+          ctx.lineWidth = Math.max(2, iso * 0.05);
+          ctx.beginPath();
+          ctx.moveTo(n.x, n.y);
+          ctx.lineTo(e.x, e.y);
+          ctx.lineTo(s.x, s.y);
+          ctx.lineTo(w.x, w.y);
+          ctx.closePath();
+          ctx.stroke();
           ctx.restore();
         }
         // mismatch visual cue: thin dashed near-black border for risky zoning
@@ -349,11 +388,22 @@ window.BlockRender = (function () {
         }
       }
     } catch(e3){}
-    ctx.strokeStyle = isSelected ? SELECT_STROKE : TOP_STROKE;
-    ctx.lineWidth = isSelected ? 2.5 : 1;
-    ctx.stroke();
-    // zone buildings rise above the road surface.
-    try { drawBuilding(ctx, c, r, cx, topY, iso); } catch (e) {}
+    if (isSelected) {
+      ctx.strokeStyle = SELECT_STROKE;
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+    } else {
+      // whisper seam: darker tone of this tile's own top color at low alpha.
+      // Same-hue neighbors melt together; different terrain still separates.
+      ctx.save();
+      ctx.globalAlpha = 0.45;
+      ctx.strokeStyle = shade(topColor, 0.55);
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.restore();
+    }
+    // NOTE: Buildings are drawn in a separate pass AFTER roads, so they appear on top.
+    // Buildings are drawn in the building pass in redrawStatic.
   }
 
   function drawRoadTile(ctx, c, r, cx, topY, iso) {
@@ -380,7 +430,12 @@ window.BlockRender = (function () {
       { key: "west", c: c - 1, r: r }
     ];
     var links = [];
+    var edgeGrid = (api.grid && api.grid.gridSize) || 20;
     for (var i = 0; i < neighbors.length; i++) {
+      // map edges have no neighbor out there: skip instead of reading past
+      // the terrain grid (used to throw undefined[col] every frame).
+      if (neighbors[i].c < 0 || neighbors[i].r < 0 ||
+          neighbors[i].c >= edgeGrid || neighbors[i].r >= edgeGrid) continue;
       var isHqNeighbor = window.Terrain && window.Terrain.isHQ &&
         window.Terrain.isHQ(neighbors[i].c, neighbors[i].r);
       if (connection[neighbors[i].key] || isHqNeighbor) {
@@ -1229,8 +1284,18 @@ window.BlockRender = (function () {
       if (isHQ) {
         // keep green land under HQ so the tile never flashes a black void
         var isSelHQ = api.selected && api.selected.col === t.c && api.selected.row === t.r;
-        drawBlock(layer, t.c, t.r, totalHeight(t.c, t.r), "#7EB24A", isSelHQ);
-        drawHQBuilding(layer, t.c, t.r);
+        drawBlock(layer, t.c, t.r, totalHeight(t.c, t.r), "#94ad39", isSelHQ);
+        // During the build phase, the printer + robot are drawn by
+        // Construction.drawTile (called from drawBlock). During the curtain
+        // phase, the amber wrap + ribbon are drawn by Construction.drawTile.
+        // In both cases the full HQ building must NOT be drawn — it would
+        // paint on top and hide the animation/curtain entirely.
+        var hqBuildingVisible = !(window.Construction &&
+          ((window.Construction.hqBuild &&
+            window.Construction.hqBuild.col === t.c && window.Construction.hqBuild.row === t.r) ||
+           (window.Construction.hqCurtain &&
+            window.Construction.hqCurtain.col === t.c && window.Construction.hqCurtain.row === t.r)));
+        if (hqBuildingVisible) drawHQBuilding(layer, t.c, t.r);
         continue;
       }
       var isRock = api.terrain.isRock(t.c, t.r);
@@ -1265,6 +1330,69 @@ window.BlockRender = (function () {
         var roadPoint = api.grid.worldToScreen(roadTile.c, roadTile.r);
         drawRoadTile(layer, roadTile.c, roadTile.r, roadPoint.x,
           roadPoint.y - totalHeight(roadTile.c, roadTile.r), api.grid.isoSize);
+      }
+    }
+    // Popped (selected) tile must visually sit ON TOP of adjacent roads — not under them.
+    // Roads are drawn in the second pass at ground height, so a raised popped tile
+    // would otherwise have its edge under the flat road diamond. Redraw it last.
+    if (api.selected) {
+      var sc = api.selected.col, sr = api.selected.row;
+      var inB = sc >= 0 && sr >= 0 && sc < api.grid.gridSize && sr < api.grid.gridSize;
+      if (inB && !api.terrain.isHQ(sc, sr) && api.terrain.typeAt(sc, sr) !== "trench" && !api.terrain.isRock(sc, sr)) {
+        // Only redraw if actually popped (rises > 0.5)
+        if ((rises[sc + "," + sr] || 0) > 0.5) {
+          var sp = api.grid.worldToScreen(sc, sr);
+          drawBlock(layer, sc, sr, totalHeight(sc, sr), api.terrain.colorAt(sc, sr), true);
+        }
+      }
+    }
+    // Building pass: draw buildings on top of roads so they appear above roads.
+    for (var bi = 0; bi < ORDER.length; bi++) {
+      var bTile = ORDER[bi];
+      var bk = bTile.c + "," + bTile.r;
+      var isHQ = api.terrain.isHQ(bTile.c, bTile.r);
+      var isTrench = api.terrain.typeAt(bTile.c, bTile.r) === "trench";
+      if (isHQ || isTrench) continue;
+      var isRock = api.terrain.isRock(bTile.c, bTile.r);
+      var isSel = api.selected && api.selected.col === bTile.c && api.selected.row === bTile.r;
+      var d = window.GameState && window.GameState.getTileData ? window.GameState.getTileData(bTile.c, bTile.r) : null;
+      if (d && d.zoneBuilding) {
+        var topY = api.grid.worldToScreen(bTile.c, bTile.r).y - totalHeight(bTile.c, bTile.r);
+        var iso = api.grid.isoSize;
+        drawBuilding(layer, bTile.c, bTile.r, api.grid.worldToScreen(bTile.c, bTile.r).x, topY, api.grid.isoSize);
+      }
+    }
+    // Construction overlay pass (printer + robot, curtain gift-box, confetti):
+    // drawn LAST so no terrain tile can cover any part of the FX. See the
+    // NOTE in drawBlock for why this cannot live in the main loop.
+    // hasFx guard: drawTile reads tileData via getTileData, which LAZILY
+    // CREATES records — calling it for all 400 tiles would populate records
+    // for tiles the player never touched. Raw tileData[k] reads create nothing.
+    if (window.Construction && window.Construction.drawTile) {
+      var CS = window.Construction;
+      var burstN = (CS.bursts && CS.bursts.length) || 0;
+      for (var fi = 0; fi < ORDER.length; fi++) {
+        var ft = ORDER[fi];
+        var hasFx = false;
+        if ((CS.hqBuild && CS.hqBuild.col === ft.c && CS.hqBuild.row === ft.r) ||
+            (CS.hqCurtain && CS.hqCurtain.col === ft.c && CS.hqCurtain.row === ft.r)) {
+          hasFx = true;
+        }
+        if (!hasFx && window.GameState && window.GameState.tileData) {
+          var fd = window.GameState.tileData[ft.c + "," + ft.r];
+          if (fd && (fd.construction || fd.curtain)) hasFx = true;
+        }
+        if (!hasFx && burstN > 0) {
+          for (var bi = 0; bi < burstN; bi++) {
+            if (CS.bursts[bi].c === ft.c && CS.bursts[bi].r === ft.r) { hasFx = true; break; }
+          }
+        }
+        if (!hasFx) continue;
+        try {
+          var fp = api.grid.worldToScreen(ft.c, ft.r);
+          CS.drawTile(layer, ft.c, ft.r, fp.x,
+            fp.y - totalHeight(ft.c, ft.r), api.grid.isoSize);
+        } catch (fxE) {}
       }
     }
   };
@@ -1401,6 +1529,13 @@ window.BlockRender = (function () {
   // HQ beacon — tiny pulse drawn per-frame over the static HQ (so it animates just a little)
   function drawBeaconPulse(ctx){
     if(!window.GameState || !window.GameState.hqTile || !api.terrain || !api.terrain.isHQ) return;
+    // no beacon before the building exists: without this the antenna-tip red
+    // dot floats in mid-air over the printer gantry / gift box during the
+    // build + curtain phases (it has no mast to sit on yet).
+    try {
+      var CZ = window.Construction;
+      if (CZ && (CZ.hqBuild || CZ.hqCurtain)) return;
+    } catch (e) {}
     var hq = window.GameState.hqTile;
     if(!api.terrain.isHQ(hq.col, hq.row)) return;
     var g = api.grid; if(!g || !g.isoSize) return;
@@ -1444,6 +1579,211 @@ window.BlockRender = (function () {
     ctx.restore();
   }
 
+// ---- Hazard Icon (SimCity-minimal: small single-colour badge on Kenney roof) ----
+  // Small badge sitting ON the Kenney building — single hazard colour, ink outline,
+  // white symbol inside, no text. Visible at game zoom, still minimal like SimCity.
+  var HAZARD_COLOR = {
+    "Foundation Crack": "#C7432B",
+    "Structural Fatigue": "#FFB300",
+    "Utility Fault": "#42A5F5",
+    "Sinkhole": "#8E24AA",
+    "Flood Risk": "#22C55E",
+    "Contamination Leak": "#C7432B"
+  };
+
+  function drawHazardCloud(ctx, cx, topY, iso, u, now, hazard) {
+    if (!hazard || !hazard.active) return;
+    var color = HAZARD_COLOR[hazard.type] || "#C7432B";
+    var baseY = topY - iso * 0.68;
+    var r = Math.max(7, Math.round(6.6 * u));
+    var pulse = 0.96 + 0.04 * Math.sin(now / 480);
+    // SimCity puff — cross-like: 3 overlapping circles, tail goes diagonally SW to roof
+    var puffX = iso * 0.14; // NE offset so bubble is cross-offset from building
+    ctx.save();
+    ctx.translate(cx + puffX, baseY);
+    ctx.scale(pulse, pulse);
+    try { ctx.filter = "drop-shadow(0 " + Math.round(1.8*u) + "px " + Math.round(3*u) + "px rgba(0,0,0,0.35))"; } catch(e){}
+    if (!ctx.filter || ctx.filter === "none") { ctx.shadowColor = "rgba(0,0,0,0.35)"; ctx.shadowBlur = Math.round(4*u); ctx.shadowOffsetY = Math.round(1.8*u); }
+    // subtle 3D gradient — modern soft plastic, not flat
+    var grad = ctx.createRadialGradient(-r*0.28, -r*0.32, r*0.18, 0, 0, r);
+    grad.addColorStop(0, "#ffffff");
+    grad.addColorStop(0.18, color);
+    grad.addColorStop(1, color);
+    // puff — soft squircle-like, no harsh black outline
+    ctx.beginPath();
+    ctx.arc(-r*0.30, -r*0.08, r*0.60, 0, Math.PI*2);
+    ctx.arc(r*0.28, -r*0.12, r*0.58, 0, Math.PI*2);
+    ctx.arc(0, r*0.30, r*0.56, 0, Math.PI*2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    // soft inset highlight + outer subtle rim, not black
+    ctx.strokeStyle = "rgba(255,255,255,0.22)";
+    ctx.lineWidth = Math.max(1, 1.2 * u);
+    ctx.lineJoin = "round";
+    ctx.stroke();
+    // add soft outer shadow already via filter, keep it
+    try { ctx.filter = "none"; } catch(e){}
+    ctx.shadowColor = "transparent"; ctx.shadowBlur = 0;
+    // tail — two soft dots, no black stroke
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(-r*0.42, r*0.62, r*0.18, 0, Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(-r*0.78, r*0.94, r*0.11, 0, Math.PI*2);
+    ctx.fill();
+    // glyph — white, slightly larger and bolder for legibility, single shape
+    ctx.strokeStyle = "#FFFBF0";
+    ctx.fillStyle = "#FFFBF0";
+    ctx.lineWidth = Math.max(2, 2.4 * u);
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    var s = r * 0.50;
+    switch (hazard.type) {
+      case "Foundation Crack":
+        ctx.beginPath(); ctx.moveTo(-s, -s*0.62); ctx.lineTo(s, s*0.62); ctx.stroke();
+        // second crack branch — subtle, adds detail without congestion
+        ctx.globalAlpha = 0.85;
+        ctx.beginPath(); ctx.moveTo(s*0.10, -s*0.15); ctx.lineTo(-s*0.38, s*0.55); ctx.stroke();
+        ctx.globalAlpha = 1;
+        break;
+      case "Structural Fatigue":
+        ctx.beginPath(); ctx.moveTo(-s, -s*0.18); ctx.quadraticCurveTo(0, s*0.65, s, -s*0.18); ctx.stroke();
+        // stress ticks
+        ctx.lineWidth = Math.max(1.2, 1.4*u);
+        ctx.beginPath(); ctx.moveTo(-s*0.55, -s*0.10); ctx.lineTo(-s*0.32, s*0.10); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(s*0.55, -s*0.10); ctx.lineTo(s*0.32, s*0.10); ctx.stroke();
+        break;
+      case "Utility Fault":
+        ctx.beginPath();
+        ctx.moveTo(0, -s*1.02); ctx.lineTo(-s*0.44, -s*0.12); ctx.lineTo(s*0.18, -s*0.12);
+        ctx.lineTo(-s*0.06, s*1.02); ctx.lineTo(s*0.38, -s*0.02); ctx.lineTo(-s*0.18, s*0.02);
+        ctx.closePath(); ctx.fill();
+        // inner highlight speck
+        ctx.fillStyle = "rgba(255,255,255,0.9)";
+        ctx.beginPath(); ctx.arc(-s*0.12, -s*0.38, Math.max(1, 1.1*u), 0, Math.PI*2); ctx.fill();
+        break;
+      case "Sinkhole":
+        ctx.beginPath(); ctx.arc(0, s*0.06, s*0.44, 0, Math.PI*2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(-s*0.38, -s*0.34); ctx.lineTo(s*0.38, s*0.46);
+        ctx.moveTo(s*0.38, -s*0.34); ctx.lineTo(-s*0.38, s*0.46); ctx.stroke();
+        break;
+      case "Flood Risk":
+        ctx.beginPath();
+        ctx.moveTo(-s, 0); ctx.quadraticCurveTo(-s*0.48, -s*0.52, 0, 0);
+        ctx.quadraticCurveTo(s*0.48, s*0.52, s, 0); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(-s*0.82, s*0.32); ctx.quadraticCurveTo(-s*0.40, s*0.06, 0, s*0.32);
+        ctx.quadraticCurveTo(s*0.40, s*0.58, s*0.82, s*0.32); ctx.stroke();
+        break;
+      case "Contamination Leak":
+        var rr = s*0.54;
+        for (var i = 0; i < 3; i++) {
+          var ang = i * Math.PI*2/3 - Math.PI/2;
+          var x = Math.cos(ang) * rr*0.48, y = Math.sin(ang) * rr*0.48;
+          ctx.beginPath(); ctx.arc(x, y, rr*0.36, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.beginPath(); ctx.arc(0, 0, rr*0.28, 0, Math.PI*2);
+        ctx.fillStyle = color; ctx.strokeStyle = "#FFFBF0"; ctx.lineWidth = Math.max(1, 1.2*u);
+        ctx.fill(); ctx.stroke();
+        break;
+    }
+    ctx.restore();
+  }
+
+  // Draw hazard icons for all tiles with active hazards — modern path is DOM (#hazard-layer),
+  // canvas is fallback for headless/old browsers.
+  function drawHazardIcons(ctx) {
+    var layer = document.getElementById("hazard-layer");
+    var useDOM = !!layer;
+    if (useDOM) {
+      syncHazardDOM(layer);
+      return;
+    }
+    if (!window.GameState || !window.GameState.tileData) return;
+    var gs = window.GameState;
+    var now = (window.performance && window.performance.now) ? window.performance.now() : Date.now();
+    var keys = Object.keys(gs.tileData);
+    for (var i = 0; i < keys.length; i++) {
+      var d = gs.tileData[keys[i]];
+      if (!d || !d.hazard?.active || d.isHQ) continue;
+      try {
+        if (window.Terrain && window.Terrain.isHQ && window.Terrain.isHQ(d.col, d.row)) continue;
+        var hq = window.GameState && window.GameState.hqTile;
+        if (hq && hq.col === d.col && hq.row === d.row) continue;
+      } catch (e) {}
+      var p = api.grid.worldToScreen(d.col, d.row);
+      var topY = p.y - totalHeight(d.col, d.row);
+      var iso = api.grid.isoSize;
+      var u = iso / 32;
+      drawHazardCloud(ctx, p.x, topY, iso, u, now, d.hazard);
+    }
+  }
+
+  // Modern DOM hazard badges — uses 2025 CSS (backdrop-filter, OKLCH, clamp, container queries)
+  var HAZARD_GLYPH = {
+    "Foundation Crack": "⧄",
+    "Structural Fatigue": "﹏",
+    "Utility Fault": "ϟ",
+    "Sinkhole": "⬢",
+    "Flood Risk": "≈",
+    "Contamination Leak": "☣"
+  };
+  var HAZARD_ICON_ATTR = {
+    "Foundation Crack": "crack",
+    "Structural Fatigue": "fatigue",
+    "Utility Fault": "bolt",
+    "Sinkhole": "hole",
+    "Flood Risk": "wave",
+    "Contamination Leak": "biohazard"
+  };
+  function syncHazardDOM(layer) {
+    if (!window.GameState || !window.GameState.tileData || !api.grid) return;
+    var gs = window.GameState;
+    var seen = {};
+    var keys = Object.keys(gs.tileData);
+    for (var i = 0; i < keys.length; i++) {
+      var d = gs.tileData[keys[i]];
+      if (!d || !d.hazard?.active || d.isHQ) continue;
+      try {
+        if (window.Terrain && window.Terrain.isHQ && window.Terrain.isHQ(d.col, d.row)) continue;
+        var hq = gs.hqTile;
+        if (hq && hq.col === d.col && hq.row === d.row) continue;
+      } catch (e) {}
+      var key = d.col + "," + d.row;
+      seen[key] = true;
+      var p = api.grid.worldToScreen(d.col, d.row);
+      var topY = p.y - totalHeight(d.col, d.row);
+      var iso = api.grid.isoSize;
+      var el = document.getElementById("hazard-" + key);
+      if (!el) {
+        el = document.createElement("div");
+        el.id = "hazard-" + key;
+        el.className = "hazard-badge";
+        var glyph = document.createElement("span");
+        glyph.className = "hazard-badge__glyph";
+        el.appendChild(glyph);
+        layer.appendChild(el);
+      }
+      el.dataset.hazard = d.hazard.type;
+      el.setAttribute("data-hazard", d.hazard.type);
+      el.setAttribute("data-icon", HAZARD_ICON_ATTR[d.hazard.type] || "crack");
+      el.setAttribute("aria-hidden", "true");
+      el.title = d.hazard.type + " at " + d.col + "," + d.row;
+      el.firstChild.textContent = HAZARD_GLYPH[d.hazard.type] || "!";
+      var offX = iso * 0.16, offY = iso * 0.70;
+      el.style.left = (p.x + offX) + "px";
+      el.style.top = (topY - offY) + "px";
+      el.style.display = "grid";
+    }
+    // remove stale badges
+    var existing = layer.querySelectorAll(".hazard-badge");
+    for (var j = 0; j < existing.length; j++) {
+      var id = existing[j].id.replace("hazard-", "");
+      if (!seen[id]) existing[j].remove();
+    }
+  }
+
   // per-frame render: clear the whole canvas first (device-pixel exact under
   // the dpr transform), then draw the cached scene under 'copy' compositing so
   // every pixel is written unconditionally — the frame buffer can never retain
@@ -1459,12 +1799,15 @@ window.BlockRender = (function () {
     ctx.globalCompositeOperation = "source-over";
     drawShimmer(ctx);
     drawBeaconPulse(ctx);
+    // Hazard icons: ultra-tiny SimCity-classic pixel symbols on buildings
+    try { drawHazardIcons(ctx); } catch (e) {}
     drawBuildingPreview(ctx);
     // placement preview + deployed drone marker (drawn on top, per-frame so
     // the drop-in animation and the cursor-following preview stay smooth)
     if (window.DroneDeploy) window.DroneDeploy.renderMain(ctx, api.grid);
     if (window.GprDeploy) window.GprDeploy.renderMain(ctx, api.grid);
     if (window.CompactorTool) window.CompactorTool.render(ctx, api.grid);
+    if (window.RepairTool) window.RepairTool.render(ctx, api.grid);
     // (no ZoningTool.render: the drag-select placement preview is gone with
     // the standalone tool; zone tint itself renders per-tile above and stays)
     if (gc) ctx.globalCompositeOperation = gc;
@@ -1506,7 +1849,8 @@ window.BlockRender = (function () {
     var topY = p.y - totalHeight(tile.col, tile.row);
     ctx.save();
     ctx.globalAlpha = 0.65;
-    window.BuildingSprites.draw(ctx, item.sprite, p.x, topY + api.grid.isoSize * 0.42, api.grid.isoSize * 1.35, 0.72);
+    var psc = buildingScale(api.grid.isoSize);
+    window.BuildingSprites.draw(ctx, item.sprite, p.x, topY + api.grid.isoSize * 0.42, api.grid.isoSize * psc, 0.72);
     ctx.globalAlpha = 1;
     ctx.strokeStyle = valid ? "#22C55E" : "#EF4444";
     ctx.lineWidth = 3;
@@ -1540,29 +1884,57 @@ window.BlockRender = (function () {
     }
   }
 
+  // A road landing on a popped tile must take it back down: placement
+  // clicks never run through setSelected, so without this the tile keeps
+  // its rise and renders stuck at popped height. Returns true when it
+  // dropped something, false when the tile was already flat.
+  api.dropRise = function (c, r) {
+    var k = key(c, r);
+    if ((rises[k] || 0) > 0.5) {
+      animateRise(c, r, 0);
+      return true;
+    }
+    return false;
+  };
+
   // select/deselect/swap logic for the pop-up animation
-  // Rock, river and HQ have their own visuals — never do the generic block raise
+  // Rock, river and HQ have their own visuals — never do the generic block raise.
+  // Roads join them: a popped road tile lifts one end of every connection and
+  // kinks the asphalt into a tent at the tile border. The cyan selection
+  // outline still draws (see drawBlock isSelected) — only the rise is skipped.
+  function isNoPopTile(c, r, type) {
+    if (type === "rock" || type === "river" || type === "hq") return true;
+    try {
+      return !!(window.GameState && window.GameState.roads &&
+        window.GameState.roads[c + "," + r]);
+    } catch (e) { return false; }
+  }
   api.setSelected = function (c, r) {
     var terrain = api.terrain;
     var newType = terrain && terrain.typeAt ? terrain.typeAt(c, r) : null;
-    var isSpecialNew = (newType === "rock" || newType === "river" || newType === "hq");
+    var isSpecialNew = isNoPopTile(c, r, newType);
     var oldSel = api.selected;
     var oldType = null;
     if (oldSel && terrain && terrain.typeAt) {
       try { oldType = terrain.typeAt(oldSel.col, oldSel.row); } catch(e){}
     }
-    var isSpecialOld = (oldType === "rock" || oldType === "river" || oldType === "hq");
+    var isSpecialOld = oldSel ? isNoPopTile(oldSel.col, oldSel.row, oldType) : false;
 
     if (oldSel && oldSel.col === c && oldSel.row === r) {
-      // toggle off: only animate if it wasn't a special tile
-      if (!isSpecialNew) animateRise(c, r, 0);
+      // toggle off: special tiles skip the rise, but a road placed on a
+      // popped tile can leave a residual rise behind — drop it anyway so a
+      // road tile never stays stuck up.
+      if (!isSpecialNew || (rises[key(c, r)] || 0) > 0.5) animateRise(c, r, 0);
       api.selected = null;
     } else {
-      // swap (or fresh select): drop old if it was a normal tile
-      if (oldSel && !isSpecialOld) animateRise(oldSel.col, oldSel.row, 0);
+      // swap (or fresh select): drop old if it was a normal tile, or if a
+      // special tile still carries a residual rise from before it changed.
+      if (oldSel && (!isSpecialOld || (rises[key(oldSel.col, oldSel.row)] || 0) > 0.5)) animateRise(oldSel.col, oldSel.row, 0);
       api.selected = { col: c, row: r };
-      // only pop new if it's a normal tile
+      // only pop new if it's a normal tile; a special tile with residual
+      // rise (road built on a popped tile) drops instead of popping.
       if (!isSpecialNew) animateRise(c, r, POP_RISE);
+      else api.dropRise(c, r);
     }
     api._dirty = true;
   };

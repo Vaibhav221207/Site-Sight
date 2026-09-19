@@ -31,6 +31,11 @@ window.CompactorTool = (function () {
     // only offers it to owners, so this changes no live flow — it just
     // fails cleanly instead of arming a dead mode).
     if (!(window.GameState && window.GameState.compactorSystemPurchased)) return false;
+    // scan-busy gate (see BuildMenu.select): never steal deploying-drone.
+    // Silent refuse — the caller (HQ panel) reports it inline instead.
+    try {
+      if (window.InputHandler && window.InputHandler.isScanBusy && window.InputHandler.isScanBusy()) return false;
+    } catch (e) {}
     api.isActive = true;
     api._selection = null;
     api._selectionStart = null;

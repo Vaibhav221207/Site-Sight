@@ -6,7 +6,8 @@
  * canvas, which dispatches to the active mode's handler and returns.
  *
  * Modes: 'idle' (default), 'placing-hq', 'placing-building', 'placing-road', 'compacting',
- *        'deploying-drone' (whole-map, no click target, kept for symmetry)
+ *        'deploying-drone' (whole-map, no click target, kept for symmetry),
+ *        'fixing-hazard' (Repair Rig single-click hazard fix)
  * Idle is the only mode that shows HQ terminal or tile popup.
  * Any non-idle mode consumes the click entirely. (Zoning lives in the DATA
  * tab mini-map now — there is no canvas zoning mode anymore.)
@@ -21,7 +22,7 @@ window.InputHandler = (function () {
   var DRAG_THRESHOLD = 5;
 
   // ---- single source of truth ----
-  var InteractionState = { mode: 'idle' }; // 'idle' | 'placing-hq' | 'placing-building' | 'placing-road' | 'compacting' | 'deploying-drone'
+  var InteractionState = { mode: 'idle' }; // 'idle' | 'placing-hq' | 'placing-building' | 'placing-road' | 'compacting' | 'deploying-drone' | 'fixing-hazard'
 
   var api = {
     canvas: null,
@@ -56,7 +57,7 @@ window.InputHandler = (function () {
     InteractionState.mode = mode;
     syncLegacyFlags();
     // cursor management per mode
-    if (mode === 'placing-hq' || mode === 'placing-building' || mode === 'placing-road' || mode === 'compacting') {
+    if (mode === 'placing-hq' || mode === 'placing-building' || mode === 'placing-road' || mode === 'compacting' || mode === 'fixing-hazard') {
       api.setCursor("crosshair");
     } else if (mode === 'idle') {
       api.setCursor("grab");
@@ -100,9 +101,16 @@ window.InputHandler = (function () {
     canvas.addEventListener("pointercancel", onPointerUp);
     canvas.addEventListener("dragstart", function (e) { e.preventDefault(); });
     canvas.addEventListener("contextmenu", function (e) {
-      if (InteractionState.mode === 'placing-building' || InteractionState.mode === 'placing-road' || InteractionState.mode === 'placing-hq') {
+      if (InteractionState.mode === 'placing-building' || InteractionState.mode === 'placing-road' || InteractionState.mode === 'placing-hq' || InteractionState.mode === 'fixing-hazard') {
         e.preventDefault();
-        if (window.BuildMenu && window.BuildMenu.cancel) window.BuildMenu.cancel();
+        if (InteractionState.mode === 'fixing-hazard' && window.RepairTool) window.RepairTool.cancel();
+        else if (window.BuildMenu && window.BuildMenu.cancel) window.BuildMenu.cancel();
+      }
+    });
+    // Global Escape: cancels Repair Rig too (single-shot fixer)
+    document.addEventListener("keydown", function (evt) {
+      if (evt.key === "Escape" && InteractionState.mode === 'fixing-hazard' && window.RepairTool) {
+        window.RepairTool.cancel();
       }
     });
   }
@@ -162,8 +170,19 @@ window.InputHandler = (function () {
   function handleBuildingClick(tile) {
     if (tile && window.BuildMenu) window.BuildMenu.attempt(tile.col, tile.row);
   }
+  function handleFixingHazardClick(tile) {
+    if (!tile || !window.RepairTool) return;
+    var ok = window.RepairTool.attempt(tile.col, tile.row);
+    if (!ok && window.HqPanel) window.HqPanel.showMsg("Needs a hazard-flagged building", false);
+  }
 
   function handleIdleClick(pos, tile) {
+    // curtain reveal tap eats the click: no panel on the reveal tap
+    if (tile && window.Construction && window.Construction.reveal) {
+      try {
+        if (window.Construction.reveal(tile.col, tile.row)) return;
+      } catch (e) {}
+    }
     // HQ tile always opens terminal, never the small popup
     var isHq = false;
     if (tile) {
@@ -180,6 +199,69 @@ window.InputHandler = (function () {
     if (tile && isClickable(tile.col, tile.row)) {
       api.onTileClick(tile.col, tile.row);
     }
+  }
+
+  // Screen-space hit test for construction FX. Returns
+  // { kind: "curtain", col, row } (caller reveals) or
+  // { kind: "build", col, row } (caller consumes, never a panel) or null.
+  // Regular in-progress builds (d.construction) are deliberately NOT matched:
+  // only curtains steal taps; printer-phase taps on normal buildings keep
+  // their existing inspect behavior. HQ is the exception — its panel must
+  // stay shut until the building actually exists (after the reveal tap).
+  function fxHitAt(pos, tile) {
+    try {
+      var C = window.Construction, G = api.grid;
+      if (!C || !G || !G.isoSize) return null;
+      var iso = G.isoSize, half = iso / 2;
+      var hq = window.GameState && window.GameState.hqTile;
+      if (!hq && !(window.GameState && window.GameState.tileData)) return null;
+      function topYFor(c, r) {
+        var p = G.worldToScreen(c, r);
+        var elev = (window.Terrain && window.Terrain.elevationAt) ? window.Terrain.elevationAt(c, r) : 0;
+        return { cx: p.x, topY: p.y - (4 + elev) };
+      }
+      // HQ build/curtain first (HQ tiles carry no tileData of their own).
+      // Union of the ground diamond (any tap on the tile) and the tall
+      // visual box (beam/progress bar above, curtain walls below).
+      if (hq && (C.hqBuild || C.hqCurtain)) {
+        var hp = topYFor(hq.col, hq.row);
+        var hdx = Math.abs(pos.x - hp.cx), hdy = pos.y - hp.topY;
+        var tileIsHq = !!(tile && ((tile.col === hq.col && tile.row === hq.row) ||
+          (window.Terrain && window.Terrain.isHQ && window.Terrain.isHQ(tile.col, tile.row))));
+        var onHqDiamond = (hdx / iso + Math.abs(hdy) / half <= 1.35);
+        if (C.hqCurtain) {
+          var onCurtainBox = hdx <= iso * 1.0 && hdy >= -(half + iso * 0.85) && hdy <= half + iso * 0.38 + 8;
+          if (tileIsHq || onHqDiamond || onCurtainBox)
+            return { kind: "curtain", col: hq.col, row: hq.row };
+        } else {
+          var onPrinterBox = hdx <= iso * 0.9 && hdy >= -(half + iso * 1.7) && hdy <= half + half * 0.8 + 8;
+          if (tileIsHq || onHqDiamond || onPrinterBox)
+            return { kind: "build", col: hq.col, row: hq.row };
+        }
+      }
+      // Regular curtained buildings: resolved tile + 8 neighbors, since tall
+      // visuals can resolve one tile off. Closest match wins.
+      if (tile && window.GameState && window.GameState.tileData) {
+        var best = null, bestScore = Infinity;
+        for (var dr = -1; dr <= 1; dr++) {
+          for (var dc = -1; dc <= 1; dc++) {
+            var c = tile.col + dc, r = tile.row + dr;
+            if (c < 0 || r < 0 || (G.gridSize && (c >= G.gridSize || r >= G.gridSize))) continue;
+            // raw read only: getTileData lazily CREATES records, and a
+            // curtain can only exist on a record made at build time.
+            var d = window.GameState.tileData[c + "," + r] || null;
+            if (!d || !d.curtain) continue;
+            var tp = topYFor(c, r);
+            var dx = Math.abs(pos.x - tp.cx), dy = pos.y - tp.topY;
+            if (dx > iso * 1.0 || dy < -(half + iso * 0.85) || dy > half + iso * 0.38 + 8) continue;
+            var score = dx / iso + Math.abs(dy) / (half + iso);
+            if (score < bestScore) { bestScore = score; best = { kind: "curtain", col: c, row: r }; }
+          }
+        }
+        if (best) return best;
+      }
+    } catch (e) {}
+    return null;
   }
 
   // ---- central pointer handlers (exactly ONE pair) ----
@@ -260,8 +342,9 @@ window.InputHandler = (function () {
     }
 
     document.addEventListener("keydown", function (evt) {
-      if (evt.key === "Escape" && (InteractionState.mode === 'placing-building' || InteractionState.mode === 'placing-road' || InteractionState.mode === 'placing-hq')) {
-        if (window.BuildMenu && window.BuildMenu.cancel) window.BuildMenu.cancel();
+      if (evt.key === "Escape" && (InteractionState.mode === 'placing-building' || InteractionState.mode === 'placing-road' || InteractionState.mode === 'placing-hq' || InteractionState.mode === 'fixing-hazard')) {
+        if (InteractionState.mode === 'fixing-hazard' && window.RepairTool) window.RepairTool.cancel();
+        else if (window.BuildMenu && window.BuildMenu.cancel) window.BuildMenu.cancel();
       }
     });
     if (InteractionState.mode !== 'compacting') {
@@ -341,12 +424,32 @@ window.InputHandler = (function () {
       handleCompactingClick(pos, tile);
       return;
     }
+    if (InteractionState.mode === 'fixing-hazard') {
+      handleFixingHazardClick(tile);
+      return;
+    }
     if (InteractionState.mode === 'deploying-drone') {
       // whole-map deploy has no click target; ignore clicks while deploying
       return;
     }
 
     // ---- idle mode only beyond this point ----
+    // Screen-space FX hit test FIRST: tall FX visuals (printer beam, curtain
+    // box + TAP! tag) stick up above the tile, so screenToTile maps those
+    // taps to the neighbor tile behind — a tile-only reveal() check misses
+    // them and the tap falls through to the HQ panel (the reveal bug).
+    var fxHit = fxHitAt(pos, tile);
+    if (fxHit) {
+      if (fxHit.kind === "curtain") {
+        try { if (window.Construction.reveal(fxHit.col, fxHit.row)) return; } catch (e) {}
+      } else {
+        // build phase (printer still printing, nothing to unveil yet):
+        // consume the tap so it can never open a panel for a building that
+        // does not exist yet. Selection gives the tap visible feedback.
+        try { if (window.BlockRender && window.BlockRender.setSelected) window.BlockRender.setSelected(fxHit.col, fxHit.row); } catch (e2) {}
+        return;
+      }
+    }
     // HQ building footprint check (tower overhang maps to neighbor via Math.round)
     // Do this BEFORE generic isClickable so HQ never shows tile popup
     var hq = window.GameState && window.GameState.hqTile;
@@ -414,6 +517,9 @@ window.InputHandler = (function () {
     }
     if (InteractionState.mode === 'compacting') {
       return !!(window.CompactorTool && window.CompactorTool.isValidTile && window.CompactorTool.isValidTile(c, r));
+    }
+    if (InteractionState.mode === 'fixing-hazard') {
+      return !!(window.RepairTool && window.RepairTool.isValidTile && window.RepairTool.isValidTile(c, r));
     }
     if (InteractionState.mode === 'deploying-drone') {
       return !!(window.DroneDeploy && window.DroneDeploy.isValid && window.DroneDeploy.isValid(c, r));

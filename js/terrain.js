@@ -24,12 +24,16 @@ window.Terrain = (function () {
   // boulder sprites in blockRender, so they stay at ground level.
   var ELEVATION = { land: 0, rock: 0, trench: -5, river: 0, hq: 0 };
 
-  // base top-face palette (side faces get shaded darker in blockRender)
+  // base top-face palette (side faces get shaded darker in blockRender).
+  // Fresh-not-neon: lawn + water pulled from the comfy52 ramp (Lospec, bess)
+  // — lively mid-lightness tones (#94ad39 lawn, #3d80a3 steel water) instead
+  // of electric lime or dishwater sage. Dark olive shadows fall out of the
+  // side-face shading automatically (#3f4328 family).
   var PALETTE = {
-    land: "#7EB24A",   // soft moss green — muted sage from reference (was vivid lime #6dd400)
+    land: "#94ad39",   // comfy52 lawn — fresh yellow-green top face
     rock: "#9AA3AB",   // rocky gray — boulder field ground (rocks drawn as sprites on top)
-    trench: "#4A3F6B", // deep violet/indigo hazard — distinct from black + moss land
-    river: "#5B6FA8",  // blue-violet — cooler harmonized partner to trench violet #4A3F6B
+    trench: "#4A3F6B", // deep violet/indigo hazard — sits with comfy52 violets
+    river: "#3d80a3",  // comfy52 steel water — reads as water, never neon
     hq: "#44ddbb",     // base tone under HQ building
   };
 
@@ -199,19 +203,31 @@ window.Terrain = (function () {
   var gen = valid.gen;
   var map = gen.map;
 
+  // Out-of-bounds reads used to throw undefined[col] in the render loop
+  // (edge road tiles query neighbors past the border). Guard once here so
+  // no caller can repeat that crash: neutral answers outside the map.
+  function inBounds(c, r) { return c >= 0 && r >= 0 && c < GRID && r < GRID; }
+
   var api = {
     rockClusters: gen.clusters,
     seed: SEED,
-    typeAt: function (c, r) { return NAMES[map[r][c]]; },
-    isRiver: function (c, r) { return map[r][c] === T.RIVER; },
-    isRock: function (c, r) { return map[r][c] === T.ROCK; },
-    isTrench: function (c, r) { return map[r][c] === T.TRENCH; },
-    elevationAt: function (c, r) { return ELEVATION[NAMES[map[r][c]]]; },
-    colorAt: function (c, r) { return PALETTE[NAMES[map[r][c]]]; },
+    typeAt: function (c, r) { return inBounds(c, r) ? NAMES[map[r][c]] : null; },
+    isRiver: function (c, r) { return inBounds(c, r) && map[r][c] === T.RIVER; },
+    isRock: function (c, r) { return inBounds(c, r) && map[r][c] === T.ROCK; },
+    isTrench: function (c, r) { return inBounds(c, r) && map[r][c] === T.TRENCH; },
+    // orthogonal trench neighbor (bounds-safe, neutral outside map)
+    isTrenchAdjacent: function (c, r) {
+      if (!inBounds(c, r)) return false;
+      return map[r - 1]?.[c] === T.TRENCH || map[r + 1]?.[c] === T.TRENCH ||
+             map[r]?.[c - 1] === T.TRENCH || map[r]?.[c + 1] === T.TRENCH;
+    },
+    elevationAt: function (c, r) { return inBounds(c, r) ? ELEVATION[NAMES[map[r][c]]] : 0; },
+    colorAt: function (c, r) { return PALETTE[inBounds(c, r) ? NAMES[map[r][c]] : "land"]; },
     baseColorAt: function (c, r) {
+      if (!inBounds(c, r)) return PALETTE.land;
       return map[r][c] === T.ROCK ? PALETTE.land : PALETTE[NAMES[map[r][c]]];
     },
-    isHQ: function (c, r) { return map[r][c] === T.HQ; },
+    isHQ: function (c, r) { return inBounds(c, r) && map[r][c] === T.HQ; },
     setHQ: function (c, r) { map[r][c] = T.HQ; },
     // called by the Dynamic Compactor when a hazard tile (trench OR rock) is
     // filled — turns it into normal flat land (pop-able, 4px base, buildable)

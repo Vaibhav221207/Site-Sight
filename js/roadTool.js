@@ -12,7 +12,7 @@ window.RoadTool = (function () {
     var data = window.GameState.getTileData ? window.GameState.getTileData(col, row) : null;
     // Roads may cross zoned land, just as in classic city builders. The zone
     // designation remains on the tile, but a building cannot occupy a road.
-    if (window.GameState.roads[col + "," + row] || (data && data.zoneBuilding)) return false;
+    if (window.GameState.roads[col + "," + row] || (data && (data.zoneBuilding || data.construction || data.curtain))) return false;
     var hq = window.GameState.hqTile;
     var adjacent = [[-1, 0], [1, 0], [0, -1], [0, 1]];
     for (var i = 0; i < adjacent.length; i++) {
@@ -37,9 +37,32 @@ window.RoadTool = (function () {
     window.GameState.roads[col + "," + row] = true;
     if (window.Main && window.Main.updateHUD) window.Main.updateHUD();
     if (window.BlockRender) {
+      try {
+        // The tile may have been popped up (selected) before placement mode
+        // began — placement clicks never run through setSelected, so drop
+        // any rise here or the new road renders stuck at popped height.
+        // Road tiles never pop again (see isNoPopTile in js/blockRender.js).
+        if (window.BlockRender.dropRise) window.BlockRender.dropRise(col, row);
+        if (window.BlockRender.selected &&
+            window.BlockRender.selected.col === col &&
+            window.BlockRender.selected.row === row) {
+          window.BlockRender.selected = null;
+        }
+      } catch (e) {}
+      // A stale tile panel for this exact tile would now describe a road —
+      // dismiss it so it never blocks the map mid-chaining.
+      try {
+        if (window.TilePanel && window.TilePanel.isOpen && window.TilePanel.currentTile &&
+            window.TilePanel.currentTile.col === col && window.TilePanel.currentTile.row === row) {
+          window.TilePanel.hide();
+        }
+      } catch (e2) {}
       window.BlockRender.invalidate();
     }
-    if (window.BuildMenu && window.BuildMenu.onBuildSuccess) window.BuildMenu.onBuildSuccess();
+    // Stay in placement mode: roads chain one after another until the player
+    // presses Cancel. Do NOT call BuildMenu.onBuildSuccess here — that ends
+    // the session (correct for single buildings, wrong for roads).
+    if (window.BuildMenu && window.BuildMenu.refresh) window.BuildMenu.refresh();
     return true;
   };
   api.cost = COST;

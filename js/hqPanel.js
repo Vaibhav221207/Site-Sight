@@ -93,6 +93,21 @@ window.HqPanel = (function () {
       if (compactorInfoBlock && compactorInfoBlock.classList) api.storeRow3 = compactorInfoBlock;
     }
 
+    // Repair Rig STORE row — reusable swarm fixer for hazard tiles
+    api.repairOrderBtn = document.getElementById("hq-order-repair-fs");
+    api.storeRow4 = null;
+    if (api.repairOrderBtn) {
+      var repairInfoBlock = api.repairOrderBtn.closest(".hq-fs-drone-row");
+      var repairInfoEl = repairInfoBlock ? repairInfoBlock.querySelector(".hq-fs-drone-info") : null;
+      if (repairInfoEl) {
+        api.repairOwnedEl = document.createElement("span");
+        api.repairOwnedEl.className = "hq-fs-drone-owned hq-owned--repair";
+        repairInfoEl.appendChild(api.repairOwnedEl);
+      }
+      api.repairOrderBtn.addEventListener("click", function () { api.buyRepair(); });
+      if (repairInfoBlock && repairInfoBlock.classList) api.storeRow4 = repairInfoBlock;
+    }
+
     // paint the STORE system icons (procedural glyphs, no image assets)
     try {
       if (api.panelEl && api.panelEl.querySelectorAll && window.Icons) {
@@ -112,6 +127,7 @@ window.HqPanel = (function () {
     api.refreshDronePurchaseState();
     api.refreshGprPurchaseState();
     api.refreshCompactorPurchaseState();
+    api.refreshRepairPurchaseState();
 
     SECTIONS.forEach(function (name) {
       if (api.navItems[name]) {
@@ -170,6 +186,8 @@ window.HqPanel = (function () {
     // always keep STORE buttons in their cards, never in the footer
     if (api.orderBtn && api.storeRow1 && api.orderBtn.parentNode !== api.storeRow1) api.storeRow1.appendChild(api.orderBtn);
     if (api.gprOrderBtn && api.storeRow2 && api.gprOrderBtn.parentNode !== api.storeRow2) api.storeRow2.appendChild(api.gprOrderBtn);
+    if (api.compactorOrderBtn && api.storeRow3 && api.compactorOrderBtn.parentNode !== api.storeRow3) api.storeRow3.appendChild(api.compactorOrderBtn);
+    if (api.repairOrderBtn && api.storeRow4 && api.repairOrderBtn.parentNode !== api.storeRow4) api.storeRow4.appendChild(api.repairOrderBtn);
   };
 
   // modern micro-interaction for nav buttons
@@ -198,6 +216,7 @@ window.HqPanel = (function () {
       try {
         section.style.opacity = "1";
         section.style.transform = "";
+        section.style.animation = "none";
       } catch (e) {}
       return;
     }
@@ -253,8 +272,10 @@ window.HqPanel = (function () {
     }
     var sec = api.sections[name];
     if (sec) {
-      // ensure it is visible before animating (display was just set)
-      requestAnimationFrame(function () { animateSectionEnter(sec); });
+      // shot captures: apply synchronously — headless rAF may never fire,
+      // which used to freeze the CSS section fade at opacity 0 forever
+      if (isShot()) animateSectionEnter(sec);
+      else requestAnimationFrame(function () { animateSectionEnter(sec); });
     }
     // also animate the outgoing section out subtly if needed (already hidden)
     if (prev && api.sections[prev]) {
@@ -302,6 +323,10 @@ window.HqPanel = (function () {
       var hasC = !!(window.GameState && window.GameState.compactorSystemPurchased);
       api.compactorOwnedEl.textContent = hasC ? "Owned" : "Not owned";
     }
+    if (api.repairOwnedEl) {
+      var hasR = !!(window.GameState && window.GameState.repairRigPurchased);
+      api.repairOwnedEl.textContent = hasR ? "Owned" : "Not owned";
+    }
     api.refreshStoreAfford();
     api.refreshNavCount();
   };
@@ -313,7 +338,7 @@ window.HqPanel = (function () {
     if (!el) return;
     var gs = window.GameState;
     var n = gs ? ((gs.inventory.droneCount || 0) + (gs.inventory.gprCount || 0) +
-      (gs.compactorSystemPurchased ? 1 : 0)) : 0;
+      (gs.compactorSystemPurchased ? 1 : 0) + (gs.repairRigPurchased ? 1 : 0)) : 0;
     el.hidden = !(n > 0);
     el.textContent = n > 0 ? String(n) : "";
   };
@@ -363,6 +388,15 @@ window.HqPanel = (function () {
     if (api.storeRow3 && api.storeRow3.classList) api.storeRow3.classList.toggle("is-bought", purchased);
   };
 
+  // ONE-TIME PURCHASE state for the Repair Rig — reusable swarm fixer
+  api.refreshRepairPurchaseState = function () {
+    if (!api.repairOrderBtn) return;
+    var purchased = !!(window.GameState && window.GameState.repairRigPurchased);
+    api.repairOrderBtn.disabled = purchased;
+    api.repairOrderBtn.textContent = purchased ? "OWNED" : "BUY";
+    if (api.storeRow4 && api.storeRow4.classList) api.storeRow4.classList.toggle("is-bought", purchased);
+  };
+
   // (Re)builds the INVENTORY tab contents from GameState.inventory:
   // - owned drones listed individually (selectable)
   // - empty state when none are owned
@@ -377,8 +411,9 @@ window.HqPanel = (function () {
     var droneN = gs.inventory.droneCount;
     var gprN = gs.inventory.gprCount;
     var compactorOwned = !!(gs.compactorSystemPurchased);
+    var repairOwned = !!(gs.repairRigPurchased);
 
-    if ((!droneN || droneN <= 0) && (!gprN || gprN <= 0) && !compactorOwned) {
+    if ((!droneN || droneN <= 0) && (!gprN || gprN <= 0) && !compactorOwned && !repairOwned) {
       var empty = document.createElement("div");
       empty.className = "hq-fs-placeholder hq-empty-inventory";
       var emptyText = document.createElement("p");
@@ -393,33 +428,34 @@ window.HqPanel = (function () {
       empty.appendChild(emptyCta);
       api.inventorySection.appendChild(empty);
     } else {
-      if (droneN > 0) api._buildFleet("drone", "DRONE FLEET", "Drone System", droneN);
-      if (gprN > 0) api._buildFleet("gpr", "GPR FLEET", "GPR System", gprN);
-      if (compactorOwned) api._buildCompactorEntry();
+      // one shared product grid (same catalogue pattern as STORE): no
+      // repeated per-type headers, cards sit side by side
+      var grid = document.createElement("div");
+      grid.className = "hq-inv-grid";
+      api.inventorySection.appendChild(grid);
+      api.inventoryListEl = grid;
+      if (droneN > 0) api._buildFleet(grid, "drone", "Drone System", droneN);
+      if (gprN > 0) api._buildFleet(grid, "gpr", "GPR System", gprN);
+      if (compactorOwned) api._buildCompactorEntry(grid);
+      if (repairOwned) api._buildRepairEntry(grid);
     }
 
     api.inventoryDeployContainer = null;
     api.refreshDeployVisibility();
   };
 
-  // Build a selectable fleet block for one equipment type ("drone" | "gpr").
-  api._buildFleet = function (type, headerText, name, count) {
+  // Build selectable product cards for one equipment type ("drone" | "gpr")
+  // into the shared grid. DOM shape, classes and data attrs are unchanged
+  // (selection + deploy wiring depends on them) — only the layout changed
+  // from full-width rows to catalogue cards.
+  api._buildFleet = function (grid, type, name, count) {
     var gs = window.GameState;
-    var header = document.createElement("div");
-    header.className = "hq-fs-section-header";
-    header.textContent = headerText;
-    api.inventorySection.appendChild(header);
-
-    var list = document.createElement("div");
-    list.className = "hq-fs-inventory-list";
-    api.inventorySection.appendChild(list);
-
     var selectedId = type === "drone" ? gs.inventory.selectedDroneId : gs.inventory.selectedGprId;
     for (var i = 1; i <= count; i++) {
       var id = type + "-" + i;
       var wrap = document.createElement("div");
       wrap.className = "hq-fs-inventory-item-wrap";
-      wrap.style.marginBottom = "14px";
+      wrap.style.marginBottom = "0";
       wrap.style.display = "flex";
       wrap.style.flexDirection = "column";
       wrap.style.alignItems = "stretch";
@@ -430,16 +466,16 @@ window.HqPanel = (function () {
       entry.dataset.itemType = type;
       entry.dataset.itemId = id;
       entry.style.cssText =
-        "display:flex;align-items:center;justify-content:space-between;" +
-        "padding:14px 18px;background:#FFFBF0;" +
+        "display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;" +
+        "padding:16px 14px 14px;background:#FFFBF0;" +
         "border:3px solid #2B2320;border-radius:16px;cursor:pointer;" +
-        "box-shadow:4px 4px 0 #000;" +
+        "box-shadow:3px 3px 0 #000;" +
         "transition:border-color 0.15s ease,background 0.15s ease;";
       var accent = type === "gpr" ? "#E0962A" : "#C7432B";
       var icon = (window.Icons && window.Icons.get) ? window.Icons.get(type === "gpr" ? "gpr" : "drone") : "";
       entry.innerHTML =
-        '<span class="hq-inv-ico" aria-hidden="true">' + icon + '</span>' +
-        '<span class="hq-fs-inventory-item-name" style="font-size:17px;font-weight:700;color:' + accent + '">' + name + '</span>' +
+        '<span class="hq-inv-ico hq-inv-ico--lg" aria-hidden="true">' + icon + '</span>' +
+        '<span class="hq-fs-inventory-item-name" style="font-size:15px;font-weight:700;color:' + accent + '">' + name + '</span>' +
         '<span class="hq-inv-status" data-status>READY</span>';
       entry.addEventListener("click", function (ev) {
         ev.stopPropagation();
@@ -452,11 +488,11 @@ window.HqPanel = (function () {
       deployBtn.type = "button";
       deployBtn.className = "hq-order-btn";
       deployBtn.textContent = "Deploy";
-      deployBtn.style.alignSelf = "flex-end";
-      deployBtn.style.width = "auto";
-      deployBtn.style.padding = "9px 20px";
+      deployBtn.style.alignSelf = "stretch";
+      deployBtn.style.width = "100%";
+      deployBtn.style.padding = "8px 14px";
       deployBtn.style.fontSize = "12px";
-      deployBtn.style.marginTop = "8px"; deployBtn.style.minHeight = "40px";
+      deployBtn.style.marginTop = "4px"; deployBtn.style.minHeight = "44px";
       deployBtn.style.display = selectedId === id ? "" : "none";
       deployBtn.addEventListener("click", function (ev) {
         ev.stopPropagation();
@@ -478,25 +514,15 @@ window.HqPanel = (function () {
       });
       wrap.appendChild(entry);
       wrap.appendChild(deployBtn);
-      list.appendChild(wrap);
+      grid.appendChild(wrap);
     }
   };
 
   // Build the Dynamic Compactor inventory entry (single reusable tool).
-  api._buildCompactorEntry = function () {
-    var gs = window.GameState;
-    var header = document.createElement("div");
-    header.className = "hq-fs-section-header";
-    header.textContent = "STABILIZATION";
-    api.inventorySection.appendChild(header);
-
-    var list = document.createElement("div");
-    list.className = "hq-fs-inventory-list";
-    api.inventorySection.appendChild(list);
-
+  api._buildCompactorEntry = function (grid) {
     var wrap = document.createElement("div");
     wrap.className = "hq-fs-inventory-item-wrap";
-    wrap.style.marginBottom = "14px";
+    wrap.style.marginBottom = "0";
     wrap.style.display = "flex";
     wrap.style.flexDirection = "column";
     wrap.style.alignItems = "stretch";
@@ -508,15 +534,15 @@ window.HqPanel = (function () {
     entry.dataset.itemType = "compactor";
     entry.dataset.itemId = "compactor-1";
     entry.style.cssText =
-      "display:flex;align-items:center;justify-content:space-between;" +
-      "padding:14px 18px;background:#FFFBF0;" +
+      "display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;" +
+      "padding:16px 14px 14px;background:#FFFBF0;" +
       "border:3px solid #2B2320;border-radius:16px;cursor:pointer;" +
-      "box-shadow:4px 4px 0 #000;" +
+      "box-shadow:3px 3px 0 #000;" +
       "transition:border-color 0.15s ease,background 0.15s ease;";
     var iconC = (window.Icons && window.Icons.get) ? window.Icons.get("compactor") : "";
     entry.innerHTML =
-      '<span class="hq-inv-ico" aria-hidden="true">' + iconC + '</span>' +
-      '<span class="hq-fs-inventory-item-name" style="font-size:17px;font-weight:700;color:#7C7C74">Dynamic Compactor</span>' +
+      '<span class="hq-inv-ico hq-inv-ico--lg" aria-hidden="true">' + iconC + '</span>' +
+      '<span class="hq-fs-inventory-item-name" style="font-size:15px;font-weight:700;color:#7C7C74">Dynamic Compactor</span>' +
       '<span class="hq-inv-status" data-status>READY</span>';
     entry.addEventListener("click", function (ev) {
       ev.stopPropagation();
@@ -532,11 +558,11 @@ window.HqPanel = (function () {
     deployBtn.type = "button";
     deployBtn.className = "hq-order-btn";
     deployBtn.textContent = "Deploy";
-    deployBtn.style.alignSelf = "flex-end";
-    deployBtn.style.width = "auto";
-    deployBtn.style.padding = "9px 20px";
+    deployBtn.style.alignSelf = "stretch";
+    deployBtn.style.width = "100%";
+    deployBtn.style.padding = "8px 14px";
     deployBtn.style.fontSize = "12px";
-    deployBtn.style.marginTop = "8px"; deployBtn.style.minHeight = "40px";
+    deployBtn.style.marginTop = "4px"; deployBtn.style.minHeight = "44px";
     deployBtn.style.display = compactorSelected ? "" : "none";
     deployBtn.addEventListener("click", function (ev) {
       ev.stopPropagation();
@@ -544,7 +570,61 @@ window.HqPanel = (function () {
     });
     wrap.appendChild(entry);
     wrap.appendChild(deployBtn);
-    list.appendChild(wrap);
+    grid.appendChild(wrap);
+  };
+
+  // Build the Repair Rig inventory entry (reusable swarm — same pattern as compactor)
+  api._buildRepairEntry = function (grid) {
+    var wrap = document.createElement("div");
+    wrap.className = "hq-fs-inventory-item-wrap";
+    wrap.style.marginBottom = "0";
+    wrap.style.display = "flex";
+    wrap.style.flexDirection = "column";
+    wrap.style.alignItems = "stretch";
+    wrap.dataset.itemType = "repair";
+    wrap.dataset.itemId = "repair-1";
+
+    var entry = document.createElement("div");
+    entry.className = "hq-fs-inventory-item";
+    entry.dataset.itemType = "repair";
+    entry.dataset.itemId = "repair-1";
+    entry.style.cssText =
+      "display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;" +
+      "padding:16px 14px 14px;background:#FFFBF0;" +
+      "border:3px solid #2B2320;border-radius:16px;cursor:pointer;" +
+      "box-shadow:3px 3px 0 #000;" +
+      "transition:border-color 0.15s ease,background 0.15s ease;";
+    var iconR = (window.Icons && window.Icons.get) ? window.Icons.get("repair") : "";
+    entry.innerHTML =
+      '<span class="hq-inv-ico hq-inv-ico--lg" aria-hidden="true">' + iconR + '</span>' +
+      '<span class="hq-fs-inventory-item-name" style="font-size:15px;font-weight:700;color:#C62828">Repair Rig</span>' +
+      '<span class="hq-inv-status" data-status>READY</span>';
+    entry.addEventListener("click", function (ev) {
+      ev.stopPropagation();
+      var w = this.closest(".hq-fs-inventory-item-wrap");
+      if (w) api.selectItem(w); else api.selectItem(this);
+    });
+    api._makeSelectable(entry, "Repair Rig repair-1");
+    var repairSelected = !!(window.GameState && window.GameState.inventory.selectedRepairId === "repair-1");
+    api.markSelected(entry, repairSelected);
+
+    var deployBtn = document.createElement("button");
+    deployBtn.type = "button";
+    deployBtn.className = "hq-order-btn";
+    deployBtn.textContent = "Deploy";
+    deployBtn.style.alignSelf = "stretch";
+    deployBtn.style.width = "100%";
+    deployBtn.style.padding = "8px 14px";
+    deployBtn.style.fontSize = "12px";
+    deployBtn.style.marginTop = "4px"; deployBtn.style.minHeight = "44px";
+    deployBtn.style.display = repairSelected ? "" : "none";
+    deployBtn.addEventListener("click", function (ev) {
+      ev.stopPropagation();
+      api.deploySelected();
+    });
+    wrap.appendChild(entry);
+    wrap.appendChild(deployBtn);
+    grid.appendChild(wrap);
   };
 
   // Make a fleet entry operable without a mouse: toggle-button semantics
@@ -579,8 +659,8 @@ window.HqPanel = (function () {
     } catch (e) {}
   };
 
-  // Select (or deselect) a survey-unit entry. Single-select across BOTH fleets:
-  // picking a unit of one type clears any selection of the other type; clicking
+  // Select (or deselect) a survey-unit entry. Single-select across ALL fleets:
+  // picking a unit of one type clears any selection of the other types; clicking
   // the active one deselects it.
   api.selectItem = function (entry) {
     var wrap = entry.closest ? entry.closest(".hq-fs-inventory-item-wrap") : null;
@@ -593,6 +673,7 @@ window.HqPanel = (function () {
     if (type === "drone") wasSelected = gs.inventory.selectedDroneId === id;
     else if (type === "gpr") wasSelected = gs.inventory.selectedGprId === id;
     else if (type === "compactor") wasSelected = gs.inventory.selectedCompactorId === id;
+    else if (type === "repair") wasSelected = gs.inventory.selectedRepairId === id;
 
     // clear any active entry visually (across both fleets)
     if (api.inventorySection) {
@@ -606,10 +687,12 @@ window.HqPanel = (function () {
     gs.inventory.selectedDroneId = null;
     gs.inventory.selectedGprId = null;
     gs.inventory.selectedCompactorId = null;
+    gs.inventory.selectedRepairId = null;
     if (!wasSelected) {
       if (type === "drone") gs.inventory.selectedDroneId = id;
       else if (type === "gpr") gs.inventory.selectedGprId = id;
       else if (type === "compactor") gs.inventory.selectedCompactorId = id;
+      else if (type === "repair") gs.inventory.selectedRepairId = id;
       var card = entry.querySelector ? entry.querySelector(".hq-fs-inventory-item") : entry;
       if (card) api.markSelected(card, true); else api.markSelected(entry, true);
     }
@@ -628,23 +711,34 @@ window.HqPanel = (function () {
         var type = w.dataset.itemType, id = w.dataset.itemId;
         var isSel = (type === "drone" && gs.selectedDroneId === id) ||
                     (type === "gpr" && gs.selectedGprId === id) ||
-                    (type === "compactor" && gs.selectedCompactorId === id);
+                    (type === "compactor" && gs.selectedCompactorId === id) ||
+                    (type === "repair" && gs.selectedRepairId === id);
         btn.style.display = isSel ? "" : "none";
       }
     }
     if (api.inventoryDeployContainer) {
-      var hasSel = !!(gs.selectedDroneId || gs.selectedGprId || gs.selectedCompactorId);
+      var hasSel = !!(gs.selectedDroneId || gs.selectedGprId || gs.selectedCompactorId || gs.selectedRepairId);
       api.inventoryDeployContainer.style.display = hasSel ? "" : "none";
     }
   };
 
-  // Deploy whichever unit type is currently selected (drone, GPR, or compactor).
+  // Deploy whichever unit type is currently selected (drone, GPR, compactor, repair).
   api.deploySelected = function () {
     var gs = window.GameState.inventory;
-    if (gs.selectedCompactorId) api.deployCompactor();
+    if (gs.selectedRepairId) api.deployRepair();
+    else if (gs.selectedCompactorId) api.deployCompactor();
     else if (gs.selectedGprId) api.deployGpr();
     else if (gs.selectedDroneId) api.deployDrone();
   };
+
+  // A scan already running blocks every other deploy: the input mode can
+  // only represent one owner, so a second scan (or compactor) would desync
+  // it. Reported on the panel's own message line — never a popup.
+  function scanBusy() {
+    try {
+      return !!(window.InputHandler && window.InputHandler.isScanBusy && window.InputHandler.isScanBusy());
+    } catch (e) { return false; }
+  }
 
   // Wire the Deploy button to whole-map, no-click drone deployment. Closes the
   // terminal and immediately starts a full-map sweep (no placement mode, no
@@ -654,6 +748,7 @@ window.HqPanel = (function () {
   api.deployDrone = function () {
     var id = window.GameState.inventory.selectedDroneId;
     if (!id) return;
+    if (scanBusy()) { api.showMsg("A survey is already running — wait for it to finish", false, api.inventoryDeployContainer); return; }
     var started = !!(window.DroneDeploy && window.DroneDeploy.startDeployment());
     console.log("[HQ] Deploy: selected " + id + " -> " + (started ? "whole-map drone sweep started" : "deploy failed (no Drone Systems available)"));
     if (api.isOpen) api.close();
@@ -666,6 +761,7 @@ window.HqPanel = (function () {
   api.deployGpr = function () {
     var id = window.GameState.inventory.selectedGprId;
     if (!id) return;
+    if (scanBusy()) { api.showMsg("A survey is already running — wait for it to finish", false, api.inventoryDeployContainer); return; }
     var started = !!(window.GprDeploy && window.GprDeploy.startDeployment());
     console.log("[HQ] Deploy GPR: selected " + id + " -> " + (started ? "whole-map GPR sweep started" : "deploy failed (no GPR Systems available)"));
     if (api.isOpen) api.close();
@@ -677,8 +773,19 @@ window.HqPanel = (function () {
   api.deployCompactor = function () {
     var id = window.GameState.inventory.selectedCompactorId;
     if (!id) return;
+    if (scanBusy()) { api.showMsg("A survey is already running — wait for it to finish", false, api.inventoryDeployContainer); return; }
     console.log("[HQ] Deploy Compactor: selected " + id + " -> entering placement mode");
     if (window.CompactorTool) window.CompactorTool.startPlacement();
+    if (api.isOpen) api.close();
+  };
+
+  // Deploy the Repair Rig — triggers the RepairTool placement mode (hazard fixer).
+  api.deployRepair = function () {
+    var id = window.GameState.inventory.selectedRepairId;
+    if (!id) return;
+    if (scanBusy()) { api.showMsg("A survey is already running — wait for it to finish", false, api.inventoryDeployContainer); return; }
+    console.log("[HQ] Deploy Repair Rig: selected " + id + " -> entering placement mode");
+    if (window.RepairTool) window.RepairTool.startPlacement();
     if (api.isOpen) api.close();
   };
 
@@ -808,6 +915,32 @@ window.HqPanel = (function () {
     }
   };
 
+  // Buy a Repair Rig — one-time unlock, REUSABLE swarm fixer (same as compactor)
+  api.buyRepair = function () {
+    var gs = window.GameState;
+    if (!gs) return;
+    if (gs.repairRigPurchased) return;
+    if (gs.cash >= gs.repairCost) {
+      if (!gs.spend(gs.repairCost, "Repair Rig")) return;
+      gs.repairRigPurchased = true;
+      if (window.Main && window.Main.updateHUD) window.Main.updateHUD();
+      api.updateOwned();
+      api.refreshRepairPurchaseState();
+      if (api.repairOrderBtn) {
+        api.repairOrderBtn.textContent = "Ordered!";
+        api.repairOrderBtn.classList.add("hq-order-btn--flash");
+        setTimeout(function () {
+          if (!api.repairOrderBtn) return;
+          var stillPurchased = !!(window.GameState && window.GameState.repairRigPurchased);
+          api.repairOrderBtn.textContent = stillPurchased ? "OWNED" : "BUY";
+          api.repairOrderBtn.classList.remove("hq-order-btn--flash");
+        }, 900);
+      }
+    } else {
+      api.showMsg("Insufficient funds", false);
+    }
+  };
+
   // ---- modal keyboard contract (WAI-APG): trap Tab inside, Escape closes
   function focusables() {
     if (!api.panelEl || !api.panelEl.querySelectorAll) return [];
@@ -874,6 +1007,7 @@ window.HqPanel = (function () {
     api.refreshDronePurchaseState();
     api.refreshGprPurchaseState();
     api.refreshCompactorPurchaseState();
+    api.refreshRepairPurchaseState();
     // initial focus lands on the close control (visible, first in tab order)
     try { if (api.closeBtn && api.closeBtn.focus) api.closeBtn.focus(); } catch (e) {}
 
@@ -892,6 +1026,10 @@ window.HqPanel = (function () {
         easing: "easeOutCubic",
       });
     } else {
+      // captures run headless under virtual time, where the CSS fade can
+      // freeze mid-transition even with the tween engine skipped
+      api.panelEl.style.transition = "none";
+      if (api.overlayEl) api.overlayEl.style.transition = "none";
       api.panelEl.style.transform = "scale(1)";
       api.panelEl.style.opacity = "1";
     }
@@ -909,6 +1047,8 @@ window.HqPanel = (function () {
       api.overlayEl.style.pointerEvents = "none";
       api.panelEl.style.transform = "";
       api.panelEl.style.opacity = "";
+      api.panelEl.style.transition = "";
+      if (api.overlayEl) api.overlayEl.style.transition = "";
       try { document.body.style.overflow = ""; } catch (e) {}
       // return focus to whatever opened the panel (APG close contract)
       try { if (api._opener && api._opener.focus) api._opener.focus(); } catch (e2) {}

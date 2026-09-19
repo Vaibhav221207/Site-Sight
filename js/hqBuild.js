@@ -8,6 +8,12 @@ window.HQBuild = (function () {
   };
 
   api.startPlacement = function () {
+    // same scan-busy gate as BuildMenu.select (HQ is picked through it):
+    // never steal the deploying-drone mode mid-scan. Silent: the card that
+    // leads here already shows locked, so no popup is needed.
+    try {
+      if (window.InputHandler && window.InputHandler.isScanBusy && window.InputHandler.isScanBusy()) return false;
+    } catch (e) {}
     api.isActive = true;
     if (window.InputHandler && window.InputHandler.setMode) window.InputHandler.setMode('placing-hq');
     else if (window.InputHandler) window.InputHandler.setPlacementMode(true);
@@ -48,7 +54,10 @@ window.HQBuild = (function () {
     if (window.InputHandler && window.InputHandler.setMode) {
       if (window.InputHandler.getMode && window.InputHandler.getMode() === 'placing-hq') window.InputHandler.setMode('idle');
     } else if (window.InputHandler) window.InputHandler.setPlacementMode(false);
-    if (window.BlockRender && window.BlockRender.triggerHQPlace) window.BlockRender.triggerHQPlace(col, row);
+    // the HQ waits under an unveiling curtain like every other building: the
+    // pop + dust celebration fires on the reveal tap, not here (see reveal).
+    if (window.Construction && window.Construction.beginHQ) window.Construction.beginHQ(col, row);
+    else if (window.BlockRender && window.BlockRender.triggerHQPlace) window.BlockRender.triggerHQPlace(col, row);
     if (typeof onSuccess === "function") onSuccess(col, row);
     return true;
   };

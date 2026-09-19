@@ -66,6 +66,17 @@ window.Icons = (function () {
       '<path d="M7 10.5 L7 5.5 L18 5.5 L18 13.5" ' + fill("#FFFFFF") + "/>" +
       '<rect x="9" y="7" width="4.6" height="3.4" rx="0.8" fill="#E0962A" stroke="' + INK + '" stroke-width="1.4"/>'
     ),
+    // repair rig: three hex-rotors in triangle, amber nav lights, central coral injector
+    repair: svg(
+      '<circle cx="12" cy="6.5" r="3.2" ' + fill("#FFFBF0") + "/>" +
+      '<circle cx="12" cy="6.5" r="1" fill="#FFB300" stroke="' + INK + '" stroke-width="1.2"/>' +
+      '<circle cx="6.2" cy="15.2" r="3.2" ' + fill("#FFFBF0") + "/>" +
+      '<circle cx="6.2" cy="15.2" r="1" fill="#FFB300" stroke="' + INK + '" stroke-width="1.2"/>' +
+      '<circle cx="17.8" cy="15.2" r="3.2" ' + fill("#FFFBF0") + "/>" +
+      '<circle cx="17.8" cy="15.2" r="1" fill="#FFB300" stroke="' + INK + '" stroke-width="1.2"/>' +
+      '<path d="M12 9.5 L12 13.5" ' + stroke() + "/>" +
+      '<circle cx="12" cy="13.5" r="1.6" fill="#C7432B" stroke="' + INK + '" stroke-width="1.2"/>'
+    ),
     // cottage: square + pitched roof + door, green
     residential: svg(
       '<rect x="6" y="11" width="12" height="9" ' + fill("#FFFBF0") + "/>" +

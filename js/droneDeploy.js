@@ -203,6 +203,23 @@ window.DroneDeploy = (function () {
 
   // -- deployment scheduler ----------------------------------------------
 
+  // Release the input mode back to idle — but ONLY if the scan still owns
+  // it AND no other survey is still running (drone vs GPR share the same
+  // 'deploying-drone' mode; naive release would drop GPR's mode when drone
+  // finishes first and cause a one-frame idle flicker before GPR's next zone).
+  function releaseMode() {
+    try {
+      // if ANY survey is still deploying, keep the mode locked
+      var anyStill = false;
+      try { anyStill = !!(window.GprDeploy && window.GprDeploy.deploying); } catch(e){}
+      if (anyStill) return;
+      var IH = window.InputHandler;
+      if (IH && IH.setMode && IH.getMode && IH.getMode() === 'deploying-drone') IH.setMode('idle');
+    } catch (e) {}
+    // re-truth the build bar cards (locked while the scan ran)
+    try { if (window.BuildMenu && window.BuildMenu.refresh) window.BuildMenu.refresh(); } catch (e2) {}
+  }
+
   // Start a whole-map deployment. CONSUMES one Drone System immediately
   // (droneCount -= 1, selection cleared, STORE owned refresh), builds the
   // ordered 8-chunk queue (skipping chunks that are already fully scanned),
@@ -239,10 +256,20 @@ window.DroneDeploy = (function () {
     api.deploying = true;
     api.deployed = null;
     if (gs.inventory) gs.inventory.deployed = null;
-    if (window.InputHandler && window.InputHandler.setMode) window.InputHandler.setMode('deploying-drone');
+    // take the mode only if nobody owns it: a placement already armed keeps
+    // its mode and the scan runs decoration-only in the background (finish
+    // releaseMode() then no-ops). Unconditional steal + unconditional reset
+    // was the stuck-CANCEL desync.
+    var takeMode = true;
+    try {
+      takeMode = !window.InputHandler || !window.InputHandler.getMode ||
+        window.InputHandler.getMode() === 'idle';
+    } catch (e) {}
+    if (takeMode && window.InputHandler && window.InputHandler.setMode) window.InputHandler.setMode('deploying-drone');
+    try { if (window.BuildMenu && window.BuildMenu.refresh) window.BuildMenu.refresh(); } catch (e) {}
     api._fillSlots();
     // _fillSlots may have completed synchronously if queue was empty
-    if (!api.deploying && window.InputHandler && window.InputHandler.setMode) window.InputHandler.setMode('idle');
+    if (!api.deploying) releaseMode();
     return true;
   };
 
@@ -279,7 +306,7 @@ window.DroneDeploy = (function () {
         window.GameState.inventory.deployed = { wholeMap: true };
       }
       if (typeof api.onDeployDone === "function") api.onDeployDone();
-      if (window.InputHandler && window.InputHandler.setMode) window.InputHandler.setMode('idle');
+      releaseMode();
     }
   };
 
@@ -323,6 +350,7 @@ window.DroneDeploy = (function () {
     api.chunks = [];
     api.deploying = false;
     api.deployed = null;
+    releaseMode();
     setCursor("grab");
   };
 
@@ -560,19 +588,17 @@ window.DroneDeploy = (function () {
     function fadeOut() {
       var s = zone.scan;
       if (!s) return;
-      // explicitly stop AND remove the looping pulse + heat tweens so they can
-      // never keep running once the fade-out begins
+      // stop the looping pulse/heat but KEEP current values — snapping to LO
+      // causes a one-frame dim flicker as the cone/heatmap jumps from bright
+      // (end-of-hold HI) to dim floor before alpha fades.
       if (s.pulseTween) { try { s.pulseTween.pause(); } catch (e) {} }
       if (s.heatTween) { try { s.heatTween.pause(); } catch (e) {} }
-      if (typeof anime !== "undefined" && anime && typeof anime.remove === "function") {
-        try { anime.remove(s); } catch (e) {}
-      }
+      // do not anime.remove(s) — it would cancel the alpha tween below if s is target elsewhere
       s.pulseTween = null;
       s.heatTween = null;
-      s.pulse = CONE_PULSE_LO;   // freeze the pulse at the floor; heat keeps last phase
-      s.heatPulse = HEAT_PULSE_LO; // freeze the heatmap at its dim floor too
-      s.sweep = 0;               // sweep line parked at the top edge
-      s.bob = 0;                 // drone stops bobbing as the light fades
+      // keep pulse/heatPulse/bob/sweep at their CURRENT hold values and let
+      // alpha alone drive the fade — no flicker step.
+      // s.pulse, s.heatPulse, s.bob, s.sweep deliberately untouched here
       var t3 = anime({
         targets: s,
         alpha: 0,

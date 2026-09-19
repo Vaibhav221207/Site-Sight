@@ -953,35 +953,46 @@ button {
     padding: 4px;
   }
 
+  #hq-section-store .hq-store-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 150px));
+    justify-content: start;
+    gap: 8px;
+  }
+
+  .hq-inv-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 150px));
+    justify-content: start;
+    gap: 8px;
+  }
+
   #hq-section-store .hq-fs-drone-row {
-    grid-template-columns: 34px minmax(0, 1fr) auto;
     gap: 6px;
-    padding: 7px 2px;
+    padding: 12px 10px 10px;
   }
 
   #hq-section-store .hq-store-ico {
-    width: 34px;
-    height: 34px;
+    width: 44px;
+    height: 44px;
   }
 
   #hq-section-store .hq-store-ico svg,
   #hq-section-store .hq-store-ico img {
-    width: 25px;
-    height: 25px;
+    width: 34px;
+    height: 34px;
   }
 
   #hq-section-store .hq-fs-drone-name {
-    font-size: 11px;
+    font-size: 12px;
   }
 
   #hq-section-store .hq-fs-drone-cost {
-    font-size: 10px;
+    font-size: 11px;
   }
 
   #hq-section-store .hq-fs-drone-row .hq-order-btn {
-    min-height: 27px;
-    padding: 3px 7px;
-    font-size: 9px;
+    min-height: 40px;
+    padding: 6px 10px;
+    font-size: 10px;
   }
 }
 
@@ -1593,6 +1604,22 @@ body.touch-ui .hq-fs-nav-item {
   color: #FFFFFF;
   background: #C7432B;
   border-color: #2B2320;
+}
+
+/* INVENTORY catalogue grid (same pattern as STORE): product cards in a
+   responsive grid, no repeated per-type headers. Wraps keep their hooks. */
+.hq-inv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 190px));
+  justify-content: start;
+  gap: 12px;
+}
+.hq-inv-grid .hq-fs-inventory-item > .hq-fs-inventory-item-name {
+  margin: 0;
+}
+.hq-inv-ico--lg {
+  width: 48px;
+  height: 48px;
 }
 
 /* building picker card head row: glyph + name share one line */
@@ -3094,9 +3121,11 @@ body.touch-ui .fs-btn {
     bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
     width: auto;
     max-height: min(46dvh, 190px);
+    min-height: 152px;
     padding: 5px 8px 7px;
     gap: 6px;
     border-radius: 14px;
+    transform: none;
   }
 
   body.touch-ui .build-bar-head {
@@ -3558,51 +3587,95 @@ body.touch-ui #tile-popup {
 
 /* ---- end start screen ---- */
 
-/* Final management layout overrides: these intentionally sit after the
-   breakpoint rules so the compact tray and larger survey map cannot regress
-   when a later responsive rule is added. */
+/* Build toolbar: thumbnail rail + scroll arrows + category keys (head with
+   title + cancel on top). The strip is the single horizontal scroll direction
+   with fixed card footprints; nothing overlaps, nothing wraps. Colors stay on
+   the chunky cream theme — only geometry lives here. */
 .build-item[hidden] { display: none !important; }
 
 .build-bar {
   left: 50%;
   right: auto;
   bottom: 82px;
-  width: min(980px, calc(100vw - 32px));
-  max-height: min(34vh, 300px);
-  padding: 10px 12px 12px;
-  gap: 7px;
+  width: min(860px, calc(100vw - 32px));
+  height: auto;
+  min-height: 190px;
+  max-height: min(46vh, 320px);
+  padding: 8px 10px 10px;
+  gap: 6px;
   transform: translateX(-50%);
 }
 .build-bar.hidden { transform: translate(-50%, 12px); }
+.build-strip {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+  min-height: 0;
+}
+.build-arrow {
+  flex: 0 0 38px;
+  min-height: 38px;
+  align-self: stretch;
+  background: #F6EEDC;
+  border: 3px solid #2B2320;
+  border-radius: 12px;
+  box-shadow: 2px 2px 0 #000;
+  color: #2B2320;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+.build-arrow:hover:not([disabled]) { background: #FFF4DE; }
+.build-arrow:active:not([disabled]) {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 transparent;
+}
+.build-arrow:disabled {
+  opacity: 0.35;
+  cursor: default;
+  box-shadow: none;
+}
 .build-items {
+  flex: 1 1 auto;
+  min-width: 0;
   display: flex;
   flex-wrap: nowrap;
   align-items: stretch;
   overflow-x: auto;
   overflow-y: hidden;
   max-height: none;
-  height: 78px;
-  gap: 7px;
+  height: 102px;
+  gap: 8px;
+  padding: 2px;
+  /* arrows own the scrolling (reference pattern): no scrollbar track cutting
+     across the strip */
+  scrollbar-width: none;
 }
+.build-items::-webkit-scrollbar { display: none; }
 .build-item {
-  flex: 0 0 132px;
-  width: 132px;
-  min-height: 70px;
-  height: 74px;
+  flex: 0 0 100px;
+  width: 100px;
+  min-height: 0;
+  height: 98px;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
   gap: 2px;
-  padding: 6px 5px;
+  padding: 6px 4px;
   border-width: 2px;
   border-radius: 10px;
   box-shadow: 2px 2px 0 #000;
   text-align: center;
 }
-.build-item-icon { width: 34px; height: 34px; }
-.build-item-icon img { max-width: 34px; max-height: 34px; }
+.build-item-icon { width: 52px; height: 52px; }
+.build-item-icon img { max-width: 52px; max-height: 52px; }
+.build-item-icon svg { width: 40px; height: 40px; }
 .build-item-info { align-items: center; gap: 0; min-width: 0; width: 100%; }
-.build-item-name { width: 100%; font-size: 11px; line-height: 1.1; }
-.build-item-cost { font-size: 10px; line-height: 1.1; }
+.build-item-name { width: 100%; font-size: 11px; line-height: 1.15; }
+.build-item-cost { font-size: 10px; line-height: 1.15; }
+.build-categories { justify-content: center; }
 
 #hq-panel { max-width: 1080px; }
 .hq-data-minimap-col { flex-basis: 68%; max-width: 680px; }
@@ -3610,38 +3683,56 @@ body.touch-ui #tile-popup {
 .hq-data-minimap-wrap { min-height: 280px; }
 
 #hq-section-store .hq-fs-status { display: none; }
-#hq-section-store .hq-fs-section { margin-top: 12px; }
-#hq-section-store .hq-fs-drone-row {
+#hq-section-store .hq-fs-section { margin-top: 10px; }
+#hq-section-store .hq-fs-section:first-child { margin-top: 0; }
+#hq-section-store .hq-store-grid {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) auto;
-  gap: 8px;
-  padding: 9px 4px;
-  align-items: center;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 190px));
+  justify-content: start;
+  gap: 12px;
+  margin-top: 12px;
 }
-#hq-section-store .hq-store-ico { width: 40px; height: 40px; border-width: 2px; border-radius: 10px; }
+#hq-section-store .hq-store-grid .hq-fs-section { margin-top: 0; }
+#hq-section-store .hq-fs-drone-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: center;
+  gap: 8px;
+  height: 100%;
+  padding: 16px 14px 14px;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 16px;
+  box-shadow: 3px 3px 0 #000;
+}
+#hq-section-store .hq-fs-drone-row:hover { background: #FFFBF0; }
+#hq-section-store .hq-store-ico { width: 56px; height: 56px; margin: 0 auto; border-width: 3px; border-radius: 14px; }
 #hq-section-store .hq-store-ico svg,
-#hq-section-store .hq-store-ico img { width: 30px; height: 30px; }
-#hq-section-store .hq-fs-drone-info { min-width: 0; gap: 1px; }
-#hq-section-store .hq-fs-drone-name { font-size: 14px; }
-#hq-section-store .hq-fs-drone-cost { font-size: 12px; }
+#hq-section-store .hq-store-ico img { width: 44px; height: 44px; }
+#hq-section-store .hq-fs-drone-info { min-width: 0; gap: 2px; align-items: center; text-align: center; }
+#hq-section-store .hq-fs-drone-name { font-size: 15px; }
+#hq-section-store .hq-fs-drone-cost { font-size: 14px; font-weight: 700; color: #2B2320; }
 #hq-section-store .hq-store-blurb { display: none; }
 #hq-section-store .hq-fs-drone-row .hq-order-btn {
-  grid-column: auto;
-  min-height: 30px;
-  padding: 4px 10px;
-  border-width: 2px;
-  border-radius: 8px;
-  font-size: 10px;
+  width: 100%;
+  min-height: 44px;
+  margin: 4px 0 0;
+  padding: 8px 14px;
+  border-width: 3px;
+  border-radius: 12px;
+  font-size: 12px;
 }
 
 @media (max-width: 900px) {
   .build-bar {
     left: 8px;
     right: calc(env(safe-area-inset-right, 0px) + 78px);
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 56px);
     width: auto;
-    height: 158px;
-    max-height: 158px;
+    height: auto;
+    min-height: 160px;
+    max-height: min(62dvh, 230px);
     padding: 7px 8px 9px;
     gap: 6px;
     background: #1d2933;
@@ -3650,28 +3741,39 @@ body.touch-ui #tile-popup {
     transform: none;
   }
   .build-bar.hidden { transform: translateY(12px); }
+  .build-bar-title { font-size: 10px; color: #e8f0f4; }
+  .build-arrow {
+    flex-basis: 38px;
+    min-height: 38px;
+    font-size: 22px;
+    background: #31424e;
+    border-color: #536573;
+    color: #e8f0f4;
+  }
+  .build-arrow:hover:not([disabled]) { background: #3b5361; }
   .build-items {
-    flex: 0 0 auto;
-    height: 66px;
-    flex-basis: 66px;
-    max-height: none;
-    overflow-x: auto;
-    overflow-y: hidden;
-    gap: 5px;
+    flex: 1 1 auto;
+    height: 80px;
+    gap: 6px;
   }
   .build-item {
-    flex: 0 0 108px;
-    width: 108px;
-    min-height: 60px;
-    height: 60px;
-    padding: 3px 4px;
+    flex: 0 0 80px;
+    width: 80px;
+    height: 76px;
+    padding: 4px 3px;
+    background: #2b3a45;
+    border-color: #647985;
+    color: #eef6f8;
+    box-shadow: 2px 2px 0 #081017;
   }
-  .build-item-icon { width: 27px; height: 27px; }
-  .build-item-icon img { max-width: 27px; max-height: 27px; }
-  .build-item-name, .build-item-cost { font-size: 9px; }
-  .build-bar-title { color: #e8f0f4; }
+  .build-item:hover { background: #3b5361; }
+  .build-item-icon { width: 34px; height: 34px; }
+  .build-item-icon img { max-width: 34px; max-height: 34px; }
+  .build-item-icon svg { width: 28px; height: 28px; }
+  .build-item-name { font-size: 9px; color: #eef6f8; }
+  .build-item-cost { font-size: 9px; color: #eef6f8; }
   .build-category {
-    min-height: 25px;
+    min-height: 26px;
     padding: 3px 8px;
     border-color: #536573;
     background: #31424e;
@@ -3684,37 +3786,26 @@ body.touch-ui #tile-popup {
     border-color: #8ce8f5;
     box-shadow: 0 2px 0 #081017;
   }
-  .build-item {
-    background: #2b3a45;
-    border-color: #647985;
-    color: #eef6f8;
-    box-shadow: 2px 2px 0 #081017;
-  }
-  .build-item-name, .build-item-cost { color: #eef6f8; }
   .hq-data-minimap-col { flex-basis: 64%; max-width: none; }
   .hq-data-side-col { flex-basis: 36%; }
 }
 
 @media (max-width: 640px) {
   .build-bar {
-    right: calc(env(safe-area-inset-right, 0px) + 70px);
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
-    height: 158px;
-    max-height: 158px;
+    right: auto;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 54px);
+    width: auto;
+    height: auto;
+    min-height: 154px;
+    max-height: min(62dvh, 220px);
     padding: 7px 8px 9px;
     gap: 6px;
     background: #1d2933;
     border-color: #536573;
     box-shadow: 3px 3px 0 #081017;
   }
-  .build-bar-title {
-    color: #e8f0f4;
-    font-size: 10px;
-  }
-  .build-categories {
-    gap: 4px;
-    padding-bottom: 1px;
-  }
+  .build-bar-title { font-size: 10px; color: #e8f0f4; }
+  .build-categories { gap: 4px; padding-bottom: 1px; }
   .build-category {
     min-height: 25px;
     padding: 3px 8px;
@@ -3729,43 +3820,152 @@ body.touch-ui #tile-popup {
     border-color: #8ce8f5;
     box-shadow: 0 2px 0 #081017;
   }
-  .build-items {
-    flex-basis: 66px;
-    height: 66px;
-    gap: 6px;
-    padding: 2px 4px 4px 2px;
+  .build-arrow {
+    flex-basis: 36px;
+    min-height: 36px;
+    font-size: 20px;
+    background: #31424e;
+    border-color: #536573;
+    color: #e8f0f4;
   }
+  .build-arrow:hover:not([disabled]) { background: #3b5361; }
+  .build-items { height: 76px; gap: 6px; }
   .build-item {
-    flex-basis: 112px;
-    width: 112px;
-    min-height: 60px;
-    height: 60px;
-    padding: 4px;
+    flex: 0 0 78px;
+    width: 78px;
+    height: 72px;
+    padding: 4px 3px;
     background: #2b3a45;
     border-color: #647985;
     color: #eef6f8;
     box-shadow: 2px 2px 0 #081017;
   }
-  .build-item:hover {
-    background: #3b5361;
-  }
-  .build-item-name,
-  .build-item-cost {
-    color: #eef6f8;
-  }
-  .build-item-icon {
-    width: 30px;
-    height: 30px;
-  }
-  .build-item-icon img {
-    max-width: 30px;
-    max-height: 30px;
-  }
+  .build-item:hover { background: #3b5361; }
+  .build-item-name, .build-item-cost { font-size: 9px; color: #eef6f8; }
+  .build-item-icon { width: 32px; height: 32px; }
+  .build-item-icon img { max-width: 32px; max-height: 32px; }
+  .build-item-icon svg { width: 26px; height: 26px; }
   .hq-data-minimap-wrap { min-height: 220px; padding: 4px; }
-  #hq-section-store .hq-fs-drone-row { grid-template-columns: 34px minmax(0, 1fr) auto; gap: 6px; padding: 7px 2px; }
-  #hq-section-store .hq-store-ico { width: 34px; height: 34px; }
-  #hq-section-store .hq-store-ico svg, #hq-section-store .hq-store-ico img { width: 25px; height: 25px; }
-  #hq-section-store .hq-fs-drone-name { font-size: 11px; }
-  #hq-section-store .hq-fs-drone-cost { font-size: 10px; }
-  #hq-section-store .hq-fs-drone-row .hq-order-btn { min-height: 27px; padding: 3px 7px; font-size: 9px; }
+  #hq-section-store .hq-store-grid { grid-template-columns: 1fr; gap: 8px; }
+  #hq-section-store .hq-fs-drone-row { gap: 6px; padding: 10px; }
+  #hq-section-store .hq-store-ico { width: 40px; height: 40px; }
+  #hq-section-store .hq-store-ico svg, #hq-section-store .hq-store-ico img { width: 30px; height: 30px; }
+  #hq-section-store .hq-fs-drone-name { font-size: 12px; }
+  #hq-section-store .hq-fs-drone-cost { font-size: 11px; }
+  #hq-section-store .hq-fs-drone-row .hq-order-btn { min-height: 40px; padding: 6px 10px; font-size: 10px; }
+  .hq-inv-grid { grid-template-columns: 1fr; gap: 8px; }
+}
+
+/* ── Modern hazard layer (2025 CSS) ──
+   Replaces the former canvas-only hazard icons with a DOM overlay so we
+   can use current platform features: backdrop-filter glass, OKLCH, clamp(),
+   container queries, @layer, @starting-style, view-transition, :has().
+   Canvas path in js/blockRender.js is now a fallback; the DOM layer is
+   authoritative when it exists. */
+@layer hazard {
+  #hazard-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5; /* above canvas (0), below HUD (10) and modals (100) */
+    container-type: inline-size;
+    container-name: hazard-layer;
+    /* isolate backdrop without creating a stacking trap for children */
+    isolation: isolate;
+  }
+
+  .hazard-badge {
+    --hazard-size: clamp(20px, 3.4cqi, 26px);
+    position: absolute;
+    width: var(--hazard-size);
+    height: var(--hazard-size);
+    translate: -50% -100%;
+    margin-top: -8px;
+    display: grid;
+    place-items: center;
+    /* modern squircle, not harsh circle: continuous curve */
+    border-radius: 32%;
+    border: 1px solid rgba(255,255,255,0.18);
+    /* soft 3D matte plastic — subtle gradient, not flat */
+    background: linear-gradient(180deg, color-mix(in oklch, var(--hazard-color) 88%, white 12%) 0%, var(--hazard-color) 58%, color-mix(in oklch, var(--hazard-color) 82%, black 18%) 100%);
+    /* soft depth: outer shadow + top sheen inset */
+    box-shadow: 0 6px 14px rgba(0,0,0,0.18), 0 1px 0 rgba(255,255,255,0.45) inset, 0 -1px 0 rgba(0,0,0,0.10) inset;
+    /* no harsh black outline — let shadow do the separation */
+    color: #FFFBF0;
+    font-size: clamp(11px, 2.4cqi, 14px);
+    line-height: 1;
+    view-transition-name: hazard-badge;
+    overflow: hidden;
+    will-change: transform, opacity;
+    /* ui-ux-pro-max P3 performance: transform/opacity only, GPU-composited */
+  }
+  /* top sheen — like 2026 app icons: soft white gradient over upper half */
+  .hazard-badge::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgba(255,255,255,0.22) 0%, transparent 52%);
+    pointer-events: none;
+  }
+  .hazard-badge::after {
+    content: "";
+    position: absolute;
+    left: 30%;
+    top: 92%;
+    width: 22%;
+    height: 14%;
+    translate: -50% 0;
+    background: var(--hazard-color);
+    border-radius: 999px;
+    /* subtle, not black — soft tail */
+    box-shadow: 0 1px 6px rgba(0,0,0,0.22);
+    opacity: 0.95;
+  }
+
+  .hazard-badge__glyph {
+    font-weight: 900;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.45));
+    font-size: clamp(10px, 2.2cqi, 13px);
+    -webkit-text-stroke: 0.5px rgba(0,0,0,0.18);
+  }
+
+  /* container query: on very narrow containers (phone portrait) keep badges compact */
+  @container hazard-layer (max-width: 380px) {
+    .hazard-badge { --hazard-size: 20px; margin-top: -4px; }
+  }
+
+  /* entrance — view transition handles motion, instant for screenshots/headless */
+  .hazard-badge {
+    opacity: 1;
+    transition: scale 280ms cubic-bezier(0.34,1.56,0.64,1), translate 280ms cubic-bezier(0.22,1,0.36,1), opacity 220ms ease;
+  }
+  @starting-style {
+    .hazard-badge { opacity: 0; scale: 0.85; translate: -50% -92%; }
+  }
+
+  /* reduced motion: no pulse, no transition, no view-transition (design-motion a11y mandatory) */
+  @media (prefers-reduced-motion: reduce) {
+    .hazard-badge { transition: none; backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--hazard-color); animation: none; view-transition-name: none; }
+    .hazard-badge::before, .hazard-badge::after { animation: none; }
+  }
+
+  /* style query fallback example: if --hazard-accent not set, use muted */
+  @container style(--hazard-accent: muted) {
+    .hazard-badge { filter: saturate(0.7); }
+  }
+
+  /* :has() — if badge contains a crack glyph, slightly rotate for dynamism */
+  .hazard-badge:has([data-icon="crack"]) { rotate: -2deg; }
+  .hazard-badge:has([data-icon="biohazard"]) { rotate: 1deg; }
+
+  /* OKLCH hazard palette — perceptually even, accessible contrast (ui-ux P1: 4.5:1) */
+  .hazard-badge[data-hazard="Foundation Crack"] { --hazard-color: oklch(0.62 0.19 29); }
+  .hazard-badge[data-hazard="Structural Fatigue"] { --hazard-color: oklch(0.82 0.17 85); color: oklch(0.25 0 0); }
+  .hazard-badge[data-hazard="Structural Fatigue"] .hazard-badge__glyph { color: #2B2320; }
+  .hazard-badge[data-hazard="Utility Fault"] { --hazard-color: oklch(0.65 0.16 245); }
+  .hazard-badge[data-hazard="Sinkhole"] { --hazard-color: oklch(0.55 0.22 310); }
+  .hazard-badge[data-hazard="Flood Risk"] { --hazard-color: oklch(0.68 0.15 155); color: oklch(0.25 0 0); }
+  .hazard-badge[data-hazard="Flood Risk"] .hazard-badge__glyph { color: #2B2320; }
+  .hazard-badge[data-hazard="Contamination Leak"] { --hazard-color: oklch(0.60 0.20 28); }
 }

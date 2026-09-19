@@ -69,6 +69,13 @@ window.Main = (function () {
   // click: pop the block up/down AND toggle the info panel.
   // HQ tiles never show the small tile popup — they open the full HQ terminal.
   function onTileClicked(col, row) {
+    // unveiling tap eats the click: curtain (or HQ curtain) consumed, no
+    // popup or panel on the reveal tap itself — celebration plays instead.
+    if (window.Construction && window.Construction.reveal) {
+      try {
+        if (window.Construction.reveal(col, row)) { render(); return; }
+      } catch (e) {}
+    }
     var isHQ = (window.Terrain && window.Terrain.isHQ && window.Terrain.isHQ(col, row)) ||
                (window.GameState && window.GameState.hqTile && window.GameState.hqTile.col === col && window.GameState.hqTile.row === row);
     if (isHQ && window.HqPanel) {
@@ -109,6 +116,8 @@ window.Main = (function () {
   function loop() {
     try {
       window.BlockRender.tick();
+      try { if (window.Construction) window.Construction.update(); } catch (e) {}
+      try { if (window.Hazards) window.Hazards.rollHazards(typeof performance !== "undefined" ? performance.now() : Date.now()); } catch (e) {}
       try { economyTick(typeof performance !== "undefined" ? performance.now() : Date.now()); } catch (e) {}
       render();
       if (_renderErrCount > 0) {
@@ -235,6 +244,48 @@ window.Main = (function () {
         }
       } catch (e) { console.error("[Main] diag fail", e); }
     }, 600);
+    // hazard demo for screenshots (#hazard or #shot=game_hazard) — plants 6 Kenney buildings with hazards
+    (function(){
+      try {
+        if ((location.hash || "").indexOf("hazard") === -1) return;
+        function plantHaz(){
+          try {
+            var gs = window.GameState; if (!gs || !window.Buildings) return;
+            if (gs._hzPlanted) return;
+            var hk = Object.keys(gs.tileData);
+            for (var i=0;i<hk.length;i++) if (gs.tileData[hk[i]] && gs.tileData[hk[i]].hazard && gs.tileData[hk[i]].hazard.active) return;
+            gs._hzPlanted = true;
+            var ss = document.getElementById("start-screen"); if (ss) ss.classList.add("hidden");
+            var tiles=[];
+            for (var r=7;r<13;r++) for (var c=7;c<13;c++){
+              if (window.Terrain && window.Terrain.typeAt(c,r)!=="land") continue;
+              if (gs.tileData[c+","+r] && gs.tileData[c+","+r].zoneBuilding) continue;
+              var ok=true;
+              for (var k=0;k<tiles.length;k++){ if (Math.abs(tiles[k].c-c)+Math.abs(tiles[k].r-r) < 3) { ok=false; break; } }
+              if (!ok) continue;
+              tiles.push({c:c,r:r}); if (tiles.length>=6) break;
+            }
+            var ids=["shop","workshop","mall","mine","cottage","apartments"];
+            var hazards=["Foundation Crack","Utility Fault","Sinkhole","Flood Risk","Contamination Leak","Structural Fatigue"];
+            var kMap={shop:"buildingTiles_030.png",workshop:"buildingTiles_100.png",mall:"buildingTiles_090.png",mine:"buildingTiles_085.png",cottage:"buildingTiles_000.png",apartments:"buildingTiles_009.png"};
+            for (var j=0;j<Math.min(tiles.length,ids.length);j++){
+              var t=tiles[j], d=gs.getTileData(t.c,t.r);
+              d.zoneType=(ids[j]==="workshop"||ids[j]==="factory")?"industrial":(ids[j]==="mine"||ids[j]==="quarry"?"mining":(ids[j]==="cottage"||ids[j]==="apartments"?"residential":"commercial"));
+              d.zoneBuilding=ids[j]; d.buildingSprite=kMap[ids[j]]||null; d.pollution=(hazards[j]==="Contamination Leak"?70:0);
+              d.surfaceStability="Poor"; d.zoneMismatched=true; d.hazard={active:true,type:hazards[j],triggeredAt:Date.now()};
+              d.bestUse=d.zoneType.charAt(0).toUpperCase()+d.zoneType.slice(1);
+            }
+            if (window.BlockRender) window.BlockRender.invalidate();
+            if (window.Main && window.Main.updateHUD) window.Main.updateHUD();
+            try{ if(window.HqPanel && window.HqPanel.close) window.HqPanel.close(); }catch(e){}
+            try{ var ov=document.getElementById("hq-overlay"); if(ov) ov.style.display="none"; }catch(e){}
+          } catch(e2){}
+        }
+        if (document.readyState==="complete") setTimeout(plantHaz,400);
+        else window.addEventListener("load", function(){ setTimeout(plantHaz,800); });
+        setTimeout(plantHaz,1500);
+      } catch(e){}
+    })();
   };
 
   return api;

@@ -299,7 +299,7 @@
   }
 
   function loadTopColor(t){
-    var top = '#7EB24A';
+    var top = '#94ad39';
     try {
       var T = window.Terrain;
       if(T){
@@ -307,7 +307,7 @@
         else if(T.colorAt) top = T.colorAt(t.c, t.r);
       }
     } catch(e){}
-    return top || '#7EB24A';
+    return top || '#94ad39';
   }
 
   function diamondAt(ctx, cx, topY, iso, half, fill){

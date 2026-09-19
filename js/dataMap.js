@@ -234,6 +234,15 @@ window.DataMap = (function () {
             ctx.fill();
             ctx.restore();
           }
+          // Hazard indicator: amber dot for tiles with active hazard
+          if (zd.hazard?.active) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(col * cell + cell / 2, row * cell + cell / 2, Math.max(2, cell * 0.1), 0, Math.PI * 2);
+            ctx.fillStyle = "#FFB300";
+            ctx.fill();
+            ctx.restore();
+          }
           // zoned mark: inner ink border (dashed near-black when mismatched).
           // The color wash alone is invisible on matched tiles (same hue as
           // the fill), so the border carries the "this tile is zoned" signal.
@@ -456,6 +465,26 @@ window.DataMap = (function () {
       (d.gprScanned ? d.bedrockDepth : "Not yet scanned") + '</strong></div>';
     html += '<div class="hq-data-details-row"><span>Best Use</span>' +
       '<span class="hq-data-badge" style="background:' + cat.color + ';color:' + textColor + '">' + cat.label + '</span></div>';
+    // Hazard row
+    if (d.hazard?.active) {
+      var hazardColors = {
+        "Foundation Crack": "#C7432B",
+        "Structural Fatigue": "#FFB300",
+        "Utility Fault": "#42A5F5",
+        "Sinkhole": "#8E24AA",
+        "Flood Risk": "#22C55E",
+        "Contamination Leak": "#C7432B"
+      };
+      var hc = hazardColors[d.hazard.type] || "#FFB300";
+      html += '<div class="hq-data-details-row"><span>HAZARD</span>' +
+        '<span class="hq-data-badge" style="background:' + hc + ';color:#FFFFFF">' + d.hazard.type + '</span></div>';
+      html += '<div class="hq-data-details-row"><span>Income</span><strong>' +
+        (d.hazard.type === "Sinkhole" ? "25% (sinkhole)" : "50% (hazard)") + '</strong></div>';
+    }
+    try {
+      var why = (window.GameState && window.GameState.bestUseReason) ? window.GameState.bestUseReason(d) : "";
+      if (why) html += '<div class="hq-data-details-row"><span>Why</span><strong>' + why + '</strong></div>';
+    } catch (e) {}
     return html;
   }
 

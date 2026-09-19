@@ -14,8 +14,8 @@ window.GameState = (function () {
     startingCash: 40000,
     cash: 40000,
     startupBudget: {
-      requiredTools: 20000,
-      starterReserve: 20000,
+      requiredTools: 25000,
+      starterReserve: 15000,
       total: 40000,
     },
     hqCost: 5000,             // accessible early command-center unlock
@@ -36,6 +36,9 @@ window.GameState = (function () {
     gprCost: 4000,            // price of one GPR System
     compactorSystemPurchased: false,
     compactorCost: 6000,
+    // Repair Rig (hazard-fix tool) — reusable, one-time purchase
+    repairRigPurchased: false,
+    repairCost: 5000,
     inventory: {              // owned items — add future item types here
       droneCount: 0,
       // id of the drone currently selected in the INVENTORY tab, or null.
@@ -51,6 +54,7 @@ window.GameState = (function () {
       selectedGprId: null,
       gprDeployed: null,
       selectedCompactorId: null,
+      selectedRepairId: null,
     },
     // permanently scanned tiles (AERIAL / Drone tier), keyed "col,row" -> true.
     // A completed Drone System scan marks EVERY tile inside its 5x10 footprint;
@@ -90,7 +94,7 @@ window.GameState = (function () {
   };
 
   api.getStartupBudget = function () {
-    var requiredTools = api.hqCost + api.droneCost + api.gprCost + api.compactorCost;
+    var requiredTools = api.hqCost + api.droneCost + api.gprCost + api.compactorCost + api.repairCost;
     return {
       requiredTools: requiredTools,
       starterReserve: api.startingCash - requiredTools,
@@ -100,6 +104,7 @@ window.GameState = (function () {
         drone: api.droneCost,
         gpr: api.gprCost,
         compactor: api.compactorCost,
+        repair: api.repairCost,
       },
     };
   };
@@ -272,6 +277,9 @@ window.GameState = (function () {
         zoneVerdict: null,        // "ok" | "mild" | "severe" (see js/buildings.js)
         zoneBuilding: null,       // building id (see js/buildings.js) | null
         buildingSprite: null,      // Kenney sprite filename for constructed building
+        construction: null,        // build phase (see js/construction.js) | null
+        curtain: null,             // ready-to-unveil build (tap reveals) | null
+        hazard: null,              // { active:true, type:string, triggeredAt:runMs } | null
         pollution: 0,             // 0-100 ground stain (see js/economy.js)
         blighted: false,          // true at max stain: earns $0 until scrubbed
       };
@@ -280,6 +288,58 @@ window.GameState = (function () {
     if (api.tileData[k].row === undefined) api.tileData[k].row = row;
     return api.tileData[k];
   };
+
+  // Orthogonal river neighbor? Waterfront land is floodplain: homes only.
+  // bounds-safe (Terrain.isRiver answers neutral outside the map).
+  api.isRiverAdjacent = function (col, row) {
+    if (!window.Terrain || !window.Terrain.isRiver) return false;
+    if (typeof col !== "number" || typeof row !== "number") return false;
+    return window.Terrain.isRiver(col + 1, row) || window.Terrain.isRiver(col - 1, row) ||
+           window.Terrain.isRiver(col, row + 1) || window.Terrain.isRiver(col, row - 1);
+  };
+
+  // ---- percentile-calibrated survey cutoffs (logical amounts) --------------
+  // Fixed raw thresholds on smooth noise fields swing wildly per map seed
+  // (measured: Mining 4..61 tiles, Industrial up to 43% of buildable land).
+  // Instead the mineral/bedrock cutoffs are calibrated per seed to fixed
+  // percentile ranks over buildable land, so every map holds ~12% Mining
+  // ground and ~20% Shallow (industrial) bedrock no matter the seed.
+  // Deterministic per seed, cached; no Math.random anywhere in this path.
+  var calibCache = null; // { seed, minCut, shalCut, deepCut, poorCut, goodCut, excCut }
+  function fieldCalib() {
+    var s = surveySeed();
+    if (calibCache && calibCache.seed === s) return calibCache;
+    var g = (window.IsoGrid && window.IsoGrid.gridSize) || 20;
+    var mv = [], bv = [], sv = [];
+    for (var r = 0; r < g; r++) for (var c = 0; c < g; c++) {
+      var t = "land";
+      try { t = window.Terrain && window.Terrain.typeAt ? window.Terrain.typeAt(c, r) : "land"; }
+      catch (e) { t = "land"; }
+      if (t !== "land") continue; // rank on buildable land only
+      mv.push(sampleField(2, c, r));
+      bv.push(sampleField(3, c, r));
+      sv.push(sampleField(1, c, r));
+    }
+    mv.sort(function (a, b) { return a - b; });
+    bv.sort(function (a, b) { return a - b; });
+    sv.sort(function (a, b) { return a - b; });
+    function cut(sorted, frac) {
+      if (!sorted.length) return frac;
+      return sorted[Math.min(sorted.length - 1, Math.floor(frac * sorted.length))];
+    }
+    // Mining = richest 12% of mineral ground; Shallow = thinnest 20% of
+    // bedrock; Deep = thickest 30%; everything between is Moderate.
+    // Stability is calibrated too: the smooth field almost never crosses the
+    // old absolute "Excellent" line (measured 0-1 tiles/map), so labels are
+    // ranked — Poor = softest 12%, Fair up to the median band, Good above
+    // it, Excellent = firmest 12%. Every label means something on every seed.
+    calibCache = {
+      seed: s,
+      minCut: cut(mv, 0.88), shalCut: cut(bv, 0.20), deepCut: cut(bv, 0.70),
+      poorCut: cut(sv, 0.12), goodCut: cut(sv, 0.55), excCut: cut(sv, 0.88)
+    };
+    return calibCache;
+  }
 
   // Suitability scoring is deliberately deterministic. Survey facts decide the
   // category; there is no per-tile jitter or hash-based roulette that can make
@@ -290,16 +350,34 @@ window.GameState = (function () {
     if (!drone && !gpr) return null;
     if (!drone || !gpr) return "Partial Data";
     if (d.surfaceStability === "Poor") return "Unsuitable";
+    // Waterfront first: floodplain takes homes only — no heavy commercial
+    // slabs, no industrial runoff, no mine tailings beside the water.
+    if (api.isRiverAdjacent(d.col, d.row)) return "Residential";
     // Use explicit planning rules instead of close floating-point scores. This
-    // keeps a tile's recommendation explainable in the DATA panel and ensures
-    // all four buildable categories remain available.
+    // keeps a tile's recommendation explainable in the DATA panel (see
+    // bestUseReason) and ensures all four buildable categories remain available.
     if (d.mineralDeposits === "Rich") return "Mining";
     if (d.bedrockDepth === "Shallow") return "Industrial";
-    if (d.bedrockDepth === "Deep" &&
-        (d.surfaceStability === "Excellent" || d.surfaceStability === "Good")) return "Commercial";
-    if (d.bedrockDepth === "Moderate" &&
-        (d.surfaceStability === "Excellent" || d.surfaceStability === "Good")) return "Commercial";
+    var firm = (d.surfaceStability === "Excellent" || d.surfaceStability === "Good");
+    // Commercial is prime ground only: deep bedrock + firm surface, or an
+    // Excellent cap over moderate bedrock. Ordinary stable land is Residential.
+    if (d.bedrockDepth === "Deep" && firm) return "Commercial";
+    if (d.bedrockDepth === "Moderate" && d.surfaceStability === "Excellent") return "Commercial";
     return "Residential";
+  };
+
+  // One-line planner justification for the current Best Use. Mirrors
+  // computeBestUse rule-for-rule so the DATA panel never contradicts the map.
+  api.bestUseReason = function (d) {
+    if (!d || !d.droneScanned || !d.gprScanned) return "";
+    if (d.surfaceStability === "Poor") return "Poor ground — compact it or build elsewhere";
+    if (api.isRiverAdjacent(d.col, d.row)) return "Waterfront — floodplain homes only";
+    if (d.mineralDeposits === "Rich") return "Rich mineral pocket — extract it";
+    if (d.bedrockDepth === "Shallow") return "Shallow bedrock — heavy foundations";
+    var firm = (d.surfaceStability === "Excellent" || d.surfaceStability === "Good");
+    if (d.bedrockDepth === "Deep" && firm) return "Deep bedrock, firm ground — high-rise ready";
+    if (d.bedrockDepth === "Moderate" && d.surfaceStability === "Excellent") return "Prime stable ground — high-rise ready";
+    return "Stable ground — good for homes";
   };
 
   // recompute a record's bestUse in place after any data change.
@@ -318,15 +396,17 @@ window.GameState = (function () {
   // Drone (aerial) scan completed for this tile: mark it scanned and sample
   // surface stability from the smooth field (Poor pockets, Fair/Good ground,
   // Excellent ridges). The trench is ALWAYS "Poor", matching its
-  // problem-site identity. Thresholds mirror the old 15/35/35/15 odds.
+  // problem-site identity. Cutoffs are percentile-calibrated per seed (see
+  // fieldCalib) so every label actually occurs on every map.
   api.markDroneScanned = function (col, row) {
     var d = api.getTileData(col, row);
     d.droneScanned = true;
     if (isHazardTile(col, row)) {
       d.surfaceStability = "Poor";
     } else {
+      var cal = fieldCalib();
       var sv = sampleField(1, col, row);
-      d.surfaceStability = sv < 0.27 ? "Poor" : sv < 0.50 ? "Fair" : sv < 0.86 ? "Good" : "Excellent";
+      d.surfaceStability = sv < cal.poorCut ? "Poor" : sv < cal.goodCut ? "Fair" : sv < cal.excCut ? "Good" : "Excellent";
     }
     api._recalcBestUse(d);
     if (isUnbuildable(col, row)) d.bestUse = null;
@@ -348,14 +428,15 @@ window.GameState = (function () {
       { value: "Rocky", w: 20 },
       { value: "Loam", w: 25 }
     ]);
+    var cal = fieldCalib();
     if (trench) {
       d.mineralDeposits = weightedPick([{ value: "None", w: 70 }, { value: "Trace", w: 30 }]);
     } else {
       var mv = sampleField(2, col, row);
-      d.mineralDeposits = mv > 0.73 ? "Rich" : mv > 0.45 ? "Trace" : "None";
+      d.mineralDeposits = mv >= cal.minCut ? "Rich" : mv > 0.45 ? "Trace" : "None";
     }
     var bv = sampleField(3, col, row);
-    d.bedrockDepth = bv < 0.42 ? "Shallow" : bv < 0.78 ? "Moderate" : "Deep";
+    d.bedrockDepth = bv < cal.shalCut ? "Shallow" : bv < cal.deepCut ? "Moderate" : "Deep";
     api._recalcBestUse(d);
     if (isUnbuildable(col, row)) d.bestUse = null;
     return d;

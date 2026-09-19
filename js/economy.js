@@ -52,7 +52,7 @@ window.Economy = (function () {
   api._adjacencyBoost = adjacencyBoost;
 
   // income for ONE built tile in whole dollars
-  // (verdict mult x adjacency x stain debuff; blighted tiles earn $0).
+  // (verdict mult x adjacency x stain debuff x hazard debuff; blighted tiles earn $0).
   function tileIncome(col, row) {
     if (!window.GameState || !window.Buildings) return 0;
     var d = window.GameState.getTileData(col, row);
@@ -63,7 +63,12 @@ window.Economy = (function () {
     var stain = d.pollution || 0;
     var stainMult = stain >= STAIN_MAX ? 0 : (stain >= STAIN_DEBUFF_AT ? 0.5 : 1);
     if (stainMult <= 0) return 0;
-    return Math.max(0, Math.round(spec.incomePerTick * mult * (1 + adjacencyBoost(col, row)) * stainMult));
+    // Hazard debuff: active hazard halves income (Sinkhole = 0.25x)
+    var hazardMult = 1;
+    if (d.hazard?.active) {
+      hazardMult = (d.hazard.type === "Sinkhole") ? 0.25 : 0.5;
+    }
+    return Math.max(0, Math.round(spec.incomePerTick * mult * (1 + adjacencyBoost(col, row)) * stainMult * hazardMult));
   }
   api._tileIncome = tileIncome;
 
@@ -83,6 +88,7 @@ window.Economy = (function () {
   // one pollution pass: every source drips onto itself and breathes 25% of
   // its output onto each neighbor. Two-phase (compute then apply) so update
   // order can't bias the spread. Blight latches at max stain.
+  // Contamination Leak hazard adds +3 pollution to 4 orthogonal neighbors per tick.
   function applyStain() {
     var gs = window.GameState;
     if (!gs || !gs.tileData) return;
@@ -101,7 +107,23 @@ window.Economy = (function () {
         delta[k] = (delta[k] || 0) + out * STAIN_SPREAD;
       }
     }
-    if (!sources) return;
+    // Contamination Leak hazard: +3 pollution to 4 orthogonal neighbors per tick
+    for (var i = 0; i < keys.length; i++) {
+      var parts = keys[i].split(",");
+      var c = +parts[0], r = +parts[1];
+      var d = gs.tileData[keys[i]];
+      if (d.hazard?.active && d.hazard.type === "Contamination Leak") {
+        var ns = neighbors(c, r);
+        for (var j = 0; j < ns.length; j++) {
+          var k = ns[j].col + "," + ns[j].row;
+          delta[k] = (delta[k] || 0) + 3;
+        }
+      }
+    }
+    // Check if delta has any entries (Object.keys returns empty array for empty object)
+    var hasDelta = false;
+    for (var k in delta) { if (Object.prototype.hasOwnProperty.call(delta, k)) { hasDelta = true; break; } }
+    if (!sources && !hasDelta) return;
     for (var k2 in delta) {
       if (!Object.prototype.hasOwnProperty.call(delta, k2)) continue;
       var p2 = k2.split(",");
@@ -201,14 +223,18 @@ window.Economy = (function () {
   };
 
   // fields rewritten to match the stabilized verdict (panel stays coherent).
+  // Each archetype satisfies computeBestUse for its own target: Fair ground
+  // over moderate/deep bedrock reads Residential; firm ground over prime
+  // bedrock reads Commercial (the old archetypes cross-read each other's
+  // categories and contradicted the DATA panel on the next recompute).
   function applyArchetype(d, target, randFn) {
     if (target === "Residential") {
-      d.surfaceStability = randFn() < 0.7 ? "Good" : "Excellent";
+      d.surfaceStability = "Fair";
       d.bedrockDepth = randFn() < 0.5 ? "Moderate" : "Deep";
       d.mineralDeposits = randFn() < 0.7 ? "None" : "Trace";
     } else if (target === "Commercial") {
-      d.surfaceStability = "Fair";
-      d.bedrockDepth = pickField(randFn, [["Shallow", 1], ["Moderate", 1], ["Deep", 1]]);
+      d.surfaceStability = "Excellent";
+      d.bedrockDepth = randFn() < 0.5 ? "Moderate" : "Deep";
       d.mineralDeposits = randFn() < 0.8 ? "None" : "Trace";
     } else if (target === "Industrial") {
       d.surfaceStability = "Good";
@@ -235,6 +261,9 @@ window.Economy = (function () {
     if (gs.cash < STABILIZE_COST) return { ok: false, reason: "funds", cash: gs.cash };
     if (!gs.spend(STABILIZE_COST, "Land stabilization")) return { ok: false, reason: "funds" };
     var pick = api.pickStabilized(col, row, randFn);
+    // Waterfront rule applies to stabilized land too: floodplain takes homes
+    // only, so a river-adjacent roll is forced Residential before fields are set.
+    if (gs.isRiverAdjacent && gs.isRiverAdjacent(col, row)) pick.bestUse = "Residential";
     applyArchetype(d, pick.bestUse, (typeof randFn === "function") ? randFn : Math.random);
     if (d.zoneType && window.Buildings) {
       d.zoneVerdict = window.Buildings.verdictFor(d.zoneType, d.bestUse);

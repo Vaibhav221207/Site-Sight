@@ -73,6 +73,8 @@ window.MobileUI = (function () {
       if (mode !== "idle") {
         if (mode === "compacting" && window.CompactorTool && window.CompactorTool.cancel) {
           window.CompactorTool.cancel();
+        } else if (mode === "fixing-hazard" && window.RepairTool && window.RepairTool.cancel) {
+          window.RepairTool.cancel();
         } else if (window.BuildMenu && window.BuildMenu.cancel) {
           window.BuildMenu.cancel();
         }
@@ -84,6 +86,7 @@ window.MobileUI = (function () {
     });
     stop.addEventListener("click", function () {
       if (window.CompactorTool) window.CompactorTool.cancel();
+      if (window.RepairTool) window.RepairTool.cancel();
     });
   }
 

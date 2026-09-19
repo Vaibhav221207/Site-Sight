@@ -155,6 +155,22 @@ window.GprDeploy = (function () {
 
   // -- deployment scheduler ----------------------------------------------
 
+  // Release the input mode back to idle — but ONLY if the scan still owns
+  // it AND no other survey is still running (drone vs GPR share the same
+  // 'deploying-drone' mode; releasing one while the other still runs flickers
+  // the bar to idle for one frame before the other re-takes it).
+  function releaseMode() {
+    try {
+      var anyStill = false;
+      try { anyStill = !!(window.DroneDeploy && window.DroneDeploy.deploying); } catch(e){}
+      if (anyStill) return;
+      var IH = window.InputHandler;
+      if (IH && IH.setMode && IH.getMode && IH.getMode() === 'deploying-drone') IH.setMode('idle');
+    } catch (e) {}
+    // re-truth the build bar cards (locked while the scan ran)
+    try { if (window.BuildMenu && window.BuildMenu.refresh) window.BuildMenu.refresh(); } catch (e2) {}
+  }
+
   api.startDeployment = function () {
     if (api.deploying) return false;
     var gs = window.GameState;
@@ -181,9 +197,17 @@ window.GprDeploy = (function () {
     api.deploying = true;
     api.deployed = null;
     if (gs.inventory) gs.inventory.gprDeployed = null;
-    if (window.InputHandler && window.InputHandler.setMode) window.InputHandler.setMode('deploying-drone');
+    // take the mode only if nobody owns it (see droneDeploy.js: the
+    // unconditional steal + unconditional reset was the stuck-CANCEL desync).
+    var takeMode = true;
+    try {
+      takeMode = !window.InputHandler || !window.InputHandler.getMode ||
+        window.InputHandler.getMode() === 'idle';
+    } catch (e) {}
+    if (takeMode && window.InputHandler && window.InputHandler.setMode) window.InputHandler.setMode('deploying-drone');
+    try { if (window.BuildMenu && window.BuildMenu.refresh) window.BuildMenu.refresh(); } catch (e) {}
     api._fillSlots();
-    if (!api.deploying && window.InputHandler && window.InputHandler.setMode) window.InputHandler.setMode('idle');
+    if (!api.deploying) releaseMode();
     return true;
   };
 
@@ -210,7 +234,7 @@ window.GprDeploy = (function () {
         window.GameState.inventory.gprDeployed = { wholeMap: true };
       }
       if (typeof api.onDeployDone === "function") api.onDeployDone();
-      if (window.InputHandler && window.InputHandler.setMode) window.InputHandler.setMode('idle');
+      releaseMode();
     }
   };
 
@@ -244,6 +268,7 @@ window.GprDeploy = (function () {
     api.chunks = [];
     api.deploying = false;
     api.deployed = null;
+    releaseMode();
     setCursor("grab");
   };
 
@@ -413,18 +438,16 @@ window.GprDeploy = (function () {
     function fadeOut() {
       var s = zone.scan;
       if (!s) return;
+      // keep current pulse/ground/ringPhase — snapping to LO causes a dim flicker
+      // as the amber rings jump from HI to floor before alpha fades.
       if (s.pulseTween) { try { s.pulseTween.pause(); } catch (e) {} }
       if (s.groundTween) { try { s.groundTween.pause(); } catch (e) {} }
       if (s.sweepTween) { try { s.sweepTween.pause(); } catch (e) {} }
-      if (typeof anime !== "undefined" && anime && typeof anime.remove === "function") {
-        try { anime.remove(s); } catch (e) {}
-      }
+      // do not anime.remove(s) — would interfere with the alpha tween target
       s.pulseTween = null;
       s.groundTween = null;
       s.sweepTween = null;
-      s.pulse = RING_PULSE_LO;
-      s.ground = GROUND_PULSE_LO;
-      s.ringPhase = 0;
+      // s.pulse, s.ground, s.ringPhase deliberately untouched — alpha alone fades
       var t3 = anime({
         targets: s,
         alpha: 0,

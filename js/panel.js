@@ -131,6 +131,10 @@ window.TilePanel = (function () {
       if (mapped) { catLabel = mapped[0]; catColor = mapped[1]; }
     }
 
+    var whyText = "";
+    try {
+      whyText = (d && window.GameState && window.GameState.bestUseReason) ? (window.GameState.bestUseReason(d) || "") : "";
+    } catch (e) { whyText = ""; }
     var rows = [
       { label: "SURFACE STABILITY", value: (d && d.droneScanned) ? d.surfaceStability : ND },
       { label: "SOIL TYPE", value: (d && d.gprScanned) ? d.soilType : ND },
@@ -138,6 +142,21 @@ window.TilePanel = (function () {
       { label: "BEDROCK DEPTH", value: (d && d.gprScanned) ? d.bedrockDepth : ND },
       { label: "BEST USE", value: catLabel, badge: catColor }
     ];
+    // Hazard row
+    if (d && d.hazard?.active) {
+      var hazardColors = {
+        "Foundation Crack": "#C7432B",
+        "Structural Fatigue": "#FFB300",
+        "Utility Fault": "#42A5F5",
+        "Sinkhole": "#8E24AA",
+        "Flood Risk": "#22C55E",
+        "Contamination Leak": "#C7432B"
+      };
+      var hc = hazardColors[d.hazard.type] || "#FFB300";
+      rows.push({ label: "HAZARD", value: d.hazard.type, badge: hc });
+      rows.push({ label: "INCOME", value: d.hazard.type === "Sinkhole" ? "25% (sinkhole)" : "50% (hazard)" });
+    }
+    if (whyText) rows.push({ label: "WHY", value: whyText });
 
     if (bodyEl) {
       bodyEl.style.display = "";
