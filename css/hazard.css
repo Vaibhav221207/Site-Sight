@@ -1,0 +1,127 @@
+/* Hazard-stripe plate base — travels with the button, shadow compresses under it. */
+.start-enter-btn::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 14px;
+  background: repeating-linear-gradient(-45deg, #C7432B 0 9px, #FFFBF0 9px 18px);
+  border-top: 3px solid #2B2320;
+  border-radius: 0 0 15px 15px;
+  pointer-events: none;
+}
+
+/* ── Modern hazard layer (2025 CSS) ──
+   Replaces the former canvas-only hazard icons with a DOM overlay so we
+   can use current platform features: backdrop-filter glass, OKLCH, clamp(),
+   container queries, @layer, @starting-style, view-transition, :has().
+   Canvas path in js/blockRender.js is now a fallback; the DOM layer is
+   authoritative when it exists. */
+@layer hazard {
+  #hazard-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5; /* above canvas (0), below HUD (10) and modals (100) */
+    container-type: inline-size;
+    container-name: hazard-layer;
+    /* isolate backdrop without creating a stacking trap for children */
+    isolation: isolate;
+  }
+
+  .hazard-badge {
+    --hazard-size: clamp(20px, 3.4cqi, 26px);
+    position: absolute;
+    width: var(--hazard-size);
+    height: var(--hazard-size);
+    translate: -50% -100%;
+    margin-top: -8px;
+    display: grid;
+    place-items: center;
+    /* modern squircle, not harsh circle: continuous curve */
+    border-radius: 32%;
+    border: 1px solid rgba(255,255,255,0.18);
+    /* soft 3D matte plastic — subtle gradient, not flat */
+    background: linear-gradient(180deg, color-mix(in oklch, var(--hazard-color) 88%, white 12%) 0%, var(--hazard-color) 58%, color-mix(in oklch, var(--hazard-color) 82%, black 18%) 100%);
+    /* soft depth: outer shadow + top sheen inset */
+    box-shadow: 0 6px 14px rgba(0,0,0,0.18), 0 1px 0 rgba(255,255,255,0.45) inset, 0 -1px 0 rgba(0,0,0,0.10) inset;
+    /* no harsh black outline — let shadow do the separation */
+    color: #FFFBF0;
+    font-size: clamp(11px, 2.4cqi, 14px);
+    line-height: 1;
+    view-transition-name: hazard-badge;
+    overflow: hidden;
+    will-change: transform, opacity;
+    /* ui-ux-pro-max P3 performance: transform/opacity only, GPU-composited */
+  }
+  /* top sheen — like 2026 app icons: soft white gradient over upper half */
+  .hazard-badge::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgba(255,255,255,0.22) 0%, transparent 52%);
+    pointer-events: none;
+  }
+  .hazard-badge::after {
+    content: "";
+    position: absolute;
+    left: 30%;
+    top: 92%;
+    width: 22%;
+    height: 14%;
+    translate: -50% 0;
+    background: var(--hazard-color);
+    border-radius: 999px;
+    /* subtle, not black — soft tail */
+    box-shadow: 0 1px 6px rgba(0,0,0,0.22);
+    opacity: 0.95;
+  }
+
+  .hazard-badge__glyph {
+    font-weight: 900;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.45));
+    font-size: clamp(10px, 2.2cqi, 13px);
+    -webkit-text-stroke: 0.5px rgba(0,0,0,0.18);
+  }
+
+  /* container query: on very narrow containers (phone portrait) keep badges compact */
+  @container hazard-layer (max-width: 380px) {
+    .hazard-badge { --hazard-size: 20px; margin-top: -4px; }
+  }
+
+  /* entrance — view transition handles motion, instant for screenshots/headless */
+  .hazard-badge {
+    opacity: 1;
+    transition: scale 280ms cubic-bezier(0.34,1.56,0.64,1), translate 280ms cubic-bezier(0.22,1,0.36,1), opacity 220ms ease;
+  }
+  @starting-style {
+    .hazard-badge { opacity: 0; scale: 0.85; translate: -50% -92%; }
+  }
+
+  /* reduced motion: no pulse, no transition, no view-transition (design-motion a11y mandatory) */
+  @media (prefers-reduced-motion: reduce) {
+    .hazard-badge { transition: none; backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--hazard-color); animation: none; view-transition-name: none; }
+    .hazard-badge::before, .hazard-badge::after { animation: none; }
+  }
+
+  /* style query fallback example: if --hazard-accent not set, use muted */
+  @container style(--hazard-accent: muted) {
+    .hazard-badge { filter: saturate(0.7); }
+  }
+
+  /* :has() — if badge contains a crack glyph, slightly rotate for dynamism */
+  .hazard-badge:has([data-icon="crack"]) { rotate: -2deg; }
+  .hazard-badge:has([data-icon="biohazard"]) { rotate: 1deg; }
+
+  /* OKLCH hazard palette — perceptually even, accessible contrast (ui-ux P1: 4.5:1) */
+  .hazard-badge[data-hazard="Foundation Crack"] { --hazard-color: oklch(0.62 0.19 29); }
+  .hazard-badge[data-hazard="Structural Fatigue"] { --hazard-color: oklch(0.82 0.17 85); color: oklch(0.25 0 0); }
+  .hazard-badge[data-hazard="Structural Fatigue"] .hazard-badge__glyph { color: #2B2320; }
+  .hazard-badge[data-hazard="Utility Fault"] { --hazard-color: oklch(0.65 0.16 245); }
+  .hazard-badge[data-hazard="Sinkhole"] { --hazard-color: oklch(0.55 0.22 310); }
+  .hazard-badge[data-hazard="Flood Risk"] { --hazard-color: oklch(0.68 0.15 155); color: oklch(0.25 0 0); }
+  .hazard-badge[data-hazard="Flood Risk"] .hazard-badge__glyph { color: #2B2320; }
+  .hazard-badge[data-hazard="Contamination Leak"] { --hazard-color: oklch(0.60 0.20 28); }
+}

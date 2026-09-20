@@ -1,0 +1,960 @@
+/* Site Sight — chunky tactile mobile-game UI theme.
+   Chrome colors: warm cream #FFFBF0 panels, thick 3px "cartoon ink" outlines
+   #2B2320 (near-black warm brown), saturated coral #C7432B primary actions,
+   warm brown-gray #6B5B4F section labels, ink #2B2320 body text. Panels get
+   hard offset shadows (ZERO blur), buttons are pressable 3D keys with a
+   darker bottom "keycap" edge that collapses on press. Major titles use a
+   comic stroke outline. The outdoor game world is untouched by this theme. */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none; /* no pull-to-refresh / bounce-scroll on mobile */
+  /* Same backdrop as the title screen (blueprint night-survey gradient) so
+     the game world and the title feel like one continuous place. The canvas
+     is transparent, so this shows through behind the map + star layers. */
+  background: linear-gradient(180deg, #081426 0%, #0d2342 55%, #0a1a33 82%, #060d1d 100%);
+  font-family: "Baloo 2", sans-serif;
+  color: #2B2320;
+  overflow-x: hidden;
+}
+
+/* Night sky stars — flat white dots, no blur/glow, chunky minimal style.
+   The layer sits BEHIND the transparent game canvas so stars show through the
+   page's black backdrop without ever covering the tiles. Fixed z-index:0 with
+   the canvas at z-index:1 keeps stars above the viewport background. */
+#sky-deco {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+#sky-deco .star,
+.rotate-sky-deco .star {
+  position: absolute;
+  background: #FFFFFF;
+  border-radius: 50%;
+  opacity: 0.75;
+}
+
+#sky-deco .star--bright,
+.rotate-sky-deco .star--bright {
+  opacity: 1;
+  /* flat crisp sparkle — still hard-edged, no blur/glow */
+}
+
+.rotate-sky-deco {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+#game-canvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  cursor: grab;
+  touch-action: none; /* block default browser touch gestures (scroll/pinch) */
+  position: relative;
+  z-index: 1;
+}
+
+button {
+  font-family: "Baloo 2", sans-serif;
+  touch-action: manipulation; /* no double-tap zoom delay on UI taps */
+}
+
+/* ---- pressable 3D button recipe (shared by every UI button) --------------
+   Rest: solid fill + 3px ink outline + a bottom "keycap" edge in a darker
+   shade of the button's own fill (0 blur, offset only). Press: the button
+   visually pushes down 5px and its bottom edge disappears. Snappy ~90ms. */
+.btn-3d {
+  border: 3px solid #2B2320;
+  border-radius: 14px;
+  color: #FFFFFF;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: transform 0.09s ease, box-shadow 0.09s ease,
+    background 0.15s ease, color 0.15s ease;
+}
+
+.btn-3d:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 0 transparent !important;
+}
+
+.btn-3d:disabled,
+.btn-3d[disabled] {
+  cursor: not-allowed;
+  background: #E3DCCB;
+  color: #A69B88;
+  box-shadow: none !important;
+  transform: none;
+}
+
+.btn-3d:disabled:hover,
+.btn-3d[disabled]:hover {
+  background: #E3DCCB;
+}
+
+/* primary coral keycap button */
+.btn-coral {
+  background: #C7432B;
+  box-shadow: 0 2px 0 0 #000; /* darker coral bottom edge, zero blur */
+}
+
+.btn-coral:hover {
+  background: #A93226;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 3px solid #2B2320;
+  background-color: #F6EEDC;
+  overflow: hidden;
+}
+
+.panel-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #C7432B;
+  /* comic game-logo outline — thinner for SITE INSPECTION */
+  -webkit-text-stroke: 1.2px #2B2320;
+  paint-order: stroke fill;
+}
+
+.panel-close {
+  width: 28px;
+  height: 28px;
+  background: #C7432B;
+  box-shadow: 0 2px 0 0 #000;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.09s ease, box-shadow 0.09s ease,
+    background 0.15s ease;
+}
+
+.panel-close:hover {
+  background: #A93226;
+}
+
+.panel-close:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 0 transparent;
+}
+
+.panel-body {
+  padding: 12px 14px;
+  overflow: visible;
+}
+
+.tile-coords {
+  font-size: 12px;
+  font-weight: 700;
+  color: #2B2320;
+  margin-bottom: 8px;
+  word-break: break-word;
+}
+
+.placeholder {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.6;
+  color: #6B5B4F;
+  word-break: break-word;
+}
+
+.build-categories {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  overflow-x: auto;
+  padding: 1px 2px 4px;
+  scrollbar-width: none;
+}
+
+.build-categories::-webkit-scrollbar { display: none; }
+
+.build-cancel-btn {
+  padding: 6px 10px;
+  border: 2px solid #2B2320;
+  border-radius: 9px;
+  background: #C7432B;
+  color: #FFFFFF;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 #000;
+}
+
+.build-cancel-btn:hover {
+  background: #A93226;
+}
+
+.build-cancel-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 transparent;
+}
+
+.build-categories {
+  gap: 5px;
+  padding: 0 1px 3px;
+}
+
+/* ---- Mobile shell: portrait rotate overlay (touch devices only) ---- */
+.rotate-overlay {
+  position: fixed;
+  inset: 0;
+  /* topmost gate (above the title screen at 10000): portrait phones meet
+     the rotate prompt first, then get the identical title in landscape */
+  z-index: 10002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000000;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.rotate-card {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  max-width: 84vw;
+  padding: 28px 34px;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 16px;
+  box-shadow: 3px 3px 0 #000;
+  text-align: center;
+  overflow: hidden;
+}
+
+.rotate-icon {
+  width: 76px;
+  height: 76px;
+  flex: 0 0 auto;
+}
+
+.rotate-text {
+  font-size: 17px;
+  font-weight: 700;
+  color: #2B2320;
+  line-height: 1.4;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+@keyframes hqFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes hqFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+#data-minimap {
+  display: block;
+  flex: 0 0 auto;
+  /* fit-bound by default (pre-JS / no-JS): never exceed the wrap in either
+     axis; js/dataMap.js fitMap() then sets the exact square px size. */
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 1 / 1;
+  margin: auto; /* centers the square map in the frame; anchors top-left when zoomed/overflowing */
+  border-radius: 2px;
+  cursor: pointer;
+  touch-action: none; /* mini-map handles pan/pinch itself (mobile) */
+}
+
+/* panel data rows — chunky cards (fix AI thin-divider flat rows) */
+.panel-data-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 12px;
+  box-shadow: 3px 3px 0 #000;
+  font-size: 11px;
+  overflow: hidden;
+}
+
+.panel-data-row:last-child {
+  margin-bottom: 0;
+}
+
+.panel-data-label {
+  color: #6B5B4F;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 10px;
+  font-weight: 500;
+  overflow: hidden;
+}
+
+.panel-data-value {
+  color: #2B2320;
+  font-weight: 700;
+  text-align: right;
+  max-width: 65%;
+  word-break: break-word;
+  overflow: hidden;
+}
+
+/* Best Use badge inside the tile popup (category color chip) */
+.panel-data-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 3px solid #2B2320;
+  border-radius: 12px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+#mobile-ui {
+  position: fixed;
+  inset: 0;
+  /* under tile popup (900), build palette (1001), HQ overlay (1100) */
+  z-index: 850;
+  pointer-events: none;
+}
+
+.mu-sidebar {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  bottom: 12px;
+  width: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  pointer-events: auto;
+}
+
+.mu-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 6px;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 16px;
+  box-shadow: 3px 3px 0 #000;
+  overflow: hidden;
+}
+
+.mu-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #6B5B4F;
+  overflow: hidden;
+}
+
+.mu-value {
+  font-size: 17px;
+  font-weight: 700;
+  color: #2B2320;
+  overflow: hidden;
+}
+
+.mu-btn {
+  padding: 12px 6px;
+  background: #C7432B;
+  box-shadow: 0 2px 0 0 #000;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: transform 0.09s ease, box-shadow 0.09s ease,
+    background 0.15s ease;
+}
+
+.mu-btn:hover {
+  background: #A93226;
+}
+
+.mu-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 0 transparent;
+}
+
+.mu-btn:disabled {
+  background: #E3DCCB;
+  color: #A69B88;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.mu-btn--stop {
+  background: #C0392B;
+}
+
+.mu-btn--stop:hover {
+  background: #A03020;
+}
+
+/* "Enter Site Sight" button: touch-only (desktop never shows the overlay) */
+.rotate-enter {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 22px;
+  background: #C7432B;
+  box-shadow: 0 2px 0 0 #000;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: transform 0.09s ease, box-shadow 0.09s ease,
+    background 0.15s ease;
+}
+
+.rotate-enter:hover {
+  background: #A93226;
+}
+
+.rotate-enter:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 0 transparent;
+}
+
+body.touch-ui .rotate-enter { display: inline-flex; }
+
+.fs-btn:hover { background: #FFC133; }
+
+.fs-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 transparent;
+}
+
+.fs-btn svg {
+  width: 22px;
+  height: 22px;
+  fill: #2B2320;
+  flex-shrink: 0;
+}
+
+/* ---- mobile polish: safe-area insets + tap behavior (later-file overrides) --
+ * viewport-fit=cover puts the page under the notch / home indicator on
+ * phones; env() insets push every fixed UI element back inside the visible
+ * area. Also kill the iOS tap grey-flash / long-press callout and the
+ * double-tap zoom delay on buttons. */
+html,
+body {
+  -webkit-tap-highlight-color: transparent; /* no grey flash on tap */
+  -webkit-touch-callout: none;              /* no iOS long-press callout */
+}
+
+.fs-btn {
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  right: calc(env(safe-area-inset-right, 0px) + 12px);
+  left: auto;
+  touch-action: manipulation;
+}
+
+/* 44px minimum touch targets on the compact mobile controls */
+body.touch-ui .fs-btn {
+  width: 56px;
+  height: 56px;
+  touch-action: manipulation;
+}
+
+/* touch: the right-edge sidebar starts below the universal fullscreen
+   button (top-right) so its first chip is never covered */
+body.touch-ui .mu-sidebar {
+  top: calc(env(safe-area-inset-top, 0px) + 76px);
+}
+
+.mu-btn {
+  min-height: 44px;
+}
+
+.mu-sidebar {
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  right: calc(env(safe-area-inset-right, 0px) + 12px);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+}
+
+/* Fresh fullscreen toggle living INSIDE the title overlay — it shares the
+   overlay's fate, so no cross-layer stacking mystery is possible. Fades out
+   while the exit transition runs. */
+.site-fs-btn {
+  position: absolute;
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  right: calc(12px + env(safe-area-inset-right, 0px));
+  /* same immunity as the universal button */
+  pointer-events: auto;
+  z-index: 3;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: #FFB300;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
+  box-shadow: 0 3px 0 #2B2320;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.09s ease, box-shadow 0.09s ease, background 0.15s ease,
+    opacity 0.2s ease;
+}
+
+.site-fs-btn:hover { background: #FFC133; }
+
+.site-fs-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 transparent;
+}
+
+.site-fs-btn svg {
+  width: 24px;
+  height: 24px;
+  fill: #2B2320;
+}
+
+@keyframes horizon-breathe {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+@keyframes stripes-march {
+  to { background-position-x: 25.46px; }
+}
+
+@keyframes led-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+#site-loadgrid {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.build-strip {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+  min-height: 0;
+}
+
+.build-arrow {
+  flex: 0 0 38px;
+  min-height: 38px;
+  align-self: stretch;
+  background: #F6EEDC;
+  border: 3px solid #2B2320;
+  border-radius: 12px;
+  box-shadow: 2px 2px 0 #000;
+  color: #2B2320;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.build-arrow:hover:not([disabled]) { background: #FFF4DE; }
+
+.build-arrow:active:not([disabled]) {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 transparent;
+}
+
+.build-arrow:disabled {
+  opacity: 0.35;
+  cursor: default;
+  box-shadow: none;
+}
+
+.build-categories { justify-content: center; }
+
+/* ---- Start Screen Save Choice Pop-up Banner / Dossier Modal ---- */
+.save-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  animation: save-modal-fade 0.22s ease-out forwards;
+}
+
+.save-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.76);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.save-modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  max-height: min(92vh, 640px);
+  background: #FFFBF0;
+  border: 3.5px solid #2B2320;
+  border-radius: 24px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 8px 0 #2B2320;
+  padding: 18px 22px 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  animation: save-card-pop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  z-index: 1;
+}
+
+@keyframes save-modal-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes save-card-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.save-modal-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.save-modal-badge-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.save-modal-badge {
+  display: inline-block;
+  background: #FFB300;
+  color: #2B2320;
+  font-family: "Baloo 2", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 2px 10px;
+  border-radius: 8px;
+  border: 2px solid #2B2320;
+}
+
+.save-modal-seed {
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #615852;
+  letter-spacing: 0.04em;
+  background: #EAE3D5;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1.5px solid #2B2320;
+}
+
+.save-modal-close-btn {
+  width: 30px;
+  height: 30px;
+  background: transparent;
+  border: 2px solid #2B2320;
+  border-radius: 50%;
+  font-family: "Baloo 2", sans-serif;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 24px;
+  color: #2B2320;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+
+.save-modal-close-btn:hover {
+  background: #2B2320;
+  color: #FFFBF0;
+  transform: rotate(90deg);
+}
+
+/* Satellite / Blueprint Viewport */
+.save-modal-viewport-wrap {
+  position: relative;
+  width: 100%;
+  height: 135px;
+  min-height: 100px;
+  border-radius: 16px;
+  border: 2.5px solid #2B2320;
+  overflow: hidden;
+  background: #0F1A2C;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+#save-modal-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.save-modal-scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0) 0 3px, rgba(0, 0, 0, 0.15) 3px 6px);
+}
+
+.save-modal-cam-tag {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  font-family: monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #00E5FF;
+  background: rgba(15, 26, 44, 0.85);
+  border: 1px solid rgba(0, 229, 255, 0.4);
+  border-radius: 6px;
+  padding: 2px 6px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  pointer-events: none;
+}
+
+.save-modal-radar-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #00E5FF;
+  box-shadow: 0 0 6px #00E5FF;
+  animation: led-pulse 1.4s ease-in-out infinite;
+}
+
+.save-modal-progress-tag {
+  position: absolute;
+  bottom: 8px;
+  right: 10px;
+  font-family: "Baloo 2", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #FFFBF0;
+  background: rgba(15, 26, 44, 0.85);
+  border: 1.5px solid #2B2320;
+  border-radius: 6px;
+  padding: 2px 8px;
+  pointer-events: none;
+}
+
+/* 4-Stat Grid Dossier */
+.save-modal-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  background: #F2ECE1;
+  border: 2.5px solid #2B2320;
+  border-radius: 16px;
+  padding: 10px 8px;
+}
+
+.save-stat-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.save-stat-label {
+  font-family: "Baloo 2", sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #7A7067;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.save-stat-val {
+  font-family: "Baloo 2", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #2B2320;
+  line-height: 1.2;
+}
+
+.save-stat-cash {
+  color: #2E7D32;
+}
+
+.save-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.save-btn-continue {
+  position: relative;
+  min-height: 52px;
+  padding: 12px 20px 18px;
+  font-family: "Baloo 2", sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #FFFBF0;
+  background-color: #E8604A;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
+  box-shadow: inset 0 2px 0 rgba(255, 251, 240, 0.4), 0 5px 0 #2B2320;
+  cursor: pointer;
+  transition: transform 0.09s ease, box-shadow 0.09s ease, background-color 0.15s ease;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.save-btn-continue::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 9px;
+  background: repeating-linear-gradient(-45deg, #C7432B 0 8px, #FFFBF0 8px 16px);
+  border-top: 2px solid #2B2320;
+  pointer-events: none;
+}
+
+.save-btn-continue:hover {
+  transform: translateY(-2px);
+  background-color: #F8715D;
+  box-shadow: inset 0 2px 0 rgba(255, 251, 240, 0.4), 0 7px 0 #2B2320;
+}
+
+.save-btn-continue:hover::before {
+  animation: stripes-march 0.6s linear infinite;
+}
+
+.save-btn-continue:active {
+  transform: translateY(3px);
+  box-shadow: inset 0 2px 0 rgba(255, 251, 240, 0.2), 0 2px 0 #2B2320;
+}
+
+.save-btn-dot {
+  position: absolute;
+  top: 9px;
+  right: 14px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #00E5FF;
+  border: 1.5px solid #2B2320;
+  box-shadow: 0 0 8px 2px rgba(0, 229, 255, 0.9);
+  animation: led-pulse 1.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.save-btn-new {
+  position: relative;
+  min-height: 40px;
+  padding: 8px 16px;
+  font-family: "Baloo 2", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #615852;
+  background: #F2ECE1;
+  border: 2px solid #2B2320;
+  border-radius: 12px;
+  box-shadow: 0 3px 0 #2B2320;
+  cursor: pointer;
+  transition: transform 0.09s ease, box-shadow 0.09s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.save-btn-new:hover {
+  transform: translateY(-1px);
+  background: #FFF1EE;
+  color: #C7432B;
+  border-color: #C7432B;
+  box-shadow: 0 4px 0 #C7432B;
+}
+
+.save-btn-new:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #C7432B;
+}

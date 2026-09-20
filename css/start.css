@@ -1,0 +1,310 @@
+/* ---- Fullscreen toggle (universal, top-right, always visible) ----
+   Same corner as the start-screen toggle: the button never jumps between
+   screens, so muscle memory + tap delivery stay identical everywhere. */
+.fs-btn {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  left: auto;
+  /* explicit auto: taps must always land (immune to any inherited none) */
+  pointer-events: auto;
+  z-index: 20000;
+  min-width: 56px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+  background: #FFB300;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
+  box-shadow: 0 3px 0 #2B2320;
+  color: #2B2320;
+  font-family: "Baloo 2", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.09s ease, box-shadow 0.09s ease, background 0.15s ease;
+}
+
+/* ---- START SCREEN — Site Sight Title Screen (game-feel, taste-skill, ui-ux-promax) ---- */
+#start-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  --mx: 50%;
+  --my: 66%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(56px, 12vh, 110px);
+  padding: calc(12px + env(safe-area-inset-top, 0px)) calc(12px + env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) calc(12px + env(safe-area-inset-left, 0px));
+  background: linear-gradient(180deg, #081426 0%, #0d2342 55%, #0a1a33 82%, #060d1d 100%);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#start-screen.hidden { display: none !important; }
+
+#start-screen.is-leaving .site-fs-btn {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* The single background idea: a slow-drifting star field on plain black.
+   Reuses the game's starry-sky identity. Nothing else layered on top. */
+.start-bg {
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Distant site glow on the horizon — warm work lights, slow breathing. */
+.start-horizon {
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  bottom: -6%;
+  height: 30%;
+  background: radial-gradient(38% 90% at 50% 108%, rgba(255,179,0,0.5), rgba(232,96,74,0.16) 55%, transparent 70%);
+  pointer-events: none;
+  animation: horizon-breathe 6s ease-in-out infinite;
+}
+
+.start-stars {
+  position: absolute;
+  inset: -60px;
+  pointer-events: none;
+  background-image:
+    radial-gradient(2px 2px at 6% 8%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 18% 24%, #fff 50%, transparent 51%),
+    radial-gradient(3px 3px at 31% 12%, #FFFBF0 50%, transparent 51%),
+    radial-gradient(2px 2px at 44% 30%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 57% 9%, #fff 50%, transparent 51%),
+    radial-gradient(3px 3px at 68% 22%, #FFFBF0 50%, transparent 51%),
+    radial-gradient(2px 2px at 79% 40%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 90% 14%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 12% 58%, #fff 50%, transparent 51%),
+    radial-gradient(3px 3px at 25% 76%, #FFFBF0 50%, transparent 51%),
+    radial-gradient(2px 2px at 38% 64%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 52% 84%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 64% 58%, #fff 50%, transparent 51%),
+    radial-gradient(3px 3px at 76% 72%, #FFFBF0 50%, transparent 51%),
+    radial-gradient(2px 2px at 86% 88%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 94% 52%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 4% 44%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 22% 88%, #fff 50%, transparent 51%),
+    radial-gradient(3px 3px at 36% 48%, #FFFBF0 50%, transparent 51%),
+    radial-gradient(2px 2px at 48% 6%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 60% 92%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 72% 52%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 82% 66%, #fff 50%, transparent 51%),
+    radial-gradient(3px 3px at 96% 78%, #FFFBF0 50%, transparent 51%);
+  opacity: 0.8;
+  animation:
+    start-stars-drift 90s linear infinite alternate,
+    start-stars-twinkle 7s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes start-stars-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(60px, 60px, 0); }
+}
+
+@keyframes start-stars-twinkle {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.95; }
+}
+
+/* (ground strip removed — open sky below) */
+/* Scan reveal: a dim survey silhouette (faint iso grid + contour glows)
+   visible ONLY inside a small disc that follows the cursor — the one
+   interactive background idea. Plain dark everywhere outside it. */
+.start-reveal {
+  position: absolute;
+  inset: 0;
+  display: none;
+  pointer-events: none;
+  background-image:
+    radial-gradient(220px 160px at 30% 62%, rgba(0,172,193,0.16), transparent 70%),
+    radial-gradient(260px 180px at 68% 40%, rgba(232,96,74,0.13), transparent 70%),
+    repeating-linear-gradient(30deg, rgba(255,251,240,0.10) 0 1px, transparent 1px 34px),
+    repeating-linear-gradient(-30deg, rgba(255,251,240,0.10) 0 1px, transparent 1px 34px);
+  -webkit-mask-image: radial-gradient(circle 190px at var(--mx) var(--my), #000 0%, transparent 70%);
+  mask-image: radial-gradient(circle 190px at var(--mx) var(--my), #000 0%, transparent 70%);
+}
+
+@supports ((-webkit-mask-image: radial-gradient(circle 10px at 0 0, #000, transparent)) or (mask-image: radial-gradient(circle 10px at 0 0, #000, transparent))) {
+  .start-reveal { display: block; }
+}
+
+/* Occasional shooting star — JS-driven, one at a time, gone in a second. */
+.start-meteor {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  width: 140px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #FFFBF0);
+  opacity: 0;
+  pointer-events: none;
+  transform: rotate(-24deg);
+}
+
+/* Title: one clean treatment — cream Baloo 2, one hard coral offset.
+   One ambient motion only: a slow gentle float. */
+.start-title-block {
+  text-align: center;
+  animation: start-title-float 7s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes start-title-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.start-title {
+  margin: 0;
+  font-family: "Baloo 2", sans-serif;
+  font-size: clamp(34px, 11vw, 168px);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  color: #FFFBF0;
+  text-shadow: 4px 4px 0 #C7432B, 9px 9px 0 rgba(0,172,193,0.85);
+  transform: rotate(-2deg);
+}
+
+/* Split letters — each one wobbles when touched by the cursor. */
+.start-title .ch,
+.start-title .sp {
+  display: inline-block;
+  will-change: transform;
+}
+
+.start-title .ch { position: relative; }
+
+.start-title .sp { width: 0.28em; }
+
+@keyframes start-btn-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.start-enter-btn {
+  position: relative;
+  min-height: 80px;
+  padding: 24px 46px;
+  font-family: "Baloo 2", sans-serif;
+  font-size: clamp(17px, 2.4vw, 21px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #2B2320;
+  text-shadow: 0 2px 0 #C07F00;
+  background-color: #FFB300;
+  background-image:
+    radial-gradient(circle 3px at 14px 14px, #2B2320 98%, transparent),
+    radial-gradient(circle 3px at calc(100% - 14px) 14px, #2B2320 98%, transparent),
+    radial-gradient(circle 3px at 14px calc(100% - 32px), #2B2320 98%, transparent),
+    radial-gradient(circle 3px at calc(100% - 14px) calc(100% - 32px), #2B2320 98%, transparent);
+  border: 3px solid #2B2320;
+  border-radius: 18px;
+  box-shadow: inset 0 3px 0 rgba(255,251,240,0.45), 0 10px 0 #2B2320;
+  cursor: pointer;
+  transition: transform 0.09s ease, box-shadow 0.09s ease, background 0.15s ease;
+  will-change: transform, box-shadow;
+}
+
+.start-enter-btn:hover {
+  transform: translateY(-2px);
+  background-color: #FFC133;
+  box-shadow: inset 0 3px 0 rgba(255,251,240,0.45), 0 12px 0 #2B2320;
+}
+
+.start-enter-btn:hover::before {
+  animation: stripes-march 0.6s linear infinite;
+}
+
+.start-enter-btn:active {
+  background-color: #E69E00;
+}
+
+.start-enter-btn.is-down {
+  box-shadow: inset 0 3px 0 rgba(255,251,240,0.25), 0 2px 0 #2B2320;
+}
+
+/* Status LED — powered-equipment pilot light, gently breathing. */
+.start-enter-dot {
+  position: absolute;
+  top: 13px;
+  right: 30px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #00ACC1;
+  border: 2px solid #2B2320;
+  box-shadow: 0 0 8px 2px rgba(0,172,193,0.7);
+  animation: led-pulse 2.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Dust kicked up by the slam. */
+.start-dust {
+  position: absolute;
+  left: calc(50% - 4px);
+  top: 88%;
+  background: #FFFBF0;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.start-enter-btn:focus-visible {
+  outline: 3px solid #FFFBF0;
+  outline-offset: 4px;
+}
+
+/* While leaving, ambient loops stop so the exit tween owns the motion. */
+#start-screen.is-leaving .start-title-block,
+#start-screen.is-leaving .start-action-block,
+#start-screen.is-leaving .start-stars {
+  animation: none;
+}
+
+/* ---- Site loader: the transition out of the title ----
+   Opaque overlay so the title/button never share layout with the bar. */
+.site-loader {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 7vh;
+  gap: 14px;
+  background: transparent;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.site-loader[hidden] { display: none !important; }
+
+.site-loader-pct {
+  margin: 0;
+  font-family: "Baloo 2", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #2B2320;
+}

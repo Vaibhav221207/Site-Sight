@@ -1,0 +1,42 @@
+/* Mobile responsive rules */
+@media (max-width: 440px) {
+  .save-modal-card {
+    padding: 14px 14px 16px;
+    border-radius: 20px;
+    gap: 10px;
+  }
+  .save-modal-viewport-wrap {
+    height: 110px;
+  }
+  .save-modal-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+  .save-btn-continue {
+    font-size: 15px;
+    min-height: 48px;
+  }
+}
+
+@media (max-height: 600px) {
+  .save-modal-card {
+    padding: 10px 14px 12px;
+    gap: 6px;
+  }
+  .save-modal-viewport-wrap {
+    height: 85px;
+  }
+  .save-modal-stats-grid {
+    padding: 6px 8px;
+  }
+  .save-btn-continue {
+    min-height: 42px;
+    padding: 8px 14px 14px;
+    font-size: 14px;
+  }
+  .save-btn-new {
+    min-height: 32px;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+}

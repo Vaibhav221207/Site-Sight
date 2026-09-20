@@ -1,0 +1,889 @@
+/* ---- Build palette ---- */
+.build-bar {
+  position: fixed;
+  bottom: 92px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px 18px;
+  width: min(920px, calc(100vw - 24px));
+  max-height: min(70vh, 520px);
+  box-sizing: border-box;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 16px;
+  box-shadow: 3px 3px 0 #000;
+  z-index: 1001;
+  overflow: hidden;
+  transition: transform 0.16s ease-out, opacity 0.16s ease-out;
+  will-change: transform, opacity;
+}
+
+.build-bar.hidden {
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+}
+
+.build-bar-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6B5B4F;
+  overflow: hidden;
+}
+
+.build-bar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+}
+
+.build-category,
+.hq-store-filter {
+  flex: 0 0 auto;
+  min-height: 30px;
+  padding: 5px 10px;
+  border: 2px solid #2B2320;
+  border-radius: 10px;
+  background: #F6EEDC;
+  color: #6B5B4F;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.build-category.is-active,
+.hq-store-filter.is-active {
+  background: #C7432B;
+  color: #FFF;
+  box-shadow: 2px 2px 0 #000;
+}
+
+.build-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr));
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 2px 4px 4px 2px;
+  box-sizing: border-box;
+}
+
+.build-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  min-width: 0;
+  width: 100%;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
+  box-shadow: 3px 3px 0 #000;
+  color: #2B2320;
+  font-family: "Baloo 2", sans-serif;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.15s ease, background 0.15s ease,
+    box-shadow 0.09s ease, transform 0.09s ease;
+}
+
+.build-item:hover {
+  background: #F6EEDC;
+}
+
+.build-item.selected {
+  background: #C7432B;
+  color: #FFFFFF;
+  box-shadow: 0 2px 0 0 #000; /* selected = raised keycap look */
+}
+
+.build-item.selected .build-item-name,
+.build-item.selected .build-item-cost {
+  color: #FFFFFF;
+}
+
+.build-item:disabled,
+.build-item[disabled] {
+  cursor: not-allowed;
+  background: #E3DCCB;
+  color: #A69B88;
+  box-shadow: none;
+}
+
+.build-item:disabled .build-item-name,
+.build-item:disabled .build-item-cost {
+  color: #A69B88;
+}
+
+.build-item:disabled:hover {
+  background: #E3DCCB;
+}
+
+/* Author styles on .build-item otherwise override the browser's hidden
+   attribute, leaving filtered cards in the grid as empty overlapping slots. */
+.build-item[hidden] {
+  display: none !important;
+}
+
+.build-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+}
+
+.build-item[data-zone] {
+  border-top-width: 5px;
+}
+
+.build-item[data-zone="residential"] { border-top-color: #4C9A57; }
+
+.build-item[data-zone="commercial"] { border-top-color: #3B82F6; }
+
+.build-item[data-zone="industrial"] { border-top-color: #E0962A; }
+
+.build-item[data-zone="mining"] { border-top-color: #8B5FBF; }
+
+.build-item-icon img {
+  display: block;
+  max-width: 44px;
+  max-height: 44px;
+  width: auto;
+  height: auto;
+}
+
+.build-item-icon svg {
+  display: block;
+}
+
+.build-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.build-item-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #2B2320;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.build-item-cost {
+  font-size: 12px;
+  font-weight: 700;
+  color: #2B2320;
+  overflow: hidden;
+}
+
+/* ONE-TIME purchase state: permanently grayed out once the Drone System has
+   been bought (same disabled pattern as .build-item for Build HQ). */
+.hq-order-btn:disabled,
+.hq-order-btn[disabled] {
+  cursor: not-allowed;
+  background: #E3DCCB;
+  color: #A69B88;
+  box-shadow: none;
+  transform: none;
+}
+
+/* ---- management panel polish --------------------------------------------
+   Keep the build palette as a compact Skyline-style tool tray: categories
+   remain the primary navigation and cards are small selectable tools. */
+.build-bar {
+  left: 50%;
+  right: auto;
+  bottom: 82px;
+  width: min(980px, calc(100vw - 32px));
+  height: min(34vh, 300px);
+  max-height: min(34vh, 300px);
+  padding: 10px 12px 12px;
+  gap: 7px;
+  border-radius: 14px;
+  transform: translateX(-50%);
+}
+
+.build-bar.hidden {
+  transform: translate(-50%, 12px);
+}
+
+.build-bar-head {
+  min-height: 22px;
+}
+
+.build-category {
+  min-height: 27px;
+  padding: 4px 9px;
+  border-radius: 8px;
+  font-size: 9px;
+}
+
+.build-items {
+  flex: 1 1 0;
+  min-height: 0;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-auto-rows: minmax(70px, auto);
+  gap: 7px;
+  max-height: 190px;
+  padding: 1px 3px 3px 1px;
+}
+
+.build-item {
+  min-height: 70px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 5px;
+  border-width: 2px;
+  border-radius: 10px;
+  box-shadow: 2px 2px 0 #000;
+  text-align: center;
+}
+
+.build-item[data-zone] {
+  border-top-width: 4px;
+}
+
+.build-item-icon {
+  width: 34px;
+  height: 34px;
+}
+
+.build-item-icon img {
+  max-width: 34px;
+  max-height: 34px;
+}
+
+.build-item-info {
+  align-items: center;
+  gap: 0;
+  min-width: 0;
+  width: 100%;
+}
+
+.build-item-name {
+  width: 100%;
+  font-size: 11px;
+  line-height: 1.1;
+}
+
+.build-item-cost {
+  font-size: 10px;
+  line-height: 1.1;
+}
+
+@media (max-width: 900px) {
+  .build-bar {
+    left: 8px;
+    right: calc(env(safe-area-inset-right, 0px) + 78px);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+    width: auto;
+    height: 142px;
+    max-height: 142px;
+    transform: none;
+  }
+
+  .build-bar.hidden {
+    transform: translateY(12px);
+  }
+
+  .build-items {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: 58px;
+    max-height: 126px;
+    gap: 5px;
+  }
+
+  .build-item {
+    min-height: 58px;
+    padding: 3px 4px;
+  }
+
+  .build-item-icon {
+    width: 27px;
+    height: 27px;
+  }
+
+  .build-item-icon img {
+    max-width: 27px;
+    max-height: 27px;
+  }
+
+  .build-item-name {
+    font-size: 9px;
+  }
+
+  .build-item-cost {
+    font-size: 9px;
+  }
+
+  .hq-data-minimap-col {
+    flex-basis: 64%;
+    max-width: none;
+  }
+
+  .hq-data-side-col {
+    flex-basis: 36%;
+  }
+}
+
+@media (max-width: 640px) {
+  .build-bar {
+    right: calc(env(safe-area-inset-right, 0px) + 70px);
+    padding: 6px 7px 7px;
+  }
+
+  .build-bar-title {
+    font-size: 10px;
+  }
+
+  .build-cancel-btn {
+    min-height: 26px;
+    padding: 3px 7px;
+    font-size: 9px;
+  }
+
+  .hq-data-minimap-wrap {
+    min-height: 220px;
+    padding: 4px;
+  }
+
+  #hq-section-store .hq-store-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 150px));
+    justify-content: start;
+    gap: 8px;
+  }
+
+  .hq-inv-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 150px));
+    justify-content: start;
+    gap: 8px;
+  }
+
+  #hq-section-store .hq-fs-drone-row {
+    gap: 6px;
+    padding: 12px 10px 10px;
+  }
+
+  #hq-section-store .hq-store-ico {
+    width: 44px;
+    height: 44px;
+  }
+
+  #hq-section-store .hq-store-ico svg,
+  #hq-section-store .hq-store-ico img {
+    width: 34px;
+    height: 34px;
+  }
+
+  #hq-section-store .hq-fs-drone-name {
+    font-size: 12px;
+  }
+
+  #hq-section-store .hq-fs-drone-cost {
+    font-size: 11px;
+  }
+
+  #hq-section-store .hq-fs-drone-row .hq-order-btn {
+    min-height: 40px;
+    padding: 6px 10px;
+    font-size: 10px;
+  }
+}
+
+/* Short mobile landscape uses the city-builder pattern: horizontal section
+   tabs, then a scrollable work area. A vertical desktop rail wastes the most
+   valuable dimension on a phone. */
+@media (max-height: 500px) and (max-width: 900px) {
+  body.touch-ui .build-categories {
+    gap: 4px;
+    padding-bottom: 2px;
+  }
+  body.touch-ui .build-category {
+    min-height: 26px;
+    padding: 3px 8px;
+    font-size: 9px;
+  }
+  body.touch-ui .hq-data-overview {
+    gap: 4px;
+    margin-bottom: 6px;
+  }
+  body.touch-ui .hq-data-overview > div {
+    padding: 5px 7px;
+    border-width: 2px;
+  }
+  body.touch-ui .hq-data-overview strong { font-size: 14px; }
+  body.touch-ui .hq-data-overview span { font-size: 8px; }
+  body.touch-ui .hq-store-categories {
+    margin-bottom: 6px;
+  }
+  body.touch-ui .hq-store-filter {
+    min-height: 28px;
+    padding: 3px 8px;
+    font-size: 9px;
+  }
+  body.touch-ui #hq-panel {
+    width: calc(100vw - 12px);
+    height: calc(100dvh - 12px);
+    max-height: calc(100dvh - 12px);
+  }
+
+  body.touch-ui .hq-fs-header {
+    min-height: 44px;
+    padding: 5px 10px;
+  }
+
+  body.touch-ui .hq-fs-title {
+    font-size: 14px;
+  }
+
+  body.touch-ui .hq-fs-head-right {
+    gap: 8px;
+  }
+
+  body.touch-ui .hq-cash {
+    font-size: 14px;
+  }
+
+  body.touch-ui .hq-fs-body {
+    flex-direction: column;
+  }
+
+  body.touch-ui .hq-fs-nav {
+    flex: 0 0 48px;
+    flex-direction: row;
+    gap: 6px;
+    padding: 5px 6px;
+    border-right: 0;
+    border-bottom: 3px solid #2B2320;
+  }
+
+  body.touch-ui .hq-fs-nav-item {
+    min-height: 36px;
+    flex: 1 1 0;
+    flex-direction: row;
+    gap: 5px;
+    padding: 4px 6px;
+    font-size: 9px;
+    white-space: nowrap;
+  }
+
+  body.touch-ui .hq-nav-ico {
+    width: 16px;
+    height: 16px;
+  }
+
+  body.touch-ui .hq-fs-content {
+    padding: 8px;
+  }
+
+  body.touch-ui #hq-section-data {
+    overflow: auto;
+  }
+
+  body.touch-ui .hq-data-layout {
+    min-height: 100%;
+  }
+
+  body.touch-ui .hq-data-minimap-col {
+    flex-basis: 48%;
+  }
+
+  body.touch-ui .hq-data-side-col {
+    flex-basis: 52%;
+  }
+
+  body.touch-ui .hq-fs-drone-row {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr);
+    gap: 5px 8px;
+    align-items: center;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    background: #FFFBF0;
+    border: 3px solid #2B2320;
+    border-radius: 12px;
+    box-shadow: 2px 2px 0 #000;
+  }
+
+  body.touch-ui .hq-fs-drone-row .hq-store-ico {
+    grid-row: 1 / span 2;
+    width: 38px;
+    height: 38px;
+    border-width: 2px;
+    border-radius: 10px;
+  }
+
+  body.touch-ui .hq-fs-drone-info {
+    min-width: 0;
+    gap: 1px;
+  }
+
+  body.touch-ui .hq-fs-drone-name {
+    font-size: 13px;
+  }
+
+  body.touch-ui .hq-fs-drone-cost,
+  body.touch-ui .hq-store-blurb {
+    font-size: 10px;
+  }
+
+  body.touch-ui .hq-fs-drone-row .hq-order-btn {
+    grid-column: 2;
+    justify-self: stretch;
+    min-height: 34px;
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+
+  body.touch-ui .build-item:disabled {
+    opacity: 0.72;
+    background: #F0E9D8;
+    color: #6B5B4F;
+  }
+
+  body.touch-ui .build-item:disabled .build-item-name,
+  body.touch-ui .build-item:disabled .build-item-cost {
+    color: #6B5B4F;
+  }
+}
+
+/* Landscape phones have a short viewport and very little room for chrome.
+   Keep the palette clear of the right-hand control rail and make the title
+   screen fit without relying on browser zoom. */
+@media (max-width: 900px) {
+  #start-screen {
+    gap: clamp(24px, 8vh, 56px);
+    padding-left: max(12px, env(safe-area-inset-left, 0px));
+    padding-right: max(12px, env(safe-area-inset-right, 0px));
+  }
+
+  .start-title {
+    font-size: clamp(40px, 14vw, 96px);
+    text-shadow: 3px 3px 0 #C7432B, 6px 6px 0 rgba(0,172,193,0.85);
+  }
+
+  .start-enter-btn {
+    min-height: 64px;
+    padding: 18px 30px;
+    font-size: 17px;
+  }
+
+  body.touch-ui .mu-sidebar {
+    top: calc(env(safe-area-inset-top, 0px) + 76px);
+    right: calc(env(safe-area-inset-right, 0px) + 8px);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+    width: 62px;
+    gap: 8px;
+  }
+
+  body.touch-ui .mu-chip {
+    padding: 8px 5px;
+  }
+
+  body.touch-ui .mu-value {
+    max-width: 100%;
+    width: 100%;
+    min-width: 0;
+    font-size: 13px;
+    letter-spacing: -0.03em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+  }
+
+  body.touch-ui .build-bar {
+    left: 8px;
+    right: calc(env(safe-area-inset-right, 0px) + 78px);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+    width: auto;
+    max-height: min(46dvh, 190px);
+    min-height: 152px;
+    padding: 5px 8px 7px;
+    gap: 6px;
+    border-radius: 14px;
+    transform: none;
+  }
+
+  body.touch-ui .build-bar-head {
+    min-height: 24px;
+  }
+
+  body.touch-ui .build-cancel-btn {
+    min-height: 30px;
+    padding: 4px 8px;
+  }
+
+  body.touch-ui .build-items {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    overflow-x: auto;
+    overflow-y: hidden;
+    height: 64px;
+    flex: 0 0 auto;
+    gap: 6px;
+    padding: 2px 3px 4px 2px;
+  }
+
+  body.touch-ui .build-item {
+    flex: 0 0 104px;
+    width: 104px;
+    min-height: 56px;
+    height: 60px;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 4px 6px;
+    gap: 2px;
+    border-width: 2px;
+    border-radius: 11px;
+    box-shadow: 2px 2px 0 #000;
+  }
+
+  body.touch-ui .build-item-icon {
+    width: 26px;
+    height: 26px;
+  }
+
+  body.touch-ui .build-item-icon img {
+    max-width: 26px;
+    max-height: 26px;
+  }
+
+  body.touch-ui .build-item-name {
+    font-size: 10px;
+  }
+
+  body.touch-ui .build-item-cost {
+    font-size: 9px;
+  }
+}
+
+@media (min-width: 641px) and (max-height: 500px) {
+  body.touch-ui .build-items {
+    display: flex;
+  }
+}
+
+/* ---- end start screen ---- */
+
+/* Build toolbar: thumbnail rail + scroll arrows + category keys (head with
+   title + cancel on top). The strip is the single horizontal scroll direction
+   with fixed card footprints; nothing overlaps, nothing wraps. Colors stay on
+   the chunky cream theme — only geometry lives here. */
+.build-item[hidden] { display: none !important; }
+
+.build-bar {
+  left: 50%;
+  right: auto;
+  bottom: 82px;
+  width: min(860px, calc(100vw - 32px));
+  height: auto;
+  min-height: 190px;
+  max-height: min(46vh, 320px);
+  padding: 8px 10px 10px;
+  gap: 6px;
+  transform: translateX(-50%);
+}
+
+.build-bar.hidden { transform: translate(-50%, 12px); }
+
+.build-items {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-height: none;
+  height: 102px;
+  gap: 8px;
+  padding: 2px;
+  /* arrows own the scrolling (reference pattern): no scrollbar track cutting
+     across the strip */
+  scrollbar-width: none;
+}
+
+.build-items::-webkit-scrollbar { display: none; }
+
+.build-item {
+  flex: 0 0 100px;
+  width: 100px;
+  min-height: 0;
+  height: 98px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 4px;
+  border-width: 2px;
+  border-radius: 10px;
+  box-shadow: 2px 2px 0 #000;
+  text-align: center;
+}
+
+.build-item-icon { width: 52px; height: 52px; }
+
+.build-item-icon img { max-width: 52px; max-height: 52px; }
+
+.build-item-icon svg { width: 40px; height: 40px; }
+
+.build-item-info { align-items: center; gap: 0; min-width: 0; width: 100%; }
+
+.build-item-name { width: 100%; font-size: 11px; line-height: 1.15; }
+
+.build-item-cost { font-size: 10px; line-height: 1.15; }
+
+@media (max-width: 900px) {
+  .build-bar {
+    left: 8px;
+    right: calc(env(safe-area-inset-right, 0px) + 78px);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 56px);
+    width: auto;
+    height: auto;
+    min-height: 160px;
+    max-height: min(62dvh, 230px);
+    padding: 7px 8px 9px;
+    gap: 6px;
+    background: #1d2933;
+    border-color: #536573;
+    box-shadow: 3px 3px 0 #081017;
+    transform: none;
+  }
+  .build-bar.hidden { transform: translateY(12px); }
+  .build-bar-title { font-size: 10px; color: #e8f0f4; }
+  .build-arrow {
+    flex-basis: 38px;
+    min-height: 38px;
+    font-size: 22px;
+    background: #31424e;
+    border-color: #536573;
+    color: #e8f0f4;
+  }
+  .build-arrow:hover:not([disabled]) { background: #3b5361; }
+  .build-items {
+    flex: 1 1 auto;
+    height: 80px;
+    gap: 6px;
+  }
+  .build-item {
+    flex: 0 0 80px;
+    width: 80px;
+    height: 76px;
+    padding: 4px 3px;
+    background: #2b3a45;
+    border-color: #647985;
+    color: #eef6f8;
+    box-shadow: 2px 2px 0 #081017;
+  }
+  .build-item:hover { background: #3b5361; }
+  .build-item-icon { width: 34px; height: 34px; }
+  .build-item-icon img { max-width: 34px; max-height: 34px; }
+  .build-item-icon svg { width: 28px; height: 28px; }
+  .build-item-name { font-size: 9px; color: #eef6f8; }
+  .build-item-cost { font-size: 9px; color: #eef6f8; }
+  .build-category {
+    min-height: 26px;
+    padding: 3px 8px;
+    border-color: #536573;
+    background: #31424e;
+    color: #c6d3da;
+    box-shadow: none;
+  }
+  .build-category.is-active {
+    background: #22a9c4;
+    color: #06151b;
+    border-color: #8ce8f5;
+    box-shadow: 0 2px 0 #081017;
+  }
+  .hq-data-minimap-col { flex-basis: 64%; max-width: none; }
+  .hq-data-side-col { flex-basis: 36%; }
+}
+
+@media (max-width: 640px) {
+  .build-bar {
+    right: auto;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 54px);
+    width: auto;
+    height: auto;
+    min-height: 154px;
+    max-height: min(62dvh, 220px);
+    padding: 7px 8px 9px;
+    gap: 6px;
+    background: #1d2933;
+    border-color: #536573;
+    box-shadow: 3px 3px 0 #081017;
+  }
+  .build-bar-title { font-size: 10px; color: #e8f0f4; }
+  .build-categories { gap: 4px; padding-bottom: 1px; }
+  .build-category {
+    min-height: 25px;
+    padding: 3px 8px;
+    border-color: #536573;
+    background: #31424e;
+    color: #c6d3da;
+    box-shadow: none;
+  }
+  .build-category.is-active {
+    background: #22a9c4;
+    color: #06151b;
+    border-color: #8ce8f5;
+    box-shadow: 0 2px 0 #081017;
+  }
+  .build-arrow {
+    flex-basis: 36px;
+    min-height: 36px;
+    font-size: 20px;
+    background: #31424e;
+    border-color: #536573;
+    color: #e8f0f4;
+  }
+  .build-arrow:hover:not([disabled]) { background: #3b5361; }
+  .build-items { height: 76px; gap: 6px; }
+  .build-item {
+    flex: 0 0 78px;
+    width: 78px;
+    height: 72px;
+    padding: 4px 3px;
+    background: #2b3a45;
+    border-color: #647985;
+    color: #eef6f8;
+    box-shadow: 2px 2px 0 #081017;
+  }
+  .build-item:hover { background: #3b5361; }
+  .build-item-name, .build-item-cost { font-size: 9px; color: #eef6f8; }
+  .build-item-icon { width: 32px; height: 32px; }
+  .build-item-icon img { max-width: 32px; max-height: 32px; }
+  .build-item-icon svg { width: 26px; height: 26px; }
+  .hq-data-minimap-wrap { min-height: 220px; padding: 4px; }
+  #hq-section-store .hq-store-grid { grid-template-columns: 1fr; gap: 8px; }
+  #hq-section-store .hq-fs-drone-row { gap: 6px; padding: 10px; }
+  #hq-section-store .hq-store-ico { width: 40px; height: 40px; }
+  #hq-section-store .hq-store-ico svg, #hq-section-store .hq-store-ico img { width: 30px; height: 30px; }
+  #hq-section-store .hq-fs-drone-name { font-size: 12px; }
+  #hq-section-store .hq-fs-drone-cost { font-size: 11px; }
+  #hq-section-store .hq-fs-drone-row .hq-order-btn { min-height: 40px; padding: 6px 10px; font-size: 10px; }
+  .hq-inv-grid { grid-template-columns: 1fr; gap: 8px; }
+}

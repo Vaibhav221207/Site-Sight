@@ -1,0 +1,1712 @@
+.hq-fs-nav-item:focus,
+.hq-fs-close:focus,
+.hq-order-btn:focus,
+.hq-data-zone-btn:focus,
+.hq-data-bld-card:focus,
+.hq-fs-inventory-item:focus,
+.panel-close:focus,
+#data-minimap:focus {
+  outline: none;
+}
+
+/* ---- HQ panel sections (small popup) ---- */
+.hq-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: hidden;
+}
+
+.hq-status {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 14px;
+  border-bottom: 3px solid #2B2320;
+  overflow: hidden;
+}
+
+.hq-status-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6B5B4F;
+  overflow: hidden;
+}
+
+.hq-status-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #2B2320;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.hq-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.hq-section-header {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6B5B4F;
+  padding-bottom: 6px;
+  border-bottom: 2px solid rgba(43, 35, 32, 0.35);
+  overflow: hidden;
+}
+
+.hq-drone-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
+  box-shadow: 3px 3px 0 #000;
+  overflow: hidden;
+}
+
+.hq-drone-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.hq-drone-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #2B2320;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hq-drone-cost {
+  font-size: 14px;
+  font-weight: 700;
+  color: #2B2320;
+  overflow: hidden;
+}
+
+.hq-order-btn {
+  padding: 8px 22px;
+  background: #C7432B;
+  box-shadow: 0 2px 0 0 #000;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.09s ease, box-shadow 0.09s ease,
+    background 0.15s ease;
+}
+
+.hq-order-btn:hover:not([disabled]) {
+  background: #A93226;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 0 0 #000;
+}
+
+.hq-order-btn[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.hq-order-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 0 transparent;
+}
+
+.hq-order-btn.hq-order-btn--flash {
+  background: #F07060; /* brief "Ordered!" confirmation flash */
+  box-shadow: 0 2px 0 0 #000;
+}
+
+.hq-order-btn:disabled:hover {
+  background: #E3DCCB;
+}
+
+/* The map is the primary DATA interaction. Give it most of the work area
+   while keeping details available in a narrower inspector column. */
+#hq-panel {
+  max-width: 1080px;
+}
+
+.hq-data-minimap-col {
+  flex-basis: 68%;
+  max-width: 680px;
+}
+
+.hq-data-side-col {
+  flex-basis: 32%;
+}
+
+.hq-data-minimap-wrap {
+  min-height: 280px;
+}
+
+/* Store uses a light inventory-list treatment: one-line purpose, price, and
+   a small action key. Descriptive copy is available on the item title but
+   does not compete with the purchase action. */
+#hq-section-store .hq-fs-status {
+  display: none;
+}
+
+#hq-section-store .hq-fs-section {
+  margin-top: 12px;
+}
+
+#hq-section-store .hq-fs-section-header {
+  font-size: 11px;
+  padding-bottom: 5px;
+  margin-bottom: 2px;
+}
+
+#hq-section-store .hq-fs-drone-row {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 9px 4px;
+  align-items: center;
+}
+
+#hq-section-store .hq-store-ico {
+  width: 40px;
+  height: 40px;
+  border-width: 2px;
+  border-radius: 10px;
+}
+
+#hq-section-store .hq-store-ico svg,
+#hq-section-store .hq-store-ico img {
+  width: 30px;
+  height: 30px;
+}
+
+#hq-section-store .hq-fs-drone-info {
+  min-width: 0;
+  gap: 1px;
+}
+
+#hq-section-store .hq-fs-drone-name {
+  font-size: 14px;
+}
+
+#hq-section-store .hq-fs-drone-cost {
+  font-size: 12px;
+}
+
+#hq-section-store .hq-store-blurb {
+  display: none;
+}
+
+#hq-section-store .hq-fs-drone-row .hq-order-btn {
+  grid-column: auto;
+  min-height: 30px;
+  padding: 4px 10px;
+  border-width: 2px;
+  border-radius: 8px;
+  font-size: 10px;
+}
+
+/* ---- Full-screen HQ management overlay ---- */
+#hq-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(43, 35, 32, 0.55);
+  z-index: 1100;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+#hq-panel {
+  width: 90vw;
+  max-width: 800px;
+  max-height: 85vh;
+  max-height: 85dvh;
+  display: flex;
+  flex-direction: column;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 16px;
+  box-shadow: 4px 4px 0 #000;
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  transform: scale(0.85);
+  transition: transform 0.18s ease-out, opacity 0.18s ease-out;
+  will-change: transform, opacity;
+}
+
+.hq-fs-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 26px;
+  border-bottom: 3px solid #2B2320;
+  background-color: #F6EEDC;
+  overflow: hidden;
+  min-height: 78px;
+}
+
+.hq-fs-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 24px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #C7432B;
+  /* comic game-logo outline on major titles only */
+  -webkit-text-stroke: 2px #2B2320;
+  paint-order: stroke fill;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* survey-pin logo mark riding with the terminal title */
+.hq-title-mark {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.hq-fs-close {
+  width: 38px;
+  height: 38px;
+  background: #C7432B;
+  box-shadow: 0 2px 0 0 #000;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
+  color: #FFFFFF;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.09s ease, box-shadow 0.09s ease,
+    background 0.15s ease;
+}
+
+.hq-fs-close:hover {
+  background: #A93226;
+}
+
+.hq-fs-close:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 0 transparent;
+}
+
+.hq-fs-body {
+  display: flex;
+  flex-direction: row;
+  /* flex-fill the panel below the header — the content area scrolls
+     (no brittle pixel height math to keep in sync across viewports) */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* fixed footer action bar — visible at ALL breakpoints (unified layout):
+   STORE order buttons + INVENTORY Deploy are pinned here, always reachable
+   without scrolling. Hidden when empty or carrying only a hidden Deploy. */
+.hq-fs-footer {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 3px solid #2B2320;
+  background: #F6EEDC;
+}
+
+.hq-fs-footer:empty {
+  display: none;
+}
+
+.hq-fs-footer--hidden {
+  display: none;
+}
+
+.hq-fs-footer .hq-order-btn {
+  flex-shrink: 0;
+}
+
+/* left sidebar nav (shared layout, all breakpoints): fixed vertical rail of
+   chunky rounded segments. Never scrolls. */
+.hq-fs-nav {
+  flex: 0 0 128px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 20px 12px;
+  border-right: 3px solid #2B2320;
+  background: #F6EEDC;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.hq-fs-nav-item {
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 10px 6px;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
+  box-shadow: 2px 2px 0 #000;
+  color: #2B2320;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  will-change: transform;
+  transition: transform 0.09s ease, box-shadow 0.09s ease,
+    background 0.15s ease, color 0.15s ease;
+}
+
+.hq-fs-nav-item:hover {
+  transform: translateY(-1px);
+  background: #FFF4DE;
+  box-shadow: 3px 3px 0 #000;
+}
+
+/* tab glyphs ride currentColor: ink at rest, white on the active coral key */
+.hq-nav-ico {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.hq-fs-content {
+  will-change: transform, opacity;
+}
+
+.hq-fs-nav-item:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 0 transparent;
+}
+
+/* active tab = filled coral key (currently selected, looks pressed in) */
+.hq-fs-nav-item--active {
+  color: #FFFFFF;
+  background: #C7432B;
+  box-shadow: 0 2px 0 0 #000;
+}
+
+body.touch-ui .hq-fs-nav-item {
+  min-height: 44px;
+}
+
+/* content area: faint blueprint grid underneath everything — the survey
+   table reads as one instrument, cards floating over graph paper */
+.hq-fs-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 28px;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(43, 35, 32, 0.055) 0 1px, transparent 1px 22px),
+    repeating-linear-gradient(90deg, rgba(43, 35, 32, 0.055) 0 1px, transparent 1px 22px);
+  overscroll-behavior: contain;
+}
+
+.hq-fs-section {
+  animation: hqFadeIn 0.15s ease;
+}
+
+.hq-fs-placeholder {
+  font-size: 14px;
+  font-weight: 500;
+  color: #6B5B4F;
+  padding: 36px 0;
+  text-align: center;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+/* designed inventory empty state: centered stack, breathing room, one CTA */
+.hq-empty-inventory {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 44px 20px;
+}
+
+.hq-empty-text {
+  margin: 0;
+  max-width: 300px;
+  line-height: 1.5;
+}
+
+.hq-fs-status {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 16px;
+  border-bottom: 3px solid #2B2320;
+  overflow: hidden;
+}
+
+/* clickable inventory cards need a hover answer, not just selected/idle.
+   filter (not background): selection colors are set inline by JS, and the
+   hover must never wash out the selected state — it only deepens it. */
+.hq-fs-inventory-item:hover {
+  filter: brightness(0.96);
+}
+
+/* thin scrollbars inside the terminal scroll regions (brand-neutral) */
+.hq-fs-content,
+.hq-data-side-col,
+.hq-data-minimap-legend {
+  scrollbar-width: thin;
+  scrollbar-color: #6B5B4F transparent;
+}
+
+.hq-fs-content::-webkit-scrollbar,
+.hq-data-side-col::-webkit-scrollbar,
+.hq-data-minimap-legend::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.hq-fs-content::-webkit-scrollbar-thumb,
+.hq-data-side-col::-webkit-scrollbar-thumb,
+.hq-data-minimap-legend::-webkit-scrollbar-thumb {
+  background: #6B5B4F;
+  border-radius: 8px;
+}
+
+.hq-fs-section {
+  margin-top: 22px;
+}
+
+.hq-fs-status-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6B5B4F;
+  overflow: hidden;
+}
+
+.hq-fs-status-text {
+  font-size: 17px;
+  font-weight: 500;
+  color: #2B2320;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.hq-fs-section {
+  margin-top: 22px;
+}
+
+.hq-fs-section-header {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6B5B4F;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #2B2320;
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+
+/* amber survey-marker squares lead every section header: one rhythm,
+   zero extra markup, readable even before the words */
+.hq-fs-section-header::before,
+.hq-data-section-header::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  flex-shrink: 0;
+  margin-right: 8px;
+  background: #FFB300;
+  border: 2px solid #2B2320;
+  border-radius: 3px;
+}
+
+.hq-fs-drone-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding: 14px 6px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  border-bottom: 2px solid rgba(43, 35, 32, 0.18);
+  overflow: visible;
+  transition: background 0.15s ease;
+}
+
+.hq-fs-drone-row .hq-order-btn {
+  align-self: center;
+  flex-shrink: 0;
+  width: auto;
+  padding: 7px 14px;
+  font-size: 12px;
+  margin-top: 0;
+  margin-left: auto;
+}
+
+/* whole-row hover answers before the button does: quiet wash, not motion
+   (list rows have no keycap to press, so they tint instead of lifting) */
+.hq-fs-drone-row:hover {
+  background: #FFF9EC;
+  border-radius: 12px;
+}
+
+.hq-fs-drone-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  overflow: hidden;
+  flex: 1 1 auto;
+  min-width: 140px;
+}
+
+/* owned-count pills: ink chips with a system-color underline */
+.hq-fs-drone-owned {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #FFFBF0;
+  background: #2B2320;
+  border-radius: 10px;
+  padding: 2px 10px;
+  white-space: nowrap;
+}
+
+.hq-owned--drone {
+  box-shadow: inset 0 -2px 0 #C7432B;
+}
+
+.hq-owned--gpr {
+  box-shadow: inset 0 -2px 0 #E0962A;
+}
+
+.hq-owned--compactor {
+  box-shadow: inset 0 -2px 0 #7C7C74;
+}
+
+/* ---- HQ icon-led rows (STORE + INVENTORY + picker cards) ---------------
+   Every buyable/selectable carries a procedural glyph: silhouette-first
+   shapes that read at slot size, one accent each, ink outlines. */
+
+.hq-store-ico {
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  align-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
+  box-shadow: 2px 2px 0 #000;
+  transition: transform 0.15s ease-out;
+}
+
+/* system-tinted glyph tiles: the color tells you which row at a glance.
+   Tints run deep enough that white glyphs separate; every glyph carries an
+   ink drop-shadow so raster and vector read as one sticker family. */
+.hq-store-ico[data-icon="drone"] { background: #EDC9BE; }
+
+.hq-store-ico[data-icon="gpr"] { background: #F0D6A8; }
+
+.hq-store-ico[data-icon="compactor"] { background: #D8D5CB; }
+
+.hq-store-ico svg,
+.hq-store-ico img,
+.hq-inv-ico svg,
+.hq-inv-ico img,
+.hq-data-bld-ico svg {
+  filter: drop-shadow(1px 1px 0 rgba(43, 35, 32, 0.9));
+}
+
+.hq-store-ico svg,
+.hq-store-ico img {
+  width: 36px;
+  height: 36px;
+  display: block;
+  pointer-events: none;
+}
+
+/* row hover gives its glyph a nudge — the row feels alive, not printed */
+.hq-fs-drone-row:hover .hq-store-ico {
+  transform: rotate(-5deg) scale(1.07);
+}
+
+.hq-store-blurb {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #6B5B4F;
+  overflow: hidden;
+}
+
+/* progressive disclosure: once bought, the teaching blurb retires and the
+   row compacts to icon + name + price + owned + action */
+.hq-fs-drone-row.is-bought .hq-store-blurb {
+  display: none;
+}
+
+/* red-when-broke: unaffordable prices read as unaffordable pre-click */
+.hq-fs-drone-cost.cant-afford {
+  color: #C0392B;
+  font-weight: 700;
+}
+
+/* header cash strip: balance stays visible inside every tab */
+.hq-fs-head-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.hq-cash {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #2B2320;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* live fleet count on the INVENTORY nav key */
+.hq-nav-count {
+  display: inline-block;
+  min-width: 22px;
+  padding: 1px 6px;
+  margin-left: 4px;
+  background: #C7432B;
+  color: #FFFFFF;
+  border-radius: 11px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.hq-nav-count[hidden] {
+  display: none;
+}
+
+/* inventory entry internals: glyph + growing name + status pill */
+.hq-fs-inventory-item > .hq-fs-inventory-item-name {
+  flex: 1;
+  margin: 0 10px;
+}
+
+.hq-inv-ico {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+}
+
+.hq-inv-ico svg,
+.hq-inv-ico img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+
+.hq-inv-status {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #6B5B4F;
+  border: 2px solid #6B5B4F;
+  border-radius: 10px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.hq-inv-status--on {
+  color: #FFFFFF;
+  background: #C7432B;
+  border-color: #2B2320;
+}
+
+/* INVENTORY catalogue grid (same pattern as STORE): product cards in a
+   responsive grid, no repeated per-type headers. Wraps keep their hooks. */
+.hq-inv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 190px));
+  justify-content: start;
+  gap: 12px;
+}
+
+.hq-inv-grid .hq-fs-inventory-item > .hq-fs-inventory-item-name {
+  margin: 0;
+}
+
+.hq-inv-ico--lg {
+  width: 48px;
+  height: 48px;
+}
+
+/* building picker card head row: glyph + name share one line */
+.hq-data-bld-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hq-data-bld-ico {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+}
+
+.hq-data-bld-ico svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.hq-data-bld-head .hq-data-bld-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hq-fs-drone-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: #2B2320;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hq-fs-drone-cost {
+  font-size: 14px;
+  font-weight: 500;
+  color: #6B5B4F;
+  letter-spacing: 0.02em;
+  overflow: hidden;
+}
+
+/* ---- HQ DATA tab: flat top-down mini-map + category summary -------------
+   Shared side-by-side split (all breakpoints): mini-map column + a right
+   column holding tile details ABOVE the category summary. The right column
+   scrolls independently (min-height: 0 + overflow-y: auto flexbox fix). */
+#hq-section-data {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* DATA tab never scrolls itself: the mini-map is fit-bound to its wrap
+     (see fitMap in js/dataMap.js) and only the side column scrolls
+     internally. Keeps all 20x20 tiles visible without outer scroll. */
+  overflow: hidden;
+}
+
+#hq-section-data.hq-fs-section {
+  margin-top: 0;
+}
+
+.hq-data-overview {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.hq-data-overview > div {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 7px 10px;
+  background: #F6EEDC;
+  border: 3px solid #2B2320;
+  border-radius: 12px;
+  box-shadow: 2px 2px 0 #000;
+}
+
+.hq-data-overview strong { font-size: 18px; line-height: 1; color: #2B2320; }
+
+.hq-data-overview span { font-size: 9px; font-weight: 700; color: #6B5B4F; letter-spacing: .06em; }
+
+.hq-store-categories {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.hq-store-categories::-webkit-scrollbar { display: none; }
+
+.hq-store-group[hidden] { display: none; }
+
+.hq-data-layout {
+  display: flex;
+  flex-direction: row;
+  flex: 1 1 auto;
+  height: 100%;
+  gap: 12px;
+  align-items: stretch;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.hq-data-minimap-col {
+  flex: 1 1 62%;
+  min-width: 0;
+  min-height: 0;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.hq-data-map-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #F6EEDC;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
+  box-shadow: 3px 3px 0 #000;
+  overflow: hidden;
+}
+
+.hq-data-map-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6B5B4F;
+  overflow: hidden;
+}
+
+.hq-data-map-hint {
+  font-size: 10px;
+  color: #6B5B4F;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  overflow: hidden;
+}
+
+/* live selection count pill in the map header — the unmissable
+   "something is selected" signal next to the title */
+.hq-data-sel-count {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #2B2320;
+  background: #FFB300;
+  border: 2px solid #2B2320;
+  border-radius: 10px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}
+
+.hq-data-sel-count[hidden] {
+  display: none;
+}
+
+.hq-data-minimap-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  /* NOTE: no align/justify centering here on purpose — the canvas uses
+     margin:auto instead, so when pinch-zoom overflows the frame the
+     top/left tiles stay reachable via wrap scroll (flex centering would
+     strand negative overflow). Zoom is clipped here, never in the tab. */
+  background: #1a1a2e; /* dark survey void behind the world map */
+  border: 3px solid #2B2320;
+  border-radius: 16px;
+  box-shadow: 3px 3px 0 #000;
+  /* hidden (not auto): no scrollbars ever; one-finger pan + pinch still
+     work because dataMap.js drives wrap.scrollLeft/Top programmatically,
+     which functions on hidden scroll containers. */
+  overflow: hidden;
+  padding: 8px;
+}
+
+/* compact quick-reference legend strip directly under the mini-map */
+.hq-data-minimap-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 6px 10px;
+  background: #F6EEDC;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
+  box-shadow: 3px 3px 0 #000;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6B5B4F;
+  overflow: hidden;
+}
+
+.hq-data-minimap-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.hq-data-minimap-legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 4px;
+  border: 2px solid #2B2320;
+  flex-shrink: 0;
+}
+
+.hq-data-side-col {
+  flex: 1 1 38%;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hq-data-section-header {
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6B5B4F;
+  padding-bottom: 6px;
+  border-bottom: 2px solid rgba(43, 35, 32, 0.35);
+  overflow: hidden;
+}
+
+/* Cards inside the scrolling side column must never shrink-clip their own
+   content (an overflow:hidden flex item gets min-height:auto=0 and would cut
+   off e.g. the DESIGNATE ZONE keys). They keep full height; the COLUMN is
+   the only thing that scrolls. */
+.hq-data-side-col > * {
+  flex-shrink: 0;
+}
+
+.hq-data-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 16px;
+  box-shadow: 3px 3px 0 #000;
+  position: relative;
+  overflow: hidden;
+}
+
+.hq-data-details-empty {
+  font-size: 12px;
+  color: #6B5B4F;
+  padding: 6px 0;
+  word-break: break-word;
+}
+
+.hq-data-details-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  overflow: hidden;
+}
+
+.hq-data-details-row span {
+  color: #6B5B4F;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 10px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.hq-data-details-row strong {
+  color: #2B2320;
+  font-weight: 700;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hq-data-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border: 3px solid #2B2320;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.hq-data-categories {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.hq-data-cat-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 14px;
+  box-shadow: 3px 3px 0 #000;
+  font-size: 11px;
+  overflow: hidden;
+}
+
+.hq-data-cat-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 2px solid #2B2320;
+  flex-shrink: 0;
+}
+
+.hq-data-cat-label {
+  flex: 1;
+  min-width: 0;
+  color: #2B2320;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 10px;
+  overflow: hidden;
+}
+
+.hq-data-cat-count {
+  color: #6B5B4F;
+  font-size: 11px;
+  overflow: hidden;
+  white-space: nowrap;
+  /* numeric column: right-aligned tabular figures scan faster than labels */
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  min-width: 52px;
+}
+
+/* share-of-map bar pinned to the row's bottom edge: composition reads
+   without reading numbers, in the row's own category color */
+.hq-data-cat-row {
+  position: relative;
+  padding-bottom: 9px;
+}
+
+.hq-data-cat-bar {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 4px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(43, 35, 32, 0.10);
+  overflow: hidden;
+}
+
+.hq-data-cat-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+}
+
+/* ---- DATA tab: DESIGNATE ZONE (zoning merged into tile review) ----------
+   Inline confirm flow inside the details panel: 4 zone keys in a 2x2 grid,
+   cost box with match/mismatch copy, Confirm finalizes. Chunky sticker
+   recipe matches the rest of the HQ terminal. */
+.hq-data-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 2px dashed rgba(43, 35, 32, 0.28);
+}
+
+.hq-data-zone-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6B5B4F;
+  overflow: hidden;
+}
+
+.hq-data-zone-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.hq-data-zone-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 6px 8px;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 12px;
+  box-shadow: 2px 2px 0 #000;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #2B2320;
+  cursor: pointer;
+  transition: transform 0.09s ease, box-shadow 0.09s ease;
+}
+
+.hq-data-zone-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 transparent;
+}
+
+.hq-data-zone-btn:hover:not([disabled]),
+.hq-data-bld-card:hover {
+  background: #FFF4DE;
+}
+
+.hq-data-zone-btn[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.hq-data-zone-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  border: 2px solid #2B2320;
+  flex-shrink: 0;
+}
+
+.hq-data-zone-note {
+  font-size: 10px;
+  line-height: 1.45;
+  color: #6B5B4F;
+  word-break: break-word;
+}
+
+.hq-data-zone-note strong {
+  color: #2B2320;
+}
+
+.hq-data-zone-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  background: #F6EEDC;
+  border: 3px solid #2B2320;
+  border-radius: 12px;
+  box-shadow: 2px 2px 0 #000;
+}
+
+.hq-data-zone-cost {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.45;
+  color: #2B2320;
+  word-break: break-word;
+}
+
+.hq-data-zone-success {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.45;
+  color: #0B6E48;
+  padding: 6px 0;
+  word-break: break-word;
+}
+
+.hq-data-zone-confirm-btn[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Unclippable zone key labels: the text span truncates with ellipsis inside
+   the key instead of spilling past its edge (backstop for narrow columns) */
+.hq-data-zone-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* ---- DATA tab: building picker cards (one step past the zone keys) ----
+   Same sticker recipe; name + price lead, stats second, blurb last. */
+.hq-data-bld-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.hq-data-bld-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+  padding: 8px 10px;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 12px;
+  box-shadow: 2px 2px 0 #000;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: transform 0.09s ease, box-shadow 0.09s ease, background 0.15s ease;
+}
+
+.hq-data-bld-card:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 transparent;
+}
+
+.hq-data-bld-card--active {
+  background: #FFE9B8;
+}
+
+.hq-data-bld-name {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #2B2320;
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.hq-data-bld-cost {
+  color: #0B6E48;
+  white-space: nowrap;
+}
+
+.hq-data-bld-stats {
+  font-size: 10px;
+  font-weight: 700;
+  color: #6B5B4F;
+}
+
+.hq-data-bld-pips {
+  letter-spacing: 1px;
+  color: #B7791F;
+}
+
+.hq-data-bld-blurb {
+  font-size: 10px;
+  line-height: 1.4;
+  color: #6B5B4F;
+  word-break: break-word;
+}
+
+/* contradiction verdict colors: amber warns, red refuses-at-risk */
+.hq-data-verdict-mild {
+  color: #B7791F;
+  font-weight: 700;
+}
+
+.hq-data-verdict-severe {
+  color: #C0392B;
+  font-weight: 700;
+}
+
+/* DATA tab earns a wider sheet on desktop: the map keeps its majority share
+   while the details column finally fits full key labels + survey rows
+   without squeezing. Scoped to wide viewports so mobile sheets are untouched. */
+@media (min-width: 641px) {
+  #hq-panel.hq-panel--data {
+    max-width: 920px;
+  }
+  .hq-panel--data .hq-data-minimap-col {
+    flex: 1 1 58%;
+    max-width: 520px;
+  }
+  .hq-panel--data .hq-data-side-col {
+    flex: 1 1 42%;
+  }
+}
+
+/* Mobile responsive for DATA tab — SIDE-BY-SIDE SPLIT (same structure as
+   desktop, compact sizes): the mini-map column (map + compact legend) sits
+   next to a right column holding tile details ABOVE the category summary.
+   The right column scrolls independently (min-height:0 + overflow-y:auto
+   flexbox fix, inherited from the shared base); the map never scrolls to be
+   seen. */
+@media (max-height: 500px), (max-width: 640px) {
+  .hq-data-map-hint {
+    display: none;
+  }
+
+  /* left column: map fills available height; legend stays pinned below it */
+  .hq-data-minimap-col {
+    flex: 0 0 56%;
+    min-width: 0;
+    position: static;
+  }
+
+  .hq-data-map-header {
+    padding: 6px 10px;
+  }
+
+  .hq-data-map-title {
+    font-size: 11px;
+  }
+
+  .hq-data-minimap-wrap {
+    border-radius: 16px;
+    padding: 6px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #data-minimap {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;         /* square map, width-bound — tiles stay square */
+    min-width: 0;
+    border-radius: 2px;
+  }
+
+  /* compact legend: always-visible strip under the map, no toggle */
+  #data-minimap-legend {
+    display: flex;
+    gap: 4px 8px;
+    padding: 5px 8px;
+    font-size: 8px;
+  }
+
+  /* right column: tile details ABOVE category summary; scrolls on its own
+     (inherits min-height:0 + overflow-y:auto from the shared base) */
+  .hq-data-side-col {
+    flex: 1 1 44%;
+    min-width: 0;
+  }
+
+  .hq-data-layout {
+    gap: 8px;
+  }
+
+  .hq-data-details {
+    padding: 6px 8px;
+  }
+
+  .hq-data-section-header {
+    font-size: 9px;
+  }
+
+  .hq-data-categories {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .hq-data-cat-row {
+    padding: 4px 6px 8px;
+    font-size: 9px;
+    gap: 4px;
+  }
+  .hq-data-cat-bar {
+    left: 6px;
+    right: 6px;
+    bottom: 3px;
+    height: 3px;
+  }
+
+  .hq-data-cat-swatch {
+    width: 10px;
+    height: 10px;
+  }
+
+  .hq-data-cat-label {
+    font-size: 8px;
+  }
+
+  .hq-data-cat-count {
+    font-size: 9px;
+  }
+
+  /* DESIGNATE ZONE keys stay thumb-friendly in the narrow side column.
+     Single column here: full-width rows are always legible and tappable,
+     and the column scrolls for the rest. */
+  .hq-data-zone-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .hq-data-bld-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .hq-data-zone-btn {
+    min-height: 44px;
+    font-size: 10px;
+    border-radius: 10px;
+  }
+}
+
+/* close @media (max-height: 500px), (max-width: 640px) */
+
+/* Short viewports (mobile landscape ~390px height, short desktop windows):
+   squeeze the map column chrome to single rows so the wrap keeps maximum
+   square room. The legend scrolls horizontally inside its own strip only —
+   the tab itself never scrolls. */
+@media (max-height: 500px) {
+  .hq-data-map-header {
+    padding: 4px 8px;
+    gap: 6px;
+  }
+  .hq-data-map-title {
+    font-size: 10px;
+  }
+  .hq-data-minimap-legend {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 8px;
+    scrollbar-width: none;
+  }
+  .hq-data-minimap-legend::-webkit-scrollbar {
+    display: none;
+  }
+  .hq-data-minimap-col {
+    gap: 6px;
+  }
+  .hq-data-minimap-wrap {
+    padding: 6px;
+  }
+}
+
+/* OR: any touch device (even with unusual viewport) also gets inset sheet */
+body.touch-ui #hq-overlay {
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  padding-top: calc(12px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  padding-left: calc(16px + env(safe-area-inset-left, 0px));
+  padding-right: calc(16px + env(safe-area-inset-right, 0px));
+}
+
+body.touch-ui #hq-panel {
+  width: calc(100vw - 32px);
+  max-width: 720px;
+  height: calc(100dvh - 32px);
+  max-height: calc(100dvh - 32px);
+  border-radius: 16px;
+  box-shadow: 3px 3px 0 #000;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* On short touch landscape screens the DATA sheet must never grow wider than
+   the usable viewport. Both columns are allowed to shrink, while the details
+   column owns the vertical scroll. */
+@media (max-height: 500px) {
+  body.touch-ui #hq-overlay {
+    padding: 6px;
+  }
+
+  body.touch-ui #hq-panel {
+    width: calc(100vw - 12px);
+    height: calc(100dvh - 12px);
+    max-height: calc(100dvh - 12px);
+  }
+
+  body.touch-ui .hq-data-layout {
+    gap: 6px;
+  }
+
+  body.touch-ui .hq-data-minimap-col {
+    flex: 0 1 54%;
+    max-width: none;
+  }
+
+  body.touch-ui .hq-data-side-col {
+    flex: 1 1 46%;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  body.touch-ui .hq-data-zone-btn,
+  body.touch-ui .hq-data-bld-card {
+    min-width: 0;
+  }
+}
+
+/* Desktop short-window exception: mouse-based windows keep floating card */
+@media (max-height: 500px) and (pointer: fine) and (hover: hover),
+       (max-width: 640px) and (pointer: fine) and (hover: hover) {
+  #hq-overlay {
+    align-items: center;
+    justify-content: center;
+  }
+  #hq-panel {
+    width: 90vw;
+    max-width: 800px;
+    height: auto;
+    max-height: 85vh;
+    max-height: 85dvh;
+    border-radius: 16px;
+    box-shadow: 3px 3px 0 #000;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .start-title-block,
+  .start-action-block,
+  .start-stars,
+  .start-horizon {
+    animation: none;
+  }
+  .hq-fs-drone-row:hover .hq-store-ico {
+    transform: none;
+  }
+  .start-enter-dot,
+  .start-enter-btn:hover::before {
+    animation: none;
+  }
+  .start-reveal,
+  .start-meteor {
+    display: none;
+  }
+}
+
+#hq-panel { max-width: 1080px; }
+
+.hq-data-minimap-col { flex-basis: 68%; max-width: 680px; }
+
+.hq-data-side-col { flex-basis: 32%; }
+
+.hq-data-minimap-wrap { min-height: 280px; }
+
+#hq-section-store .hq-fs-status { display: none; }
+
+#hq-section-store .hq-fs-section { margin-top: 10px; }
+
+#hq-section-store .hq-fs-section:first-child { margin-top: 0; }
+
+#hq-section-store .hq-store-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 190px));
+  justify-content: start;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+#hq-section-store .hq-store-grid .hq-fs-section { margin-top: 0; }
+
+#hq-section-store .hq-fs-drone-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: center;
+  gap: 8px;
+  height: 100%;
+  padding: 16px 14px 14px;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 16px;
+  box-shadow: 3px 3px 0 #000;
+}
+
+#hq-section-store .hq-fs-drone-row:hover { background: #FFFBF0; }
+
+#hq-section-store .hq-store-ico { width: 56px; height: 56px; margin: 0 auto; border-width: 3px; border-radius: 14px; }
+
+#hq-section-store .hq-store-ico svg,
+#hq-section-store .hq-store-ico img { width: 44px; height: 44px; }
+
+#hq-section-store .hq-fs-drone-info { min-width: 0; gap: 2px; align-items: center; text-align: center; }
+
+#hq-section-store .hq-fs-drone-name { font-size: 15px; }
+
+#hq-section-store .hq-fs-drone-cost { font-size: 14px; font-weight: 700; color: #2B2320; }
+
+#hq-section-store .hq-store-blurb { display: none; }
+
+#hq-section-store .hq-fs-drone-row .hq-order-btn {
+  width: 100%;
+  min-height: 44px;
+  margin: 4px 0 0;
+  padding: 8px 14px;
+  border-width: 3px;
+  border-radius: 12px;
+  font-size: 12px;
+}
