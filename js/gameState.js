@@ -81,6 +81,7 @@ window.GameState = (function () {
     api.cash -= amount;
     api.cashLedger.push({ type: "expense", amount: amount, reason: reason || "Purchase", at: Date.now() });
     if (api.cashLedger.length > 100) api.cashLedger.shift();
+    try { if (window.SaveSystem) window.SaveSystem.markDirty(); } catch(e){}
     return true;
   };
 
@@ -90,6 +91,7 @@ window.GameState = (function () {
     api.cash += amount;
     api.cashLedger.push({ type: "income", amount: amount, reason: reason || "City income", at: Date.now() });
     if (api.cashLedger.length > 100) api.cashLedger.shift();
+    try { if (window.SaveSystem) window.SaveSystem.markDirty(); } catch(e){}
     return amount;
   };
 

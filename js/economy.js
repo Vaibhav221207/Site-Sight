@@ -272,6 +272,7 @@ window.Economy = (function () {
     if (window.Main && window.Main.updateHUD) window.Main.updateHUD();
     if (window.MobileUI && window.MobileUI.update) window.MobileUI.update();
     if (window.BlockRender) window.BlockRender.invalidate();
+    try { if (window.SaveSystem) window.SaveSystem.markDirty(); } catch(e){}
     try { console.log("[Economy] stabilized " + col + "," + row + " -> " + pick.bestUse + " for $" + STABILIZE_COST); } catch (e) {}
     return { ok: true, bestUse: pick.bestUse, net: STABILIZE_COST, cash: gs.cash };
   };
@@ -292,6 +293,7 @@ window.Economy = (function () {
     if (window.Main && window.Main.updateHUD) window.Main.updateHUD();
     if (window.MobileUI && window.MobileUI.update) window.MobileUI.update();
     if (window.BlockRender) window.BlockRender.invalidate();
+    try { if (window.SaveSystem) window.SaveSystem.markDirty(); } catch(e){}
     try { console.log("[Economy] scrubbed " + col + "," + row + " for $" + SCRUB_COST); } catch (e) {}
     return { ok: true, cash: gs.cash };
   };

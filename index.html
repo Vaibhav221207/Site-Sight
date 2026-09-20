@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <title>Site Sight</title>
   <!-- bump ?v= every time style.css changes so browsers/CDN never serve a stale cached copy -->
-  <link rel="stylesheet" href="css/style.css?v=55" />
+  <link rel="stylesheet" href="css/style.css?v=56" />
   <!-- Baloo 2 — rounded playful UI font -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -55,8 +55,61 @@
         <h1 class="start-title" id="start-title">SITE SIGHT</h1>
       </div>
 
-      <div class="start-action-block">
+      <div class="start-action-block" id="start-action-block">
         <button id="start-enter" class="start-enter-btn" type="button" aria-label="Start survey"><span class="start-enter-dot" aria-hidden="true"></span>START SURVEY</button>
+      </div>
+
+      <!-- Save Choice Pop-up Banner / Modal (City-Builder Dossier Style) -->
+      <div id="save-choice-modal" class="save-modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="save-modal-title">
+        <div class="save-modal-backdrop" id="save-modal-backdrop"></div>
+        <div class="save-modal-card">
+          <div class="save-modal-head-row">
+            <div class="save-modal-badge-group">
+              <span class="save-modal-badge" id="save-modal-sector">SITE OPERATION</span>
+              <span class="save-modal-seed" id="save-modal-seed">DOSSIER</span>
+            </div>
+            <button id="save-modal-close" class="save-modal-close-btn" type="button" aria-label="Close dialog">&times;</button>
+          </div>
+
+          <div class="save-modal-viewport-wrap">
+            <canvas id="save-modal-canvas" width="440" height="140" aria-label="Saved site satellite preview"></canvas>
+            <div class="save-modal-scanlines" aria-hidden="true"></div>
+            <div class="save-modal-cam-tag">
+              <span class="save-modal-radar-dot"></span>
+              SATELLITE RECON // ACTIVE SITE
+            </div>
+            <div class="save-modal-progress-tag" id="save-modal-scanned-tag">0% SCANNED</div>
+          </div>
+
+          <div class="save-modal-stats-grid">
+            <div class="save-stat-box">
+              <span class="save-stat-label">TREASURY</span>
+              <span class="save-stat-val save-stat-cash" id="save-modal-cash">$0</span>
+            </div>
+            <div class="save-stat-box">
+              <span class="save-stat-label">DEVELOPED</span>
+              <span class="save-stat-val" id="save-modal-buildings">0 BUILT</span>
+            </div>
+            <div class="save-stat-box">
+              <span class="save-stat-label">TRANSIT</span>
+              <span class="save-stat-val" id="save-modal-roads">0 ROADS</span>
+            </div>
+            <div class="save-stat-box">
+              <span class="save-stat-label">LAST ACTIVE</span>
+              <span class="save-stat-val" id="save-modal-time">JUST NOW</span>
+            </div>
+          </div>
+
+          <div class="save-modal-actions">
+            <button id="save-modal-continue" class="save-btn-continue" type="button">
+              <span class="save-btn-dot" aria-hidden="true"></span>
+              RESUME OPERATION
+            </button>
+            <button id="save-modal-new" class="save-btn-new" type="button">
+              START NEW EXPEDITION
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Transition loader — drone surveys the site, shown while entering -->
@@ -412,7 +465,8 @@
     <script src="js/blockRender.js?v=39"></script>
     <script src="js/input.js?v=5"></script>
     <script src="js/panel.js?v=4"></script>
-    <script src="js/gameState.js?v=8"></script>
+    <script src="js/gameState.js?v=9"></script>
+    <script src="js/saveSystem.js?v=2"></script>
     <script src="js/hazards.js?v=4"></script>
     <script src="js/progress.js"></script>
       <script src="js/ui.js?v=2"></script>
@@ -433,6 +487,6 @@
     <script src="js/mobileUI.js"></script>
     <script src="js/fullscreen.js?v=5"></script>
     <script src="js/orientation.js"></script>
-    <script src="js/startScreen.js?v=4"></script>
+    <script src="js/startScreen.js?v=6"></script>
   </body>
 </html>

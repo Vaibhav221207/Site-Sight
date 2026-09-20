@@ -58,6 +58,7 @@ window.HQBuild = (function () {
     // pop + dust celebration fires on the reveal tap, not here (see reveal).
     if (window.Construction && window.Construction.beginHQ) window.Construction.beginHQ(col, row);
     else if (window.BlockRender && window.BlockRender.triggerHQPlace) window.BlockRender.triggerHQPlace(col, row);
+    try { if (window.SaveSystem) window.SaveSystem.markDirty(); } catch(e){}
     if (typeof onSuccess === "function") onSuccess(col, row);
     return true;
   };

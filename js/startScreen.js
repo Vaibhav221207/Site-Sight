@@ -12,6 +12,7 @@
   var lastPointer = 0;
   var loading = false, prog = 0, shown = 0, lastTs = 0, shownPct = -1;
   var loadTiles = [], fillOrder = [];
+  var hasSave = false;
   // Deterministic capture hooks for headless visual review:
   //   #shot            start screen, settled (no entrance, no meteor)
   //   #shot=game       straight into the live map, no loader
@@ -76,9 +77,22 @@
     btn = document.getElementById('start-enter');
     loader = document.getElementById('site-loader');
     if(!screen || !btn) return;
+    
+    // Wire main start button
+    btn.addEventListener('click', handleStartClick);
+
+    // Wire save choice modal buttons
+    var contBtn = document.getElementById('save-modal-continue');
+    var newBtn = document.getElementById('save-modal-new');
+    var closeBtn = document.getElementById('save-modal-close');
+    var backdrop = document.getElementById('save-modal-backdrop');
+
+    if (contBtn) contBtn.addEventListener('click', continueGame);
+    if (newBtn) newBtn.addEventListener('click', newGame);
+    if (closeBtn) closeBtn.addEventListener('click', closeSaveModal);
+    if (backdrop) backdrop.addEventListener('click', closeSaveModal);
 
     splitLetters();
-    btn.addEventListener('click', enter);
     screen.addEventListener('pointermove', onPointer);
     window.addEventListener('keydown', onKey);
 
@@ -93,6 +107,193 @@
     startLoop();
     scheduleMeteor(2500);
     btn.focus();
+  }
+
+  function handleStartClick(){
+    if(entered) return;
+    var saveExists = false;
+    try {
+      if (window.SaveSystem) saveExists = window.SaveSystem.hasSave();
+    } catch(e){}
+
+    if (saveExists) {
+      openSaveModal();
+    } else {
+      enter();
+    }
+  }
+
+  function openSaveModal(){
+    var modal = document.getElementById('save-choice-modal');
+    if(!modal) { enter(); return; }
+
+    var saveObj = null;
+    try {
+      if (window.SaveSystem) {
+        var raw = localStorage.getItem(window.SaveSystem.SAVE_KEY);
+        if (raw) {
+          var d = JSON.parse(raw);
+          saveObj = d;
+          var bCount = 0;
+          var rCount = 0;
+          var scannedCount = 0;
+          var totalTiles = 400;
+
+          // tileData holds droneScanned per-tile, roads live in d.roads map, seed is d.seed (alias terrainSeed)
+          if (d.tileData) {
+            for (var k in d.tileData) {
+              var td = d.tileData[k];
+              if (td.zoneBuilding) bCount++;
+            }
+          }
+          // roads are not per-tile; count the global roads map
+          if (d.roads) rCount = Object.keys(d.roads).length;
+          // scanned is the global aerial scanned map (per-tile droneScanned is in tileData)
+          if (d.scanned) scannedCount = Object.keys(d.scanned).length;
+          else {
+            // fallback: count per-tile droneScanned for very old saves
+            for (var k2 in (d.tileData||{})) if (d.tileData[k2].droneScanned) scannedCount++;
+          }
+          if (d.droneScannedAll) scannedCount = totalTiles;
+
+          var scanPct = Math.min(100, Math.round((scannedCount / totalTiles) * 100));
+
+          var cashEl = document.getElementById('save-modal-cash');
+          var bldEl = document.getElementById('save-modal-buildings');
+          var roadEl = document.getElementById('save-modal-roads');
+          var timeEl = document.getElementById('save-modal-time');
+          var seedEl = document.getElementById('save-modal-seed');
+          var scanEl = document.getElementById('save-modal-scanned-tag');
+
+          if (cashEl) cashEl.textContent = '$' + (d.cash || 0).toLocaleString();
+          if (bldEl) bldEl.textContent = bCount + ' BUILT';
+          if (roadEl) roadEl.textContent = rCount + ' ROADS';
+          if (seedEl) seedEl.textContent = 'SEED #' + ((d.seed != null ? d.seed : d.terrainSeed) ? ((d.seed != null ? d.seed : d.terrainSeed) % 100000) : '001');
+          if (scanEl) scanEl.textContent = scanPct + '% SCANNED';
+
+          if (timeEl) {
+            var mins = Math.floor((Date.now() - (d.savedAt || Date.now())) / 60000);
+            if (mins < 1) timeEl.textContent = 'JUST NOW';
+            else if (mins < 60) timeEl.textContent = mins + 'M AGO';
+            else {
+              var hrs = Math.floor(mins / 60);
+              timeEl.textContent = hrs + (hrs === 1 ? ' HR AGO' : ' HRS AGO');
+            }
+          }
+        }
+      }
+    } catch(e){}
+
+    modal.style.display = 'flex';
+    requestAnimationFrame(function(){
+      drawSaveThumbnail(saveObj);
+    });
+
+    var contBtn = document.getElementById('save-modal-continue');
+    if (contBtn) contBtn.focus();
+  }
+
+  function drawSaveThumbnail(saveData) {
+    var cv = document.getElementById('save-modal-canvas');
+    if (!cv) return;
+    var ctx = cv.getContext('2d');
+    if (!ctx) return;
+
+    var rect = cv.getBoundingClientRect();
+    var w = Math.max(260, Math.floor(rect.width || cv.width || 400));
+    var h = Math.max(80, Math.floor(rect.height || cv.height || 140));
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    cv.width = Math.round(w * dpr);
+    cv.height = Math.round(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // Deep blueprint recon backdrop
+    ctx.fillStyle = '#0E1726';
+    ctx.fillRect(0, 0, w, h);
+
+    // High-tech coordinate grid
+    ctx.strokeStyle = 'rgba(0, 229, 255, 0.07)';
+    ctx.lineWidth = 1;
+    for (var gx = 0; gx <= w; gx += 20) {
+      ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, h); ctx.stroke();
+    }
+    for (var gy = 0; gy <= h; gy += 20) {
+      ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(w, gy); ctx.stroke();
+    }
+
+    var n = 20;
+    var layout = saveData && saveData.terrainLayout ? saveData.terrainLayout : null;
+    var tileData = saveData && saveData.tileData ? saveData.tileData : {};
+
+    // Isometric diamond calculations
+    var isoW = w / 23;
+    var isoH = isoW * 0.52;
+    var originX = w / 2;
+    var originY = 10;
+
+    for (var r = 0; r < n; r++) {
+      for (var c = 0; c < n; c++) {
+        var k = c + ',' + r;
+        var td = tileData[k] || {};
+        var type = (layout && layout.types && layout.types[k]) ? layout.types[k] : (td.type || 'land');
+
+        var px = originX + (c - r) * (isoW / 2);
+        var py = originY + (c + r) * (isoH / 2);
+
+        var elev = (layout && layout.elevations && layout.elevations[k]) ? layout.elevations[k] : 0;
+        py -= elev * 1.5;
+
+        // Tile base color
+        var color = '#3A5A35';
+        if (type === 'river') color = '#2574A9';
+        else if (type === 'trench') color = '#1E281F';
+        else if (type === 'rock') color = '#524B40';
+        else if (type === 'sand' || type === 'beach') color = '#7D734C';
+
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(px + isoW / 2, py + isoH / 2);
+        ctx.lineTo(px, py + isoH);
+        ctx.lineTo(px - isoW / 2, py + isoH / 2);
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+
+        // Road marker
+        if (td.road) {
+          ctx.beginPath();
+          ctx.arc(px, py + isoH / 2, isoW * 0.22, 0, Math.PI * 2);
+          ctx.fillStyle = '#D4A373';
+          ctx.fill();
+        }
+
+        // Building block
+        if (td.zoneBuilding || td.building) {
+          var bh = 7;
+          ctx.fillStyle = '#E8604A';
+          ctx.fillRect(px - isoW * 0.22, py + isoH * 0.2 - bh, isoW * 0.44, bh);
+          ctx.fillStyle = '#FFB300';
+          ctx.fillRect(px - isoW * 0.22, py + isoH * 0.2 - bh - 2, isoW * 0.44, 2);
+        }
+      }
+    }
+
+    // Radial vignette overlay for high-tech satellite screen feel
+    var grad = ctx.createRadialGradient(w / 2, h / 2, h * 0.2, w / 2, h / 2, w * 0.6);
+    grad.addColorStop(0, 'rgba(14, 23, 38, 0)');
+    grad.addColorStop(1, 'rgba(14, 23, 38, 0.75)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  function closeSaveModal(){
+    var modal = document.getElementById('save-choice-modal');
+    if (modal) modal.style.display = 'none';
+    if (btn) btn.focus();
   }
 
   function now(){
@@ -363,14 +564,62 @@
 
   function onKey(e){
     if(!screen) return;
+    var modal = document.getElementById('save-choice-modal');
+    var modalOpen = modal && modal.style.display !== 'none';
+
     if(e.key === 'Enter' || e.key === ' '){
       if(screen.classList.contains('hidden') || entered) return;
-      e.preventDefault();
-      enter();
+      if (modalOpen) {
+        var active = document.activeElement;
+        if (active && (active.id === 'save-modal-new' || active.id === 'save-modal-close')) return;
+        e.preventDefault();
+        continueGame();
+      } else {
+        e.preventDefault();
+        handleStartClick();
+      }
     } else if(e.key === 'Escape'){
-      if(screen.classList.contains('hidden')) show();
-      else if(!entered) enter();
+      if (modalOpen) {
+        e.preventDefault();
+        closeSaveModal();
+      } else if(screen.classList.contains('hidden')) {
+        show();
+      }
     }
+  }
+
+  function continueGame(){
+    if(entered) return;
+    closeSaveModal();
+    try {
+      if (window.SaveSystem) {
+        var d = window.SaveSystem.load();
+        if (d) {
+          window.SaveSystem.apply(d);
+          if (window.BlockRender && window.BlockRender.invalidate) window.BlockRender.invalidate();
+        }
+      }
+    } catch(e) { console.error("Continue failed", e); }
+    btn = document.getElementById('start-enter');
+    enter();
+  }
+
+  function newGame(){
+    if(entered) return;
+    var saveExists = false;
+    try { if (window.SaveSystem) saveExists = window.SaveSystem.hasSave(); } catch(e){}
+    if (saveExists) {
+      if (!confirm("This will erase your current save progress and generate a new survey site. Are you sure?")) return;
+      try { if (window.SaveSystem) window.SaveSystem.clearSave(); } catch(e){}
+      try {
+        if (window.Terrain && window.Terrain.regenerate) {
+          window.Terrain.regenerate((Date.now() ^ Math.floor(Math.random() * 0xffffffff)) >>> 0);
+        }
+      } catch(e){}
+    }
+    closeSaveModal();
+    btn = document.getElementById('start-enter');
+    enter();
   }
 
   // Compactor slam: anticipation rise, impact (shake + dust), recover —
@@ -541,6 +790,7 @@
     if(!screen) return;
     entered = false;
     loading = false;
+    closeSaveModal();
     for(var lj = 0; lj < loadTimers.length; lj++){ try { clearTimeout(loadTimers[lj]); } catch(e){} }
     loadTimers = [];
     if(loader) loader.style.pointerEvents = '';

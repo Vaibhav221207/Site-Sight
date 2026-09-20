@@ -112,6 +112,7 @@ window.Main = (function () {
     if (res && res.earned > 0 && window.UI && window.UI.toast) {
       window.UI.toast("+$" + res.earned.toLocaleString() + " income", { icon: "\uD83D\uDCB0", duration: 1800 });
     }
+    try { if (window.SaveSystem) window.SaveSystem.autosave(); } catch(e){}
   }
   function loop() {
     try {
@@ -203,6 +204,12 @@ window.Main = (function () {
     if (window.visualViewport && typeof window.visualViewport.addEventListener === "function") {
       window.visualViewport.addEventListener("resize", onResize);
     }
+    // catch tab closures/switches for autosave
+    document.addEventListener("visibilitychange", function() {
+      if (document.hidden) {
+        try { if (window.SaveSystem) window.SaveSystem.autosave(); } catch(e){}
+      }
+    });
     // each module init is isolated so one broken module cannot prevent canvas resize/loop
     function safeInit(name, fn) {
       try { fn(); } catch (err) {

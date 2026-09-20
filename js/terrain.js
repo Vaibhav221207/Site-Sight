@@ -243,6 +243,40 @@ window.Terrain = (function () {
       return n;
     },
     hqColor: "#4fc3f7",
+    // ---- SaveSystem layout hooks (expose private map for save/restore) ----
+    // flat row-major array of terrain ints (400 for 20x20)
+    getLayout: function () {
+      var flat = [];
+      for (var r = 0; r < GRID; r++) {
+        for (var c = 0; c < GRID; c++) {
+          flat.push(map[r][c]);
+        }
+      }
+      return flat;
+    },
+    // restore layout from a saved flat array; returns false on shape mismatch
+    setLayout: function (flat) {
+      if (!flat || flat.length !== GRID * GRID) return false;
+      for (var r = 0; r < GRID; r++) {
+        for (var c = 0; c < GRID; c++) {
+          map[r][c] = flat[r * GRID + c];
+        }
+      }
+      return true;
+    },
+    // re-generate terrain from a new seed (used by New Game)
+    regenerate: function (newSeed) {
+      var v = generateValid(newSeed);
+      SEED = v.seed;
+      api.seed = SEED;
+      var g = v.gen;
+      for (var r = 0; r < GRID; r++) {
+        for (var c = 0; c < GRID; c++) {
+          map[r][c] = g.map[r][c];
+        }
+      }
+      api.rockClusters = g.clusters;
+    }
   };
 
   return api;

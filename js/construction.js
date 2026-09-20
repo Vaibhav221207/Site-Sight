@@ -86,6 +86,7 @@ window.Construction = (function () {
       t0: api.now(),
       dur: DURATION,
     };
+    try { if (window.SaveSystem) window.SaveSystem.markDirty(); } catch(e){}
     return true;
   };
 
@@ -93,6 +94,7 @@ window.Construction = (function () {
   // a build phase (printer + robot), then waits under a curtain for tap-to-reveal.
   api.beginHQ = function (col, row) {
     api.hqBuild = { col: col, row: row, t0: api.now() };
+    try { if (window.SaveSystem) window.SaveSystem.markDirty(); } catch(e){}
     if (window.BlockRender && window.BlockRender.invalidate) {
       try { window.BlockRender.invalidate(); } catch (e) {}
     }
@@ -140,6 +142,7 @@ window.Construction = (function () {
     }
     d.curtain = null;
     api.bursts.push({ c: col, r: row, t0: now });
+    try { if (window.SaveSystem) window.SaveSystem.markDirty(); } catch(e){}
     if (window.Main && window.Main.updateHUD) {
       try { window.Main.updateHUD(); } catch (e4) {}
     }
