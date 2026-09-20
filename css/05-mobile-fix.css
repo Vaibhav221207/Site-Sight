@@ -1,0 +1,193 @@
+/* 05-mobile-fix.css — LAST in cascade. Precision fix for mobile landscape
+ * conjunction (Nov 2026 screenshots): HQ nav active tab white-on-cream,
+ * mobile rail bleeding through overlay, STORE cards cut, DATA cramped,
+ * CASH truncated. Loads after all functional splits so these win.
+ *
+ * Design read (taste-skill): shipped game HQ terminal for site managers on
+ * phones, chunky industrial, vanilla CSS. Dials VARIANCE 5 / MOTION 3 /
+ * DENSITY 5 — preserve, compact, no new motion.
+ * Motion (design-motion-principles): Emil restraint for frequent tab taps
+ * (no new animation), Jakub 200ms polish max, reduced-motion respected.
+ * UX (ui-ux-pro-max): 44px targets, 8px gaps, 4.5:1 contrast, svh + safe-area
+ * (web research: openreplay/shadeed/polypane 2025-26). */
+
+/* 1) Active tab bulletproof — higher specificity + !important so no split
+ * file can wash the coral out (was white-on-cream in screenshots). */
+#hq-panel .hq-fs-nav-item.hq-fs-nav-item--active {
+  background: #C7432B !important;
+  color: #FFFFFF !important;
+  border-color: #2B2320 !important;
+  box-shadow: 0 2px 0 0 #000 !important;
+}
+#hq-panel .hq-fs-nav-item.hq-fs-nav-item--active .hq-nav-ico {
+  color: #FFFFFF !important;
+}
+#hq-panel .hq-fs-nav-item.hq-fs-nav-item--active .hq-nav-count {
+  background: #FFFFFF !important;
+  color: #C7432B !important;
+}
+#hq-panel .hq-fs-nav-item:not(.hq-fs-nav-item--active) {
+  background: #FFFBF0;
+  color: #2B2320;
+}
+
+/* 2) Hide mobile rail + fs button bleed while terminal open (right-edge
+ * SH/,0../LD ghost in screenshots). JS toggles body.hq-open; :has covers
+ * no-JS/at-load edge. */
+body.hq-open #mobile-ui,
+body.hq-open #fs-btn {
+  display: none !important;
+}
+body.touch-ui:has(#hq-overlay[style*="visible"]) #mobile-ui {
+  display: none;
+}
+
+/* 3) Touch overlay uses stable viewport + safe-area (web research: svh for
+ * stable modal, NOT jumping dvh; opaque enough to hide rail bleed). */
+body.touch-ui #hq-overlay {
+  height: 100svh;
+  max-height: 100svh;
+  padding: 6px;
+  padding-top: max(6px, env(safe-area-inset-top, 0px));
+  padding-bottom: max(6px, env(safe-area-inset-bottom, 0px));
+  padding-left: max(6px, env(safe-area-inset-left, 0px));
+  padding-right: max(6px, env(safe-area-inset-right, 0px));
+  background: rgba(20, 14, 12, 0.82);
+}
+body.touch-ui #hq-panel {
+  width: calc(100svw - 12px);
+  max-width: 100svw;
+  height: calc(100svh - 12px);
+  max-height: calc(100svh - 12px);
+  min-height: 0;
+  overflow: hidden;
+}
+#hq-panel .hq-fs-body {
+  min-height: 0;
+  overflow: hidden;
+}
+#hq-panel .hq-fs-content {
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+}
+
+/* 4) Short landscape nav: one scroll-safe row, equal keys, 44px targets. */
+@media (max-height: 500px) {
+  body.touch-ui #hq-panel .hq-fs-body {
+    flex-direction: column;
+  }
+  body.touch-ui #hq-panel .hq-fs-nav {
+    flex: 0 0 auto;
+    flex-direction: row;
+    gap: 6px;
+    padding: 6px;
+    border-right: 0;
+    border-bottom: 3px solid #2B2320;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+  body.touch-ui #hq-panel .hq-fs-nav::-webkit-scrollbar {
+    display: none;
+  }
+  body.touch-ui #hq-panel .hq-fs-nav-item {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 44px;
+    flex-direction: row;
+    gap: 6px;
+    padding: 6px 8px;
+    font-size: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* 5) STORE + INVENTORY grids: fit narrow sheets, never clip BUY/Deploy. */
+#hq-section-store .hq-store-grid,
+#hq-section-inventory .hq-inv-grid,
+.hq-inv-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(160px, 100%), 1fr));
+  align-content: start;
+  align-items: stretch;
+}
+#hq-section-store .hq-fs-drone-row,
+#hq-section-inventory .hq-fs-inventory-item-wrap {
+  min-width: 0;
+  max-width: 100%;
+}
+#hq-panel .hq-order-btn {
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* 6) DATA tab on short screens: stack map above details so neither squeezes
+ * (screenshot 3: dotted map + cut zone keys). Map caps at 38svh, column owns
+ * the scroll. Desktop untouched (body.touch-ui + height guard). */
+@media (max-height: 500px) {
+  body.touch-ui #hq-section-data {
+    overflow-y: auto;
+  }
+  body.touch-ui #hq-section-data .hq-data-layout {
+    flex-direction: column;
+    overflow: visible;
+    height: auto;
+    min-height: 0;
+  }
+  body.touch-ui #hq-section-data .hq-data-minimap-col {
+    flex: 0 0 auto;
+    max-width: none;
+    width: 100%;
+  }
+  body.touch-ui #hq-section-data #data-minimap {
+    max-height: 38svh;
+  }
+  body.touch-ui #hq-section-data .hq-data-side-col {
+    flex: 0 0 auto;
+    width: 100%;
+    overflow: visible;
+  }
+}
+
+/* 7) Mobile rail cash truncation ($35,0... in screenshot 4): wider rail,
+ * tighter tabular Mono, guaranteed ellipsis. */
+body.touch-ui #mobile-ui .mu-sidebar {
+  width: 72px;
+}
+body.touch-ui #mobile-ui .mu-chip {
+  min-width: 0;
+}
+body.touch-ui #mobile-ui .mu-value {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: -0.02em;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 8) Industrial type hardening: system fallbacks so offline file:// never
+ * falls back to serif (previous white-page screenshot). */
+body, button, .hq-fs-nav-item, .hq-order-btn {
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.hq-fs-title, .hq-fs-drone-name, .panel-title, .start-title {
+  font-family: "Space Grotesk", "Inter", system-ui, sans-serif;
+}
+
+/* 9) Reduced motion: no new transitions introduced here; respect setting. */
+@media (prefers-reduced-motion: reduce) {
+  #hq-panel .hq-fs-nav-item {
+    transition: none;
+  }
+}

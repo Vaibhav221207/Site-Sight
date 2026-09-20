@@ -412,6 +412,8 @@ window.HqPanel = (function () {
     api.overlayEl.style.pointerEvents = "auto";
     // lock the page behind the modal so touch scroll can't escape under it
     try { document.body.style.overflow = "hidden"; } catch (e) {}
+    // mobile rail must hide while terminal is open (see 05-mobile-fix.css)
+    try { document.body.classList.add("hq-open"); } catch (e2) {}
     // reopen where the player left off (DATA on first open)
     var target = api.currentSection || "data";
     api.currentSection = "";
@@ -464,6 +466,7 @@ window.HqPanel = (function () {
       api.panelEl.style.transition = "";
       if (api.overlayEl) api.overlayEl.style.transition = "";
       try { document.body.style.overflow = ""; } catch (e) {}
+      try { document.body.classList.remove("hq-open"); } catch (e3) {}
       // return focus to whatever opened the panel (APG close contract)
       try { if (api._opener && api._opener.focus) api._opener.focus(); } catch (e2) {}
       api._opener = null;
