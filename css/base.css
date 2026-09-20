@@ -22,7 +22,7 @@ body {
      the game world and the title feel like one continuous place. The canvas
      is transparent, so this shows through behind the map + star layers. */
   background: linear-gradient(180deg, #081426 0%, #0d2342 55%, #0a1a33 82%, #060d1d 100%);
-  font-family: "Baloo 2", sans-serif;
+  font-family: "Inter", sans-serif;
   color: #2B2320;
   overflow-x: hidden;
 }
@@ -72,7 +72,7 @@ body {
 }
 
 button {
-  font-family: "Baloo 2", sans-serif;
+  font-family: "Inter", sans-serif;
   touch-action: manipulation; /* no double-tap zoom delay on UI taps */
 }
 
@@ -699,7 +699,7 @@ body.touch-ui .mu-sidebar {
   display: inline-block;
   background: #FFB300;
   color: #2B2320;
-  font-family: "Baloo 2", sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -726,7 +726,7 @@ body.touch-ui .mu-sidebar {
   background: transparent;
   border: 2px solid #2B2320;
   border-radius: 50%;
-  font-family: "Baloo 2", sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 19px;
   font-weight: 700;
   line-height: 24px;
@@ -807,7 +807,7 @@ body.touch-ui .mu-sidebar {
   position: absolute;
   bottom: 8px;
   right: 10px;
-  font-family: "Baloo 2", sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -838,7 +838,7 @@ body.touch-ui .mu-sidebar {
 }
 
 .save-stat-label {
-  font-family: "Baloo 2", sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -848,7 +848,7 @@ body.touch-ui .mu-sidebar {
 }
 
 .save-stat-val {
-  font-family: "Baloo 2", sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 13px;
   font-weight: 700;
   color: #2B2320;
@@ -869,7 +869,7 @@ body.touch-ui .mu-sidebar {
   position: relative;
   min-height: 52px;
   padding: 12px 20px 18px;
-  font-family: "Baloo 2", sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 17px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -932,7 +932,7 @@ body.touch-ui .mu-sidebar {
   position: relative;
   min-height: 40px;
   padding: 8px 16px;
-  font-family: "Baloo 2", sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -957,4 +957,10 @@ body.touch-ui .mu-sidebar {
 .save-btn-new:active {
   transform: translateY(2px);
   box-shadow: 0 1px 0 #C7432B;
+}
+
+/* ConTech industrial type — tabular numbers for cash/seed/stats */
+.hud .value, .mu-value, .hq-cash, .save-stat-val, .save-modal-seed, #save-modal-cash {
+  font-family: "JetBrains Mono", monospace;
+  font-variant-numeric: tabular-nums;
 }

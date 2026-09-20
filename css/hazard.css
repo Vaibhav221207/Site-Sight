@@ -124,4 +124,6 @@
   .hazard-badge[data-hazard="Flood Risk"] { --hazard-color: oklch(0.68 0.15 155); color: oklch(0.25 0 0); }
   .hazard-badge[data-hazard="Flood Risk"] .hazard-badge__glyph { color: #2B2320; }
   .hazard-badge[data-hazard="Contamination Leak"] { --hazard-color: oklch(0.60 0.20 28); }
+  /* ensure solid after functional split — override any @starting-style flash */
+  .hazard-badge { opacity: 1 !important; }
 }
