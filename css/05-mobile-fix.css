@@ -64,16 +64,36 @@ body.touch-ui #hq-panel {
 }
 #hq-panel .hq-fs-body {
   min-height: 0;
+  min-width: 0;
   overflow: hidden;
+  overflow-x: clip;
 }
 #hq-panel .hq-fs-content {
   min-height: 0;
   min-width: 0;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: clip;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+}
+/* panel can never pop out of the screen: every flex/grid child between the
+ * clipped panel and the text gets shrink permission (research: min-width:auto
+ * trap, 2025 elegantsoftware/shadcn/derkonline). */
+#hq-panel,
+#hq-panel .hq-fs-header,
+#hq-panel .hq-fs-nav,
+#hq-panel .hq-fs-content,
+#hq-panel .hq-fs-section,
+#hq-panel .hq-fs-drone-row,
+#hq-panel .hq-fs-drone-info {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+}
+#hq-panel .hq-store-grid,
+#hq-panel .hq-inv-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(150px, 100%), 1fr));
 }
 
 /* 4) Short landscape nav: one scroll-safe row, equal keys, 44px targets. */
@@ -129,51 +149,98 @@ body.touch-ui #hq-panel {
   overflow-wrap: anywhere;
 }
 
-/* 6) DATA tab on short screens: stack map above details so neither squeezes
- * (screenshot 3: dotted map + cut zone keys). Map caps at 38svh, column owns
- * the scroll. Desktop untouched (body.touch-ui + height guard). */
+/* 6) DATA tab on short screens: OLD side-by-side design (map left, details
+ * right) but compact enough to fit 390px height with NO page scroll — only
+ * the details column scrolls internally. Research: minmax(0,1fr) tracks +
+ * min-width:0 on every flex/grid child (min-width:auto trap), overflow-x:clip
+ * at content regions (not body, so sticky/tooltips survive). */
 @media (max-height: 500px) {
   body.touch-ui #hq-section-data {
-    overflow-y: auto;
-  }
-  body.touch-ui #hq-section-data .hq-data-layout {
-    flex-direction: column;
-    overflow: visible;
-    height: auto;
+    overflow: hidden;
     min-height: 0;
   }
+  body.touch-ui #hq-section-data .hq-data-overview {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    margin-bottom: 6px;
+  }
+  body.touch-ui #hq-section-data .hq-data-overview > div {
+    min-width: 0;
+    padding: 4px 6px;
+  }
+  body.touch-ui #hq-section-data .hq-data-layout {
+    flex-direction: row;
+    gap: 6px;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    overflow-x: clip;
+  }
   body.touch-ui #hq-section-data .hq-data-minimap-col {
-    flex: 0 0 auto;
+    flex: 0 1 46%;
+    min-width: 0;
     max-width: none;
-    width: 100%;
+    width: auto;
+    overflow: hidden;
+  }
+  body.touch-ui #hq-section-data .hq-data-map-header {
+    min-width: 0;
+  }
+  body.touch-ui #hq-section-data .hq-data-minimap-wrap {
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
   }
   body.touch-ui #hq-section-data #data-minimap {
-    max-height: 38svh;
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+  }
+  body.touch-ui #hq-section-data .hq-data-minimap-legend {
+    overflow-x: auto;
+    white-space: nowrap;
   }
   body.touch-ui #hq-section-data .hq-data-side-col {
-    flex: 0 0 auto;
-    width: 100%;
-    overflow: visible;
+    flex: 1 1 54%;
+    min-width: 0;
+    overflow-y: auto;
+    overflow-x: clip;
+  }
+  body.touch-ui #hq-section-data .hq-data-details,
+  body.touch-ui #hq-section-data .hq-data-zone-confirm {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  body.touch-ui #hq-section-data .hq-data-zone-grid,
+  body.touch-ui #hq-section-data .hq-data-bld-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  body.touch-ui #hq-section-data .hq-data-zone-btn,
+  body.touch-ui #hq-section-data .hq-data-bld-card {
+    min-width: 0;
+    max-width: 100%;
   }
 }
 
 /* 7) Mobile rail cash truncation ($35,0... in screenshot 4): wider rail,
  * tighter tabular Mono, guaranteed ellipsis. */
 body.touch-ui #mobile-ui .mu-sidebar {
-  width: 72px;
+  width: 78px;
 }
 body.touch-ui #mobile-ui .mu-chip {
   min-width: 0;
+  padding: 6px 4px;
 }
 body.touch-ui #mobile-ui .mu-value {
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: -0.02em;
   max-width: 100%;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 /* 8) Industrial type hardening: system fallbacks so offline file:// never
