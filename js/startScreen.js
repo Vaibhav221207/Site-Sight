@@ -597,6 +597,9 @@
         if (d) {
           window.SaveSystem.apply(d);
           if (window.BlockRender && window.BlockRender.invalidate) window.BlockRender.invalidate();
+          // HUD/rail were painted at boot with fresh defaults ($40,000) — push
+          // the restored cash to screen NOW, not at the next income tick.
+          if (window.Main && window.Main.updateHUD) window.Main.updateHUD();
         }
       }
     } catch(e) { console.error("Continue failed", e); }
@@ -616,6 +619,16 @@
           window.Terrain.regenerate((Date.now() ^ Math.floor(Math.random() * 0xffffffff)) >>> 0);
         }
       } catch(e){}
+      // New world = full fresh state (cash back to starting budget, progress
+      // cleared). This is the ONLY enter path that resets cash.
+      try { if (window.GameState && window.GameState.reset) window.GameState.reset(); } catch(e2){}
+      try {
+        if (window.Construction) { window.Construction.hqBuild = null; window.Construction.hqCurtain = null; window.Construction.bursts = []; }
+      } catch(e3){}
+      try { if (window.DroneDeploy && window.DroneDeploy.cancel) window.DroneDeploy.cancel(); } catch(e4){}
+      try { if (window.GprDeploy && window.GprDeploy.cancel) window.GprDeploy.cancel(); } catch(e5){}
+      try { if (window.BlockRender && window.BlockRender.invalidate) window.BlockRender.invalidate(); } catch(e6){}
+      try { if (window.Main && window.Main.updateHUD) window.Main.updateHUD(); } catch(e7){}
     }
     closeSaveModal();
     btn = document.getElementById('start-enter');

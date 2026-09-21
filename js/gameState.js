@@ -95,6 +95,34 @@ window.GameState = (function () {
     return amount;
   };
 
+  // Fresh-world reset: cash back to starting budget, all progress cleared.
+  // Called ONLY when a genuinely new world is created (New Game), never on
+  // Continue/refresh — Continue restores via SaveSystem.apply instead.
+  api.reset = function () {
+    api.cash = api.startingCash;
+    api.hqBuilt = false;
+    api.hqTile = null;
+    api.droneSystemPurchased = false;
+    api.gprSystemPurchased = false;
+    api.compactorSystemPurchased = false;
+    api.repairRigPurchased = false;
+    api.inventory = {
+      droneCount: 0,
+      selectedDroneId: null,
+      deployed: null,
+      gprCount: 0,
+      selectedGprId: null,
+      gprDeployed: null,
+      selectedCompactorId: null,
+      selectedRepairId: null,
+    };
+    api.scanned = {};
+    api.subsurfaceScanned = {};
+    api.tileData = {};
+    api.roads = {};
+    api.cashLedger = [];
+  };
+
   api.getStartupBudget = function () {
     var requiredTools = api.hqCost + api.droneCost + api.gprCost + api.compactorCost + api.repairCost;
     return {
