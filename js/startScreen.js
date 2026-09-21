@@ -174,7 +174,7 @@
           if (timeEl) {
             var mins = Math.floor((Date.now() - (d.savedAt || Date.now())) / 60000);
             if (mins < 1) timeEl.textContent = 'JUST NOW';
-            else if (mins < 60) timeEl.textContent = mins + 'M AGO';
+            else if (mins < 60) timeEl.textContent = mins + ' MIN AGO';
             else {
               var hrs = Math.floor(mins / 60);
               timeEl.textContent = hrs + (hrs === 1 ? ' HR AGO' : ' HRS AGO');
@@ -225,12 +225,15 @@
     var n = 20;
     var layout = saveData && saveData.terrainLayout ? saveData.terrainLayout : null;
     var tileData = saveData && saveData.tileData ? saveData.tileData : {};
+    var roadMap = saveData && saveData.roads ? saveData.roads : {};
 
-    // Isometric diamond calculations
-    var isoW = w / 23;
+    // Isometric diamond calculations — fit BOTH axes: the 20x20 map spans
+    // 20*isoW wide and 19*isoH tall, so size from the tighter constraint and
+    // center vertically (was: width-only, map clipped top/bottom in a void).
+    var isoW = Math.min(w / 21.5, h / 11);
     var isoH = isoW * 0.52;
     var originX = w / 2;
-    var originY = 10;
+    var originY = Math.max(4, (h - 19 * isoH) / 2);
 
     for (var r = 0; r < n; r++) {
       for (var c = 0; c < n; c++) {
@@ -263,8 +266,9 @@
         ctx.lineWidth = 0.5;
         ctx.stroke();
 
-        // Road marker
-        if (td.road) {
+        // Road marker — roads live in the global roads map, never per-tile
+        // (same data-source fix as the modal counts above)
+        if (roadMap[k]) {
           ctx.beginPath();
           ctx.arc(px, py + isoH / 2, isoW * 0.22, 0, Math.PI * 2);
           ctx.fillStyle = '#D4A373';
