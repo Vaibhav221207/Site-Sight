@@ -7,6 +7,9 @@
  *
  * Deterministic: seeded mulberry32 RNG, no Math.random in BestUse paths.
  * Runs every 100s of visible run-time (paused in hidden tabs).
+ * Offline-safe: `now` is performance.now() (session-relative, resets on
+ * reload) and JS never runs while closed, so nothing accrues offline and
+ * there is no catch-up burst on return — max ONE new hazard per roll.
  */
 
 window.Hazards = (function () {
@@ -14,6 +17,8 @@ window.Hazards = (function () {
 
   var HAZARD_INTERVAL_MS = 100000;
   var MAX_PROB_PER_ROLL = 0.6;     // cap total probability per tile per roll
+  var MAX_NEW_PER_ROLL = 1;        // max NEW hazards per roll — one roll can
+                                   // never flag the whole city at once
 
   // Hazard types (cosmetic only — all halve income except Sinkhole=0.25, Leak=spread)
   var HAZARD_TYPES = [
@@ -125,16 +130,24 @@ window.Hazards = (function () {
   // Called once per frame from main.js loop; rolls hazards every 100s
   api.rollHazards = function (now) {
     if (!window.GameState || !window.GameState.tileData) return;
+    // Explicit hidden-tab guard (rAF already pauses, but performance.now()
+    // keeps advancing — this documents the pause and avoids a surprise roll
+    // the instant a long-hidden tab regains focus mid-frame).
+    try { if (document.hidden) return; } catch (e) {}
     if (now - lastRoll < HAZARD_INTERVAL_MS) return;
     lastRoll = now;
 
+    var tick = (now / HAZARD_INTERVAL_MS) | 0;
     var gs = window.GameState;
     var keys = Object.keys(gs.tileData);
+    // Collect every tile that wins its roll first, then activate at most
+    // MAX_NEW_PER_ROLL — so one unlucky roll can never flag every building.
+    var winners = [];
     for (var i = 0; i < keys.length; i++) {
       var d = gs.tileData[keys[i]];
       if (!d) continue;
       // Only constructed buildings (has zoneBuilding), not HQ, no active hazard
-      if (!d.zoneBuilding || d.hazard?.active) continue;
+      if (!d.zoneBuilding || (d.hazard && d.hazard.active)) continue;
       if (d.isHQ || isHqTile(d.col, d.row)) continue; // HQ immune
 
       var weights = computeWeights(d, d.col, d.row);
@@ -142,7 +155,7 @@ window.Hazards = (function () {
       for (var k in weights) total += weights[k];
       if (total <= 0) continue;
 
-      var roll = deterministicRandom(d.col, d.row, (now / HAZARD_INTERVAL_MS) | 0);
+      var roll = deterministicRandom(d.col, d.row, tick);
       var accum = 0;
       for (var t = 0; t < HAZARD_TYPES.length; t++) {
         var type = HAZARD_TYPES[t];
@@ -150,10 +163,16 @@ window.Hazards = (function () {
         if (w <= 0) continue;
         accum += w / total;
         if (roll < Math.min(accum, MAX_PROB_PER_ROLL)) {
-          activateHazard(d, type, now);
+          winners.push({ d: d, type: type });
           break;
         }
       }
+    }
+    for (var n = 0; n < winners.length && n < MAX_NEW_PER_ROLL; n++) {
+      // Deterministic pick (not first-found) so map position can't bias it.
+      var pick = Math.floor(deterministicRandom(winners.length, n, tick) * winners.length) % winners.length;
+      var won = winners.splice(pick, 1)[0];
+      activateHazard(won.d, won.type, now);
     }
   };
 
