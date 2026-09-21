@@ -478,8 +478,16 @@ window.DataMap = (function () {
       var hc = hazardColors[d.hazard.type] || "#FFB300";
       html += '<div class="hq-data-details-row"><span>HAZARD</span>' +
         '<span class="hq-data-badge" style="background:' + hc + ';color:#FFFFFF">' + d.hazard.type + '</span></div>';
-      html += '<div class="hq-data-details-row"><span>Income</span><strong>' +
-        (d.hazard.type === "Sinkhole" ? "25% (sinkhole)" : "50% (hazard)") + '</strong></div>';
+      // Boosters earn $0 — show the household story, not a % penalty.
+      var isBooster = false;
+      try {
+        var bspec2 = (window.Buildings && window.Buildings.byId) ? window.Buildings.byId(d.zoneBuilding) : null;
+        isBooster = !!(bspec2 && bspec2.role === "booster");
+      } catch (e3) {}
+      html += isBooster
+        ? '<div class="hq-data-details-row"><span>Households</span><strong>Families unhappy — bonus paused</strong></div>'
+        : '<div class="hq-data-details-row"><span>Income</span><strong>' +
+          (d.hazard.type === "Sinkhole" ? "25% (sinkhole)" : "50% (hazard)") + '</strong></div>';
     }
     try {
       var why = (window.GameState && window.GameState.bestUseReason) ? window.GameState.bestUseReason(d) : "";

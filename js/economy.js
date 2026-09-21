@@ -36,7 +36,8 @@ window.Economy = (function () {
   }
 
   // sum of residential boost auras around a tile (cottages +15%, apartments
-  // +30%), capped so ring-stacking homes can't print money.
+  // +30%), capped so ring-stacking homes can't print money. A hazarded
+  // booster gives NO bonus while flagged — unhappy households don't shop.
   function adjacencyBoost(col, row) {
     if (!window.GameState || !window.Buildings) return 0;
     var sum = 0;
@@ -44,6 +45,7 @@ window.Economy = (function () {
     for (var i = 0; i < ns.length; i++) {
       var d = window.GameState.getTileData(ns[i].col, ns[i].row);
       if (!d || !d.zoneBuilding) continue;
+      if (d.hazard && d.hazard.active) continue; // flagged homes go quiet
       var spec = window.Buildings.byId(d.zoneBuilding);
       if (spec && spec.role === "booster" && spec.boost) sum += spec.boost;
     }

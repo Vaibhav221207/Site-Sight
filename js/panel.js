@@ -154,7 +154,16 @@ window.TilePanel = (function () {
       };
       var hc = hazardColors[d.hazard.type] || "#FFB300";
       rows.push({ label: "HAZARD", value: d.hazard.type, badge: hc });
-      rows.push({ label: "INCOME", value: d.hazard.type === "Sinkhole" ? "25% (sinkhole)" : "50% (hazard)" });
+      // Boosters earn $0, so a % penalty is nonsense on them — their hazard
+      // story is unhappy households (and their bonus aura is paused).
+      var isBooster = false;
+      try {
+        var bspec = (window.Buildings && window.Buildings.byId) ? window.Buildings.byId(d.zoneBuilding) : null;
+        isBooster = !!(bspec && bspec.role === "booster");
+      } catch (e2) {}
+      rows.push(isBooster
+        ? { label: "HOUSEHOLDS", value: "Families unhappy — bonus paused" }
+        : { label: "INCOME", value: d.hazard.type === "Sinkhole" ? "25% (sinkhole)" : "50% (hazard)" });
     }
     if (whyText) rows.push({ label: "WHY", value: whyText });
 

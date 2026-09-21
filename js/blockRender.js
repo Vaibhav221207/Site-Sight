@@ -393,11 +393,13 @@ window.BlockRender = (function () {
       ctx.lineWidth = 2.5;
       ctx.stroke();
     } else {
-      // whisper seam: darker tone of this tile's own top color at low alpha.
-      // Same-hue neighbors melt together; different terrain still separates.
+      // whisper seam: barely-darker tone of this tile's own top color.
+      // Seamless-tileset practice (no dark outlines): same-hue neighbors
+      // melt into continuous landscape, terrain still separates by hue.
+      // Selection / mismatch / zone edges keep their own stronger strokes.
       ctx.save();
-      ctx.globalAlpha = 0.45;
-      ctx.strokeStyle = shade(topColor, 0.55);
+      ctx.globalAlpha = 0.28;
+      ctx.strokeStyle = shade(topColor, 0.8);
       ctx.lineWidth = 1;
       ctx.stroke();
       ctx.restore();

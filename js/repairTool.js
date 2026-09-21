@@ -70,6 +70,7 @@ window.RepairTool = (function () {
     api.isActive = false;
     api._swarm = null;
     api._pending = null;
+    api._queue = [];
     if (api._anim) { try { api._anim.pause(); } catch (e) {} api._anim = null; }
     if (window.InputHandler && window.InputHandler.setMode) {
       if (window.InputHandler.getMode && window.InputHandler.getMode() === "fixing-hazard") window.InputHandler.setMode("idle");
@@ -94,49 +95,71 @@ window.RepairTool = (function () {
   function prefersReducedMotion(){
     try { return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch(e){ return false; }
   }
-  // lock to prevent double-click on same tile while drone is en-route
+  // single-drone queue: one repair flies at a time; extra taps while busy
+  // QUEUE instead of overwriting (the old overwrite left every in-flight
+  // repair orphaned — clicking A then B solved neither).
   api._pending = null; // "col,row" of tile currently being repaired
-  api.attempt = function (col, row) {
-    if (!api.isValidTile(col, row)) return false;
-    // prevent re-entry on same tile mid-flight
-    var key = col+","+row;
-    if (api._pending === key) return false;
+  api._queue = [];     // queued "col,row" keys, oldest first
+  function queueMsg(text, ok) {
+    try { if (window.HqPanel && window.HqPanel.showMsg) window.HqPanel.showMsg(text, !!ok); } catch (e) {}
+  }
+  function shiftNext() {
+    if (!api._queue.length) return false;
+    var nxt = api._queue.shift().split(",");
+    _begin(+nxt[0], +nxt[1]);
+    return true;
+  }
+  function finishJob(col, row, key, type) {
+    // stale timer (cancelled or superseded) — never touch another job
+    if (api._pending !== key) return;
+    try {
+      var dd = window.GameState && window.GameState.getTileData ? window.GameState.getTileData(col, row) : null;
+      if (dd && dd.hazard && dd.hazard.active) dd.hazard = null;
+    } catch(e){}
+    try { if (window.Construction && window.Construction.bursts) window.Construction.bursts.push({ c: col, r: row, t0: window.Construction.now() }); } catch (e2) {}
+    api._pending = null;
+    try { if (window.SaveSystem && window.SaveSystem.markDirty) window.SaveSystem.markDirty(); } catch (e3) {}
+    if (window.Main && window.Main.updateHUD) try { window.Main.updateHUD(); } catch (e3b) {}
+    queueMsg(type + " fixed — income restored", true);
+    if (window.BlockRender) window.BlockRender.invalidate();
+    shiftNext(); // drone flies straight to the next queued hazard, if any
+  }
+  function _begin(col, row) {
+    var key = col + "," + row;
     var d = window.GameState.getTileData(col, row);
-    var type = d.hazard ? d.hazard.type : "hazard";
+    var type = (d && d.hazard) ? d.hazard.type : "hazard";
     // keep hazard visible during LIFT→TRAVEL→SCAN so badge doesn't pop before drone arrives
     api._pending = key;
-    // accessibility: reduced-motion → instant (no travel)
+    // accessibility: reduced-motion → instant (no travel), then next queued
     if (prefersReducedMotion()){
-      d.hazard = null;
-      try { if (window.Construction && window.Construction.bursts) window.Construction.bursts.push({ c: col, r: row, t0: window.Construction.now() }); } catch (e) {}
-      api._pending = null;
+      finishJob(col, row, key, type);
       api._swarm = null;
-      try { if (window.SaveSystem && window.SaveSystem.markDirty) window.SaveSystem.markDirty(); } catch (e2) {}
-      if (window.Main && window.Main.updateHUD) try { window.Main.updateHUD(); } catch (e3) {}
-      if (window.HqPanel) try { window.HqPanel.showMsg(type + " fixed — income restored", true); } catch (e4) {}
-      if (window.BlockRender) window.BlockRender.invalidate();
-      setTimeout(function () { api.cancel(); }, 120);
-      return true;
+      setTimeout(function () { if (!api._pending) api.cancel(); }, 120);
+      return;
     }
     api._swarm = { col: col, row: row, t0: Date.now() };
     if (window.BlockRender) window.BlockRender.invalidate();
     // badge stays → drone travels → clear + celebrate at END of WORK phase (first frame of EXIT)
     var clearDelay = LIFT_MS + TRAVEL_MS + SCAN_MS + WORK_MS;
-    setTimeout(function(){
-      // if user cancelled early, pending cleared and tile may already be gone
-      if (api._pending !== key) return;
-      try {
-        var dd = window.GameState && window.GameState.getTileData ? window.GameState.getTileData(col, row) : null;
-        if (dd && dd.hazard && dd.hazard.active) dd.hazard = null;
-      } catch(e){}
-      try { if (window.Construction && window.Construction.bursts) window.Construction.bursts.push({ c: col, r: row, t0: window.Construction.now() }); } catch (e2) {}
-      api._pending = null;
-      try { if (window.SaveSystem && window.SaveSystem.markDirty) window.SaveSystem.markDirty(); } catch (e3) {}
-      if (window.Main && window.Main.updateHUD) try { window.Main.updateHUD(); } catch (e3b) {}
-      if (window.HqPanel) try { window.HqPanel.showMsg(type + " fixed — income restored", true); } catch (e4) {}
-      if (window.BlockRender) window.BlockRender.invalidate();
-    }, clearDelay);
-    setTimeout(function () { api._pending = null; api.cancel(); }, TOTAL_MS + 90);
+    setTimeout(function(){ finishJob(col, row, key, type); }, clearDelay);
+    setTimeout(function () {
+      if (api._pending) return; // a job (this or queued next) still owns the mode
+      api.cancel();
+    }, TOTAL_MS + 90);
+  }
+  api.attempt = function (col, row) {
+    if (!api.isValidTile(col, row)) return false;
+    var key = col+","+row;
+    if (api._pending === key) return false; // same tile mid-flight
+    if (api._pending) {
+      // drone busy — queue instead of overwriting (overwrite orphaned both)
+      if (api._queue.indexOf(key) < 0) {
+        api._queue.push(key);
+        queueMsg("Drone busy — repair queued (#" + api._queue.length + ")", false);
+      }
+      return true;
+    }
+    _begin(col, row);
     return true;
   };
 
