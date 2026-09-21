@@ -473,10 +473,25 @@ window.BlockRender = (function () {
     for (var innerIndex = 0; innerIndex < links.length; innerIndex++) {
       drawRoadBranch(ctx, center, links[innerIndex].edge, innerWidth, "#4B5563");
     }
-    ctx.fillStyle = "#4B5563";
-    ctx.beginPath();
-    ctx.arc(cx, topY, Math.max(7, iso * 0.16), 0, Math.PI * 2);
-    ctx.fill();
+    // Center joint: flush with the road width on straights/corners (no
+    // bulge), a rounded U-turn bulb only where the road ENDS (dead end),
+    // and a slightly larger node on 3+ junctions. (Was: same round blob
+    // stamped on every tile, so straights read as beads.)
+    if (links.length === 1 || links.length === 2) {
+      ctx.fillStyle = "#111827";
+      ctx.beginPath();
+      ctx.arc(cx, topY, outerWidth * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#4B5563";
+      ctx.beginPath();
+      ctx.arc(cx, topY, innerWidth * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (links.length >= 3) {
+      ctx.fillStyle = "#4B5563";
+      ctx.beginPath();
+      ctx.arc(cx, topY, Math.max(7, iso * 0.16), 0, Math.PI * 2);
+      ctx.fill();
+    }
     if (links.length === 1 || links.length === 2) {
       ctx.save();
       ctx.strokeStyle = "#FDE68A";
@@ -496,62 +511,6 @@ window.BlockRender = (function () {
       ctx.setLineDash([]);
       ctx.restore();
     }
-    ctx.restore();
-    return;
-
-    var markingLinks = [];
-    for (var markIndex = 0; markIndex < links.length; markIndex++) {
-      var markLink = links[markIndex];
-      var remote = window.RoadTool && window.RoadTool.connections ?
-        window.RoadTool.connections(markLink.c, markLink.r) : {};
-      var remoteCount = 0;
-      for (var remoteKey in remote) if (remote[remoteKey]) remoteCount++;
-      if (remoteCount < 3) markingLinks.push(markLink);
-    }
-    ctx.strokeStyle = "#374151";
-    ctx.lineWidth = Math.max(8, iso * 0.56);
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    if (markingLinks.length === 1) {
-      drawRoadPath(ctx, [{ x: cx, y: topY }, markingLinks[0].edge]);
-    } else if (markingLinks.length === 2) {
-      var straightSurface = (markingLinks[0].key === "north" && markingLinks[1].key === "south") ||
-        (markingLinks[0].key === "south" && markingLinks[1].key === "north") ||
-        (markingLinks[0].key === "east" && markingLinks[1].key === "west") ||
-        (markingLinks[0].key === "west" && markingLinks[1].key === "east");
-      if (straightSurface) drawRoadPath(ctx, [markingLinks[0].edge, markingLinks[1].edge]);
-      else drawRoadCorner(ctx, markingLinks[0].edge, { x: cx, y: topY }, markingLinks[1].edge, iso);
-    } else if (markingLinks.length >= 3) {
-      for (var surfaceBranch = 0; surfaceBranch < links.length; surfaceBranch++) {
-        drawRoadPath(ctx, [{ x: cx, y: topY }, links[surfaceBranch].edge]);
-      }
-    }
-    ctx.setLineDash([]);
-    // The marking follows the projected isometric road path: edge -> center ->
-    // edge for a turn, and edge -> edge for a straight. This keeps the
-    // incoming direction from the previous tile instead of inventing a
-    // horizontal/vertical line in screen space.
-    ctx.strokeStyle = "#FDE68A";
-    ctx.lineWidth = Math.max(1.5, iso * 0.032);
-    ctx.lineCap = "butt";
-    ctx.lineJoin = "miter";
-    ctx.setLineDash([Math.max(5, iso * 0.11), Math.max(4, iso * 0.08)]);
-    if (links.length === 1) {
-      drawRoadPath(ctx, [{ x: cx, y: topY }, links[0].edge]);
-    } else if (links.length === 2) {
-      var straight = (links[0].key === "north" && links[1].key === "south") ||
-        (links[0].key === "south" && links[1].key === "north") ||
-        (links[0].key === "east" && links[1].key === "west") ||
-        (links[0].key === "west" && links[1].key === "east");
-      if (straight) {
-        drawRoadPath(ctx, [links[0].edge, links[1].edge]);
-      } else {
-        drawRoadCorner(ctx, links[0].edge, { x: cx, y: topY }, links[1].edge, iso);
-      }
-    } else if (links.length >= 3) {
-      // Junctions use a clean asphalt node without decorative lane dots.
-    }
-    ctx.setLineDash([]);
     ctx.restore();
   }
 
