@@ -473,11 +473,16 @@ window.BlockRender = (function () {
     for (var innerIndex = 0; innerIndex < links.length; innerIndex++) {
       drawRoadBranch(ctx, center, links[innerIndex].edge, innerWidth, "#4B5563");
     }
-    // Center joint: flush with the road width on straights/corners (no
-    // bulge), a rounded U-turn bulb only where the road ENDS (dead end),
-    // and a slightly larger node on 3+ junctions. (Was: same round blob
-    // stamped on every tile, so straights read as beads.)
-    if (links.length === 1 || links.length === 2) {
+    // Center joint: straights need NOTHING (branch quads already meet
+    // seamlessly — any disc here reads as a dark ring against the straight
+    // borders). Corners get a flush joint, dead ends a U-turn bulb, 3+
+    // junctions a node. (Was: same round blob stamped on every tile.)
+    var straightLink = links.length === 2 &&
+      ((links[0].key === "north" && links[1].key === "south") ||
+       (links[0].key === "south" && links[1].key === "north") ||
+       (links[0].key === "east" && links[1].key === "west") ||
+       (links[0].key === "west" && links[1].key === "east"));
+    if (links.length === 1 || (links.length === 2 && !straightLink)) {
       ctx.fillStyle = "#111827";
       ctx.beginPath();
       ctx.arc(cx, topY, outerWidth * 0.5, 0, Math.PI * 2);
