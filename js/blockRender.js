@@ -460,8 +460,8 @@ window.BlockRender = (function () {
     }
     // Use explicit branch polygons instead of thick clipped strokes. The
     // shared center node guarantees continuous asphalt at every junction.
-    var outerWidth = Math.max(11, iso * 0.36);
-    var innerWidth = Math.max(7, iso * 0.26);
+    var outerWidth = Math.max(13, iso * 0.46);
+    var innerWidth = Math.max(9, iso * 0.34);
     var center = { x: cx, y: topY };
     if (standalone) {
       drawRoadDiamond(ctx, center, iso * 2, iso, "#111827");
@@ -487,9 +487,13 @@ window.BlockRender = (function () {
       ctx.arc(cx, topY, innerWidth * 0.5, 0, Math.PI * 2);
       ctx.fill();
     } else if (links.length >= 3) {
+      ctx.fillStyle = "#111827";
+      ctx.beginPath();
+      ctx.arc(cx, topY, outerWidth * 0.5, 0, Math.PI * 2);
+      ctx.fill();
       ctx.fillStyle = "#4B5563";
       ctx.beginPath();
-      ctx.arc(cx, topY, Math.max(7, iso * 0.16), 0, Math.PI * 2);
+      ctx.arc(cx, topY, innerWidth * 0.5, 0, Math.PI * 2);
       ctx.fill();
     }
     if (links.length === 1 || links.length === 2) {
