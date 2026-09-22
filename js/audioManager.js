@@ -24,30 +24,31 @@ window.AudioManager = (function () {
   // a small random pitch shift (±5%). Same file, never quite the same hit.
   var PITCH_JITTER = 0.05;
 
-  // id -> { file | files[], dir, volume }. SimCity/Cities-style direction:
-  // everything sub-0.3s except rare moments; soft musical tones (plucks,
-  // glass, bells) instead of arcade lasers; UI sits quiet underneath.
+  // id -> { file | files[], dir, volume }. Skylines direction, v3:
+  // ONE soft UI voice (filtered ticks, whisper-quiet), exploration mostly
+  // silent — decisions (buy/deploy/fix/alert) carry the sound, not every tap.
   // `files` arrays rotate randomly per play so frequent taps never drone.
+  var MASTER_VOLUME = 0.7;
   var SOUNDS = {
-    uiClick:   { files: ["pluck_001.ogg", "pluck_002.ogg"], dir: "interface", volume: 0.35 },
-    uiTab:     { file: "toggle_002.ogg",       dir: "interface", volume: 0.4 },
-    uiOpen:    { file: "open_002.ogg",         dir: "interface", volume: 0.45 },
-    uiClose:   { file: "close_001.ogg",        dir: "interface", volume: 0.45 },
-    uiSelect:  { file: "select_001.ogg",       dir: "interface", volume: 0.45 },
-    uiToggle:  { file: "toggle_001.ogg",       dir: "interface", volume: 0.45 },
-    buy:       { file: "confirmation_001.ogg", dir: "interface", volume: 0.65 },
-    error:     { file: "error_001.ogg",        dir: "interface", volume: 0.65 },
+    uiClick:   { files: ["tick_002.ogg", "tick_004.ogg"], dir: "interface", volume: 0.3 },
+    uiTab:     { file: "toggle_002.ogg",       dir: "interface", volume: 0.35 },
+    uiOpen:    { file: "open_002.ogg",         dir: "interface", volume: 0.4 },
+    uiClose:   { file: "close_001.ogg",        dir: "interface", volume: 0.4 },
+    uiSelect:  { file: "select_001.ogg",       dir: "interface", volume: 0.4 },
+    uiToggle:  { file: "toggle_001.ogg",       dir: "interface", volume: 0.4 },
+    buy:       { file: "confirmation_001.ogg", dir: "interface", volume: 0.6 },
+    error:     { file: "error_001.ogg",        dir: "interface", volume: 0.6 },
     tick:      { file: "tick_001.ogg",         dir: "interface", volume: 0.3 },
-    buildDrop: { file: "drop_002.ogg",         dir: "interface", volume: 0.6 },
-    reveal:    { file: "maximize_002.ogg",     dir: "interface", volume: 0.65 },
-    droneGo:   { file: "maximize_001.ogg",     dir: "interface", volume: 0.6 },
-    droneDone: { file: "confirmation_002.ogg", dir: "interface", volume: 0.65 },
-    gprGo:     { file: "doorOpen_002.ogg",     dir: "scifi",     volume: 0.55 },
-    gprDone:   { file: "confirmation_003.ogg", dir: "interface", volume: 0.65 },
+    buildDrop: { file: "drop_002.ogg",         dir: "interface", volume: 0.55 },
+    reveal:    { file: "maximize_002.ogg",     dir: "interface", volume: 0.6 },
+    droneGo:   { file: "maximize_001.ogg",     dir: "interface", volume: 0.55 },
+    droneDone: { file: "confirmation_002.ogg", dir: "interface", volume: 0.6 },
+    gprGo:     { file: "doorOpen_002.ogg",     dir: "scifi",     volume: 0.5 },
+    gprDone:   { file: "confirmation_003.ogg", dir: "interface", volume: 0.6 },
     compactor: { file: "impactMetal_002.ogg",  dir: "scifi",     volume: 0.6 },
-    repairGo:  { file: "maximize_003.ogg",     dir: "interface", volume: 0.6 },
-    hazardAlert: { file: "bong_001.ogg",       dir: "interface", volume: 0.75 },
-    hazardFixed: { file: "glass_003.ogg",      dir: "interface", volume: 0.65 },
+    repairGo:  { file: "maximize_003.ogg",     dir: "interface", volume: 0.55 },
+    hazardAlert: { file: "bong_001.ogg",       dir: "interface", volume: 0.6 },
+    hazardFixed: { file: "glass_003.ogg",      dir: "interface", volume: 0.6 },
   };
 
   var howls = {};
@@ -104,6 +105,7 @@ window.AudioManager = (function () {
 
   api.init = function () {
     if (typeof Howler !== "undefined") {
+      try { Howler.volume(MASTER_VOLUME); } catch (e0) {}
       try { Howler.mute(muted); } catch (e) {}
     }
     // desktop HUD mute key (mobile rail wires itself in mobileUI.js)
