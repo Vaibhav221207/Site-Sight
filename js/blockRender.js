@@ -1249,6 +1249,8 @@ window.BlockRender = (function () {
     // from bleeding onto adjacent land tiles' side faces.
     drawTrenchPit(layer);
 
+    // HQ body tile (rendered in its own pass after roads — see below).
+    var hqPass = null;
     for (var i = 0; i < ORDER.length; i++) {
       var t = ORDER[i];
       var k = t.c + "," + t.r;
@@ -1275,7 +1277,9 @@ window.BlockRender = (function () {
             window.Construction.hqBuild.col === t.c && window.Construction.hqBuild.row === t.r) ||
            (window.Construction.hqCurtain &&
             window.Construction.hqCurtain.col === t.c && window.Construction.hqCurtain.row === t.r)));
-        if (hqBuildingVisible) drawHQBuilding(layer, t.c, t.r);
+        // Body deferred: drawn in the HQ pass after roads so surrounding
+        // driveways tuck UNDER the base instead of painting over it.
+        if (hqBuildingVisible) hqPass = { c: t.c, r: t.r };
         continue;
       }
       var isRock = api.terrain.isRock(t.c, t.r);
@@ -1342,6 +1346,9 @@ window.BlockRender = (function () {
         drawBuilding(layer, bTile.c, bTile.r, api.grid.worldToScreen(bTile.c, bTile.r).x, topY, api.grid.isoSize);
       }
     }
+    // HQ pass: body draws AFTER the roads pass (it used to live in the
+    // terrain loop, so every adjacent road painted over its base).
+    if (hqPass) drawHQBuilding(layer, hqPass.c, hqPass.r);
     // Construction overlay pass (printer + robot, curtain gift-box, confetti):
     // drawn LAST so no terrain tile can cover any part of the FX. See the
     // NOTE in drawBlock for why this cannot live in the main loop.
