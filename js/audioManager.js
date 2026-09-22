@@ -21,28 +21,30 @@ window.AudioManager = (function () {
   var MUTE_KEY = "siteSight_muted";
   var THROTTLE_MS = 80;
 
-  // id -> { file, subdir, volume }. Volumes keep frequent UI blips quiet and
-  // rare alerts prominent (tasteful, non-repetitive).
+  // id -> { file | files[], dir, volume }. SimCity/Cities-style direction:
+  // everything sub-0.3s except rare moments; soft musical tones (plucks,
+  // glass, bells) instead of arcade lasers; UI sits quiet underneath.
+  // `files` arrays rotate randomly per play so frequent taps never drone.
   var SOUNDS = {
-    uiClick:   { file: "click_002.ogg",        dir: "interface", volume: 0.45 },
-    uiTab:     { file: "switch_001.ogg",       dir: "interface", volume: 0.45 },
-    uiOpen:    { file: "open_002.ogg",         dir: "interface", volume: 0.5 },
-    uiClose:   { file: "close_001.ogg",        dir: "interface", volume: 0.5 },
-    uiSelect:  { file: "select_001.ogg",       dir: "interface", volume: 0.5 },
-    uiToggle:  { file: "toggle_001.ogg",       dir: "interface", volume: 0.5 },
-    buy:       { file: "confirmation_001.ogg", dir: "interface", volume: 0.7 },
-    error:     { file: "error_001.ogg",        dir: "interface", volume: 0.7 },
-    tick:      { file: "tick_001.ogg",         dir: "interface", volume: 0.35 },
-    buildDrop: { file: "drop_002.ogg",         dir: "interface", volume: 0.65 },
-    reveal:    { file: "maximize_002.ogg",     dir: "interface", volume: 0.7 },
-    droneGo:   { file: "laserRetro_001.ogg",   dir: "scifi",     volume: 0.65 },
-    droneDone: { file: "confirmation_002.ogg", dir: "interface", volume: 0.7 },
-    gprGo:     { file: "computerNoise_001.ogg",dir: "scifi",     volume: 0.6 },
-    gprDone:   { file: "confirmation_003.ogg", dir: "interface", volume: 0.7 },
-    compactor: { file: "impactMetal_002.ogg",  dir: "scifi",     volume: 0.75 },
-    repairGo:  { file: "laserSmall_003.ogg",   dir: "scifi",     volume: 0.65 },
-    hazardAlert: { file: "forceField_002.ogg", dir: "scifi",     volume: 0.8 },
-    hazardFixed: { file: "confirmation_004.ogg", dir: "interface", volume: 0.75 },
+    uiClick:   { files: ["pluck_001.ogg", "pluck_002.ogg"], dir: "interface", volume: 0.35 },
+    uiTab:     { file: "toggle_002.ogg",       dir: "interface", volume: 0.4 },
+    uiOpen:    { file: "open_002.ogg",         dir: "interface", volume: 0.45 },
+    uiClose:   { file: "close_001.ogg",        dir: "interface", volume: 0.45 },
+    uiSelect:  { file: "select_001.ogg",       dir: "interface", volume: 0.45 },
+    uiToggle:  { file: "toggle_001.ogg",       dir: "interface", volume: 0.45 },
+    buy:       { file: "confirmation_001.ogg", dir: "interface", volume: 0.65 },
+    error:     { file: "error_001.ogg",        dir: "interface", volume: 0.65 },
+    tick:      { file: "tick_001.ogg",         dir: "interface", volume: 0.3 },
+    buildDrop: { file: "drop_002.ogg",         dir: "interface", volume: 0.6 },
+    reveal:    { file: "maximize_002.ogg",     dir: "interface", volume: 0.65 },
+    droneGo:   { file: "maximize_001.ogg",     dir: "interface", volume: 0.6 },
+    droneDone: { file: "confirmation_002.ogg", dir: "interface", volume: 0.65 },
+    gprGo:     { file: "doorOpen_002.ogg",     dir: "scifi",     volume: 0.55 },
+    gprDone:   { file: "confirmation_003.ogg", dir: "interface", volume: 0.65 },
+    compactor: { file: "impactMetal_002.ogg",  dir: "scifi",     volume: 0.6 },
+    repairGo:  { file: "maximize_003.ogg",     dir: "interface", volume: 0.6 },
+    hazardAlert: { file: "bong_001.ogg",       dir: "interface", volume: 0.75 },
+    hazardFixed: { file: "glass_003.ogg",      dir: "interface", volume: 0.65 },
   };
 
   var howls = {};
@@ -56,13 +58,22 @@ window.AudioManager = (function () {
     return "assets/kenney-audio/";
   }
 
-  function ensure(id) {
-    if (howls[id] || typeof Howl === "undefined") return howls[id] || null;
+  // Resolve one playable file per call (rotation for `files` entries).
+  function resolveFile(s) {
+    if (s.files && s.files.length) {
+      return s.files[(Math.random() * s.files.length) | 0];
+    }
+    return s.file;
+  }
+
+  function ensure(id, file) {
+    var key = id + "::" + file;
+    if (howls[key] || typeof Howl === "undefined") return howls[key] || null;
     var s = SOUNDS[id];
     if (!s) return null;
     try {
-      howls[id] = new Howl({
-        src: [base() + s.dir + "/" + s.file],
+      howls[key] = new Howl({
+        src: [base() + s.dir + "/" + file],
         format: ["ogg"],
         html5: true,
         preload: true,
@@ -71,7 +82,7 @@ window.AudioManager = (function () {
     } catch (e) {
       return null;
     }
-    return howls[id];
+    return howls[key];
   }
 
   function unlock() {
@@ -116,10 +127,12 @@ window.AudioManager = (function () {
   api.play = function (id) {
     if (!unlocked || muted) return false;
     if (typeof Howl === "undefined") return false;
+    var s = SOUNDS[id];
+    if (!s) return false;
     var now = Date.now();
     if (now - (lastPlay[id] || 0) < THROTTLE_MS) return false;
     lastPlay[id] = now;
-    var h = ensure(id);
+    var h = ensure(id, resolveFile(s));
     if (!h) return false;
     try { h.play(); } catch (e) { return false; }
     return true;
