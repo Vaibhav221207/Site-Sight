@@ -467,6 +467,7 @@ window.HqPanel = (function () {
       if (api.overlayEl) api.overlayEl.style.transition = "";
       try { document.body.style.overflow = ""; } catch (e) {}
       try { document.body.classList.remove("hq-open"); } catch (e3) {}
+      try { document.body.classList.remove("map-expanded"); } catch (e4) {}
       // return focus to whatever opened the panel (APG close contract)
       try { if (api._opener && api._opener.focus) api._opener.focus(); } catch (e2) {}
       api._opener = null;

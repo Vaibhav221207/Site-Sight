@@ -1113,6 +1113,31 @@ window.DataMap = (function () {
     // above it in the map column — no toggle needed)
     renderLegend();
 
+    // Expand-to-viewport map (touch only): tiles are ~8px in a 390px-tall
+    // sheet — untappable. The header ⤢ opens the map fullscreen where tiles
+    // read ~19px+ (pinch still applies on top). Collapse via the × key.
+    api.expandBtn = document.getElementById("data-map-expand");
+    api.collapseBtn = document.getElementById("data-map-collapse");
+    api.setMapExpanded = function (on) {
+      try { document.body.classList.toggle("map-expanded", !!on); } catch (e) {}
+      if (api.expandBtn && api.expandBtn.setAttribute) {
+        api.expandBtn.setAttribute("aria-expanded", on ? "true" : "false");
+      }
+      if (on && api.collapseBtn && api.collapseBtn.focus) {
+        try { api.collapseBtn.focus(); } catch (e2) {}
+      }
+      fitMapSoon(); // wrap box changed — re-measure after layout
+    };
+    if (api.expandBtn) {
+      api.expandBtn.addEventListener("click", function (e) {
+        if (e && e.stopPropagation) e.stopPropagation();
+        api.setMapExpanded(true);
+      });
+    }
+    if (api.collapseBtn) {
+      api.collapseBtn.addEventListener("click", function () { api.setMapExpanded(false); });
+    }
+
     api.refresh();
 
     // keep the fit live across rotation / window resize / devtools docking.

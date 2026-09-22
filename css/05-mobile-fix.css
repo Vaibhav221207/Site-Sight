@@ -290,7 +290,69 @@ body, button, .hq-fs-nav-item, .hq-order-btn {
   font-family: "Space Grotesk", "Inter", system-ui, sans-serif;
 }
 
-/* 9) Reduced motion: no new transitions introduced here; respect setting. */
+/* 9) Expand-to-viewport survey map (touch only): tiles are ~8px inside a
+ * 390px-tall sheet — untappable no matter the column split. The header ⤢
+ * key (hidden on desktop, where the map already fits) opens the map over
+ * the whole viewport (~19px+ tiles, pinch still stacks on top). */
+.hq-data-map-expand {
+  display: none;
+}
+.hq-data-map-collapse {
+  display: none;
+}
+body.touch-ui .hq-data-map-expand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 4px 10px;
+  background: #FFFBF0;
+  border: 3px solid #2B2320;
+  border-radius: 12px;
+  box-shadow: 2px 2px 0 #000;
+  color: #2B2320;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+body.touch-ui .hq-data-map-expand:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 transparent;
+}
+body.touch-ui.map-expanded #hq-panel .hq-data-minimap-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  border: 0;
+  border-radius: 0;
+  padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+  background: #1a1a2e;
+}
+body.touch-ui.map-expanded .hq-data-map-collapse {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top, 0px));
+  right: max(12px, env(safe-area-inset-right, 0px));
+  z-index: 1301;
+  width: 44px;
+  height: 44px;
+  background: #C7432B;
+  border: 3px solid #2B2320;
+  border-radius: 50%;
+  box-shadow: 2px 2px 0 #000;
+  color: #FFFFFF;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* 10) Reduced motion: no new transitions introduced here; respect setting. */
 @media (prefers-reduced-motion: reduce) {
   #hq-panel .hq-fs-nav-item {
     transition: none;
