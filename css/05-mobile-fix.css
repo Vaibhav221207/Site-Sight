@@ -324,9 +324,19 @@ body.touch-ui .hq-data-map-expand:active {
 body.touch-ui.map-expanded #hq-panel .hq-data-minimap-wrap {
   position: fixed;
   inset: 0;
+  width: auto;
+  height: auto;
+  aspect-ratio: auto;
+  max-width: none;
+  max-height: none;
+  min-height: 0;
+  margin: 0;
+  flex: none;
+  align-self: auto;
   z-index: 1300;
   border: 0;
   border-radius: 0;
+  box-shadow: none;
   padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
   background: #1a1a2e;
 }
@@ -351,7 +361,28 @@ body.touch-ui.map-expanded .hq-data-map-collapse {
   cursor: pointer;
 }
 
-/* 10) DATA tab content diet (touch + short landscape only): the tab packs
+/* 10) Short-landscape chrome diet (touch only): the CONTECH HQ title goes
+ * entirely (cash + close stay), and the survey map header slims to one
+ * compact row — every px goes to the map. Desktop keeps title + roomy
+ * header untouched. */
+@media (max-height: 500px) {
+  body.touch-ui #hq-panel .hq-fs-title {
+    display: none;
+  }
+  body.touch-ui #hq-panel .hq-fs-header {
+    min-height: 0;
+    padding: 6px 10px;
+  }
+  body.touch-ui #hq-section-data .hq-data-map-header {
+    padding: 4px 8px;
+    gap: 6px;
+  }
+  body.touch-ui #hq-section-data .hq-data-map-title {
+    font-size: 11px;
+  }
+}
+
+/* 11) DATA tab content diet (touch + short landscape only): the tab packs
  * overview + map + legend + details + zone flow + picker + 7 category rows
  * into ~200px of content. Progressive disclosure — every hidden item
  * duplicates info kept elsewhere, zero decisions lost:
@@ -378,7 +409,7 @@ body.touch-ui.map-expanded .hq-data-map-collapse {
   }
 }
 
-/* 11) Reduced motion: no new transitions introduced here; respect setting. */
+/* 12) Reduced motion: no new transitions introduced here; respect setting. */
 @media (prefers-reduced-motion: reduce) {
   #hq-panel .hq-fs-nav-item {
     transition: none;

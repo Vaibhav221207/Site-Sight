@@ -251,7 +251,10 @@
   opacity: 0;
   transform: scale(0.85);
   transition: transform 0.18s ease-out, opacity 0.18s ease-out;
-  will-change: transform, opacity;
+  /* NOTE: no will-change here on purpose — it would make #hq-panel a
+     containing block for position:fixed descendants and trap the expanded
+     survey map inside the sheet instead of the viewport. hqPanel.js sets it
+     inline only for the 350ms open/280ms close tweens, then clears it. */
 }
 
 .hq-fs-header {
@@ -413,7 +416,7 @@
 }
 
 .hq-fs-content {
-  will-change: transform, opacity;
+  /* NOTE: no will-change (see #hq-panel note — same fixed-descendant trap). */
 }
 
 .hq-fs-nav-item:active {

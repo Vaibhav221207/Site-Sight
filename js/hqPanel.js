@@ -430,12 +430,16 @@ window.HqPanel = (function () {
     try { if (api.closeBtn && api.closeBtn.focus) api.closeBtn.focus(); } catch (e) {}
 
     if (!isShot() && typeof anime !== "undefined" && anime) {
+      try { api.panelEl.style.willChange = "transform, opacity"; } catch (e5) {}
       anime({
         targets: api.panelEl,
         scale: [0.85, 1],
         opacity: [0, 1],
         duration: OPEN_DUR,
         easing: "easeOutCubic",
+        complete: function () {
+          try { api.panelEl.style.willChange = "auto"; } catch (e6) {}
+        },
       });
       anime({
         targets: api.overlayEl,
@@ -467,6 +471,7 @@ window.HqPanel = (function () {
       api.panelEl.style.transform = "";
       api.panelEl.style.opacity = "";
       api.panelEl.style.transition = "";
+      try { api.panelEl.style.willChange = "auto"; } catch (e8) {}
       if (api.overlayEl) api.overlayEl.style.transition = "";
       try { document.body.style.overflow = ""; } catch (e) {}
       try { document.body.classList.remove("hq-open"); } catch (e3) {}
@@ -476,6 +481,7 @@ window.HqPanel = (function () {
       api._opener = null;
     }
 
+    try { api.panelEl.style.willChange = "transform, opacity"; } catch (e7) {}
     if (typeof anime !== "undefined" && anime) {
       anime({
         targets: api.panelEl,
