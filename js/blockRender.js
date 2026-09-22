@@ -446,10 +446,20 @@ window.BlockRender = (function () {
           x: neighborPoint.x,
           y: neighborPoint.y - totalHeight(neighbors[i].c, neighbors[i].r)
         };
-        neighbors[i].edge = {
-          x: (cx + neighborCenter.x) * 0.5,
-          y: (topY + neighborCenter.y) * 0.5
-        };
+        if (isHqNeighbor) {
+          // Driveway stops AT the HQ walls, not through them: intersect the
+          // center-to-center line with the HQ diamond (|dx|/iso+|dy|/half=1).
+          // (Was: midpoint, so 4 surrounding roads paved over the HQ.)
+          var hx = neighborCenter.x - cx, hy = neighborCenter.y - topY;
+          var denom = Math.abs(hx) / iso + Math.abs(hy) / half;
+          var t = denom > 0 ? 1 / denom : 0.5;
+          neighbors[i].edge = { x: cx + hx * t, y: topY + hy * t };
+        } else {
+          neighbors[i].edge = {
+            x: (cx + neighborCenter.x) * 0.5,
+            y: (topY + neighborCenter.y) * 0.5
+          };
+        }
         links.push(neighbors[i]);
       }
     }

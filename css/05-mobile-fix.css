@@ -208,12 +208,11 @@ body.touch-ui #hq-panel {
     align-self: center;
     margin: 0 auto;
   }
-  /* compact overview strip: inline value+label saves ~20px for the map */
-  body.touch-ui #hq-section-data .hq-data-overview > div {
-    flex-direction: row;
-    align-items: baseline;
-    gap: 6px;
-    padding: 3px 8px;
+  /* overview strip takes the whole DATA tab on short screens (map is
+   * height-bound: every px here is a px off the map). Counts already live
+   * in CATEGORY SUMMARY, so the strip hides and the map takes the space. */
+  body.touch-ui #hq-section-data .hq-data-overview {
+    display: none;
   }
   body.touch-ui #hq-section-data .hq-data-overview strong {
     font-size: 14px;
