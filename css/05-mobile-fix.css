@@ -352,7 +352,34 @@ body.touch-ui.map-expanded .hq-data-map-collapse {
   cursor: pointer;
 }
 
-/* 10) Reduced motion: no new transitions introduced here; respect setting. */
+/* 10) DATA tab content diet (touch + short landscape only): the tab packs
+ * overview + map + legend + details + zone flow + picker + 7 category rows
+ * into ~200px of content. Progressive disclosure — every hidden item
+ * duplicates info kept elsewhere, zero decisions lost:
+ * - legend strip: every swatch+label already lives in CATEGORY SUMMARY rows
+ * - picker blurbs: flavor text; name + price + stats decide the pick
+ * - zone explainer note: cost box already states the price
+ * - categories collapse to 2 columns (counts stay readable)
+ * Desktop and portrait-touch keep the full layout untouched. */
+@media (max-height: 500px) {
+  body.touch-ui #hq-section-data .hq-data-minimap-legend {
+    display: none;
+  }
+  body.touch-ui #hq-section-data .hq-data-bld-blurb {
+    display: none;
+  }
+  body.touch-ui #hq-section-data .hq-data-zone-note {
+    display: none;
+  }
+  body.touch-ui #hq-section-data .hq-data-categories {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  body.touch-ui #hq-section-data .hq-data-cat-count {
+    min-width: 0;
+  }
+}
+
+/* 11) Reduced motion: no new transitions introduced here; respect setting. */
 @media (prefers-reduced-motion: reduce) {
   #hq-panel .hq-fs-nav-item {
     transition: none;
