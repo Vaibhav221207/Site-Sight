@@ -373,12 +373,38 @@ body.touch-ui.map-expanded .hq-data-map-collapse {
     min-height: 0;
     padding: 6px 10px;
   }
+  /* map header stops being a card: slim floating bar over the map itself
+   * (standard minimap pattern) — the old full-width pill ate ~1/4 of the
+   * map column for one title + one key. Wrap yields top padding so tiles
+   * never hide under the bar. */
+  body.touch-ui #hq-section-data .hq-data-minimap-col {
+    position: relative;
+  }
   body.touch-ui #hq-section-data .hq-data-map-header {
-    padding: 4px 8px;
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    right: 6px;
+    z-index: 5;
+    padding: 2px 4px 2px 8px;
     gap: 6px;
+    background: rgba(246, 238, 220, 0.94);
+    border-width: 2px;
+    border-radius: 10px;
+    box-shadow: 2px 2px 0 #000;
   }
   body.touch-ui #hq-section-data .hq-data-map-title {
-    font-size: 11px;
+    font-size: 10px;
+  }
+  body.touch-ui #hq-section-data .hq-data-map-expand {
+    min-width: 40px;
+    min-height: 40px;
+    border-width: 2px;
+    border-radius: 10px;
+    font-size: 16px;
+  }
+  body.touch-ui #hq-section-data .hq-data-minimap-wrap {
+    padding-top: 54px;
   }
 }
 
