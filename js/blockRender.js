@@ -970,18 +970,12 @@ window.BlockRender = (function () {
       layer.translate(-cx, -(cy + half * 0.2));
     }
 
-    // 1) loaf shadow + cable (chunky) — keep ground readable
+    // 1) loaf shadow (soft ellipse only — the old thick "cable" curve swept a
+    // full tile east and read as a stray road/pipeline, so it was removed)
     layer.beginPath();
     layer.ellipse(cx, cy + half * 0.22, iso * 1.02, half * 0.42, 0, 0, Math.PI * 2);
     layer.fillStyle = "rgba(0,0,0,0.18)";
     layer.fill();
-    layer.beginPath();
-    layer.moveTo(cx, cy + half);
-    layer.quadraticCurveTo(cx + iso*0.38, cy + half + iso*0.52, cx + iso*0.98, cy + half + iso*0.58);
-    layer.strokeStyle = HQ_EDGE;
-    layer.lineWidth = 3.5;
-    layer.lineCap = "round";
-    layer.stroke();
 
     // ---- FIGMA CITY HQ: chunky two-tier — fits single tile, refined edges ----
     // modestly larger for readability (10% up) but still inside tile: base 0.99×, tower 0.60×
