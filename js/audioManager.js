@@ -20,6 +20,9 @@ window.AudioManager = (function () {
 
   var MUTE_KEY = "siteSight_muted";
   var THROTTLE_MS = 80;
+  // SimCity-level feel: identical samples sound robotic, so every play gets
+  // a small random pitch shift (±5%). Same file, never quite the same hit.
+  var PITCH_JITTER = 0.05;
 
   // id -> { file | files[], dir, volume }. SimCity/Cities-style direction:
   // everything sub-0.3s except rare moments; soft musical tones (plucks,
@@ -134,7 +137,10 @@ window.AudioManager = (function () {
     lastPlay[id] = now;
     var h = ensure(id, resolveFile(s));
     if (!h) return false;
-    try { h.play(); } catch (e) { return false; }
+    try {
+      var soundId = h.play();
+      try { h.rate(1 + (Math.random() * 2 - 1) * PITCH_JITTER, soundId); } catch (e2) {}
+    } catch (e) { return false; }
     return true;
   };
 

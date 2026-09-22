@@ -457,9 +457,14 @@ window.HqPanel = (function () {
     }
   };
 
+  // Deploy flows close the terminal AND dispatch a machine in the same tap —
+  // playing both sounds muddies the moment, so deployers set _silentClose.
+  api._silentClose = false;
   api.close = function () {
-    if (!api.isOpen) return;
-    if (window.AudioManager) window.AudioManager.play("uiClose");
+    if (!api.isOpen) { api._silentClose = false; return; }
+    var silent = api._silentClose;
+    api._silentClose = false;
+    if (!silent && window.AudioManager) window.AudioManager.play("uiClose");
     if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
     var fsBtn2 = document.getElementById('fs-btn');
     if (fsBtn2) fsBtn2.style.display = '';

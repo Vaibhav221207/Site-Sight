@@ -352,6 +352,7 @@ var api = window.HqPanel; if(!api) return;
     if (scanBusy()) { api.showMsg("A survey is already running — wait for it to finish", false, api.inventoryDeployContainer); return; }
     var started = !!(window.DroneDeploy && window.DroneDeploy.startDeployment());
     console.log("[HQ] Deploy: selected " + id + " -> " + (started ? "whole-map drone sweep started" : "deploy failed (no Drone Systems available)"));
+    api._silentClose = true;
     if (api.isOpen) api.close();
     if (!started) api.showMsg("[DEPLOY] no Drone Systems available", false, api.inventoryDeployContainer);
   };
@@ -365,6 +366,7 @@ var api = window.HqPanel; if(!api) return;
     if (scanBusy()) { api.showMsg("A survey is already running — wait for it to finish", false, api.inventoryDeployContainer); return; }
     var started = !!(window.GprDeploy && window.GprDeploy.startDeployment());
     console.log("[HQ] Deploy GPR: selected " + id + " -> " + (started ? "whole-map GPR sweep started" : "deploy failed (no GPR Systems available)"));
+    api._silentClose = true;
     if (api.isOpen) api.close();
     if (!started) api.showMsg("[DEPLOY] no GPR Systems available", false, api.inventoryDeployContainer);
   };
@@ -378,6 +380,7 @@ var api = window.HqPanel; if(!api) return;
     console.log("[HQ] Deploy Compactor: selected " + id + " -> entering placement mode");
     if (window.AudioManager) window.AudioManager.play("uiClick");
     if (window.CompactorTool) window.CompactorTool.startPlacement();
+    api._silentClose = true;
     if (api.isOpen) api.close();
   };
 
@@ -388,6 +391,7 @@ var api = window.HqPanel; if(!api) return;
     if (scanBusy()) { api.showMsg("A survey is already running — wait for it to finish", false, api.inventoryDeployContainer); return; }
     console.log("[HQ] Deploy Repair Rig: selected " + id + " -> entering placement mode");
     if (window.RepairTool) window.RepairTool.startPlacement();
+    api._silentClose = true;
     if (api.isOpen) api.close();
   };
 
