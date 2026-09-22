@@ -208,6 +208,7 @@ window.GprDeploy = (function () {
     try { if (window.BuildMenu && window.BuildMenu.refresh) window.BuildMenu.refresh(); } catch (e) {}
     api._fillSlots();
     if (!api.deploying) releaseMode();
+    if (window.AudioManager) window.AudioManager.play("gprGo");
     return true;
   };
 
@@ -233,6 +234,7 @@ window.GprDeploy = (function () {
       if (window.GameState && window.GameState.inventory) {
         window.GameState.inventory.gprDeployed = { wholeMap: true };
       }
+      if (window.AudioManager) window.AudioManager.play("gprDone");
       if (typeof api.onDeployDone === "function") api.onDeployDone();
       releaseMode();
     }

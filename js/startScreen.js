@@ -111,6 +111,8 @@
 
   function handleStartClick(){
     if(entered) return;
+    // first audible trigger coincides with this real click (autoplay-safe)
+    if (window.AudioManager) window.AudioManager.play("uiClick");
     var saveExists = false;
     try {
       if (window.SaveSystem) saveExists = window.SaveSystem.hasSave();
@@ -594,6 +596,7 @@
 
   function continueGame(){
     if(entered) return;
+    if (window.AudioManager) window.AudioManager.play("uiClick");
     closeSaveModal();
     try {
       if (window.SaveSystem) {
@@ -636,6 +639,7 @@
     }
     closeSaveModal();
     btn = document.getElementById('start-enter');
+    if (window.AudioManager) window.AudioManager.play("uiClick");
     enter();
   }
 

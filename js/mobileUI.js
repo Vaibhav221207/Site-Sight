@@ -61,6 +61,20 @@ window.MobileUI = (function () {
     stop.style.display = "none";
     rail.appendChild(stop);
 
+    // mute toggle (same registry as the desktop HUD button via data-mute-btn)
+    var mute = document.createElement("button");
+    mute.type = "button";
+    mute.className = "mu-btn";
+    mute.setAttribute("data-mute-btn", "");
+    mute.setAttribute("aria-label", "Mute sound");
+    mute.setAttribute("aria-pressed", "false");
+    mute.innerHTML = '<svg data-mute-on viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8a5 5 0 010 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 5.5a9 9 0 010 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>' +
+      '<svg data-mute-off viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" hidden><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 9l6 6M22 9l-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+    mute.addEventListener("click", function () {
+      if (window.AudioManager && window.AudioManager.toggleMute) window.AudioManager.toggleMute();
+    });
+    rail.appendChild(mute);
+
     ui.appendChild(rail);
     document.body.appendChild(ui);
 

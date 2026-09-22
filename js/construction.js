@@ -125,6 +125,7 @@ window.Construction = (function () {
       if (window.BlockRender && window.BlockRender.invalidate) {
         try { window.BlockRender.invalidate(); } catch (e3) {}
       }
+      if (window.AudioManager) window.AudioManager.play("reveal");
       return true;
     }
     var d = tileData(col, row);
@@ -149,6 +150,7 @@ window.Construction = (function () {
     if (window.BlockRender && window.BlockRender.invalidate) {
       try { window.BlockRender.invalidate(); } catch (e5) {}
     }
+    if (window.AudioManager) window.AudioManager.play("reveal");
     return true;
   };
 

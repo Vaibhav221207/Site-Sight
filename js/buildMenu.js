@@ -169,6 +169,7 @@ var ITEMS = [
           tabs[t].classList.toggle("is-active", selected);
           tabs[t].setAttribute("aria-selected", selected ? "true" : "false");
         }
+        if (window.AudioManager) window.AudioManager.play("uiTab");
         api.refresh();
       });
     }
@@ -199,11 +200,13 @@ var ITEMS = [
       window.InputHandler.setMode(item.road ? 'placing-road' : (item.zone ? 'placing-building' : 'placing-hq'));
     }
     else if (window.InputHandler) window.InputHandler.setPlacementMode(true);
+    if (window.AudioManager) window.AudioManager.play("uiSelect");
     api.refresh();
   };
 
   // cancel any in-progress placement and close the bar
   api.cancel = function () {
+    if (window.AudioManager) window.AudioManager.play("uiClose");
     var item = api.selected ? itemById(api.selected) : null;
     if (item) {
       var module = item.module && item.module();
@@ -283,6 +286,7 @@ var ITEMS = [
     }
     if (window.Main && window.Main.updateHUD) window.Main.updateHUD();
     if (window.BlockRender) window.BlockRender.invalidate();
+    if (window.AudioManager) window.AudioManager.play("buildDrop");
     api.onBuildSuccess();
     return true;
   };
@@ -376,8 +380,12 @@ var ITEMS = [
   };
 
   api.toggle = function () {
+    // close() plays uiClose itself; only the open direction clicks here
     if (api.isOpen) api.close();
-    else api.open();
+    else {
+      if (window.AudioManager) window.AudioManager.play("uiClick");
+      api.open();
+    }
   };
 
   // reflect current state on the cards: selection highlight + disabled

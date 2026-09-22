@@ -202,6 +202,7 @@ window.TilePanel = (function () {
 
   api.show = function (col, row) {
     if (!api.panel) return;
+    if (window.AudioManager) window.AudioManager.play("uiClick");
     // HQ tiles have their own full-screen terminal — never show the small tile popup for them.
     var isHQ = (window.Terrain && window.Terrain.isHQ && window.Terrain.isHQ(col, row)) ||
                (window.GameState && window.GameState.hqTile && window.GameState.hqTile.col === col && window.GameState.hqTile.row === row);

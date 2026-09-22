@@ -62,6 +62,7 @@ window.RepairTool = (function () {
       window.InputHandler.setCursor("crosshair");
     }
     if (window.HqPanel) try { window.HqPanel.showMsg("Click a flagged building to dispatch Repair Drone", false); } catch (e2) {}
+    if (window.AudioManager) window.AudioManager.play("repairGo");
     if (window.BlockRender) window.BlockRender.invalidate();
     return true;
   };
@@ -121,6 +122,7 @@ window.RepairTool = (function () {
     try { if (window.SaveSystem && window.SaveSystem.markDirty) window.SaveSystem.markDirty(); } catch (e3) {}
     if (window.Main && window.Main.updateHUD) try { window.Main.updateHUD(); } catch (e3b) {}
     queueMsg(type + " fixed — income restored", true);
+    if (window.AudioManager) window.AudioManager.play("hazardFixed");
     if (window.BlockRender) window.BlockRender.invalidate();
     shiftNext(); // drone flies straight to the next queued hazard, if any
   }

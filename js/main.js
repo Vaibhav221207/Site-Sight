@@ -224,6 +224,7 @@ window.Main = (function () {
     safeInit("TilePanel", function () { window.TilePanel.init(); });
     safeInit("HqPanel", function () { window.HqPanel.init(); });
     safeInit("BuildMenu", function () { window.BuildMenu.init(); });
+    safeInit("AudioManager", function () { if (window.AudioManager && window.AudioManager.init) window.AudioManager.init(); });
     safeInit("MobileUI", function () { if (window.MobileUI && window.MobileUI.init) window.MobileUI.init(); });
 
     try { onResize(); } catch (err) {

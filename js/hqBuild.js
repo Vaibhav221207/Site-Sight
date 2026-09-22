@@ -59,6 +59,7 @@ window.HQBuild = (function () {
     if (window.Construction && window.Construction.beginHQ) window.Construction.beginHQ(col, row);
     else if (window.BlockRender && window.BlockRender.triggerHQPlace) window.BlockRender.triggerHQPlace(col, row);
     try { if (window.SaveSystem) window.SaveSystem.markDirty(); } catch(e){}
+    if (window.AudioManager) window.AudioManager.play("buildDrop");
     if (typeof onSuccess === "function") onSuccess(col, row);
     return true;
   };

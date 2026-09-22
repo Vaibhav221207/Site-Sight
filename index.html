@@ -6,7 +6,7 @@
   <title>Site Sight</title>
   <!-- functional CSS split — each file is one UI domain, load order matters -->
   <link rel="stylesheet" href="css/base.css?v=2" />
-  <link rel="stylesheet" href="css/hud.css?v=2" />
+  <link rel="stylesheet" href="css/hud.css?v=3" />
   <link rel="stylesheet" href="css/build.css?v=2" />
   <link rel="stylesheet" href="css/hq.css?v=2" />
   <link rel="stylesheet" href="css/start.css?v=2" />
@@ -19,6 +19,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@500;700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet" />
   <!-- Anime.js — vendored locally (was CDN; prevents Edge Tracking-Prevention storage warnings) -->
   <script src="js/vendor/anime.min.js"></script>
+  <!-- Howler.js —vendored locally, same pattern as Anime.js (offline file://
+       support, no tracking-prevention warnings). MIT, howlerjs.com -->
+  <script src="js/vendor/howler.min.js"></script>
   <script>
     // live debug: surface any JS error + canvas diagnostics on screen so
     // file:// caching / CDN failures are visible in a screenshot
@@ -272,6 +275,7 @@
         <span id="hud-cash" class="value">$0</span>
       </div>
       <button id="hud-build-btn" class="hud-btn">Build</button>
+      <button id="hud-mute-btn" class="hud-btn hud-mute-btn" type="button" data-mute-btn aria-label="Mute sound" aria-pressed="false" title="Sound on/off"><svg data-mute-on viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8a5 5 0 010 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 5.5a9 9 0 010 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><svg data-mute-off viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" hidden><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 9l6 6M22 9l-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
       <button id="hud-cancel-btn" class="hud-btn hud-cancel-btn" style="display:none;">Cancel</button>
       <button id="hud-stop-btn" class="hud-btn" style="display:none;">Stop</button>
     </div>
@@ -469,32 +473,33 @@
     <script src="js/terrain.js?v=5"></script>
     <script src="js/hqCityBuilderSVG.js"></script>
     <script src="js/buildingSprites.js"></script>
-    <script src="js/roadTool.js?v=3"></script>
-    <script src="js/construction.js?v=10"></script>
+    <script src="js/roadTool.js?v=4"></script>
+    <script src="js/construction.js?v=11"></script>
     <script src="js/blockRender.js?v=44"></script>
     <script src="js/input.js?v=5"></script>
-    <script src="js/panel.js?v=5"></script>
+    <script src="js/panel.js?v=6"></script>
     <script src="js/gameState.js?v=10"></script>
     <script src="js/saveSystem.js?v=2"></script>
-    <script src="js/hazards.js?v=5"></script>
+    <script src="js/hazards.js?v=6"></script>
     <script src="js/progress.js"></script>
       <script src="js/ui.js?v=2"></script>
     <script src="js/landData.js"></script>
-    <script src="js/gprDeploy.js?v=4"></script>
-    <script src="js/hqBuild.js?v=4"></script>
-    <script src="js/compactorTool.js?v=4"></script>
-    <script src="js/repairTool.js?v=7"></script>
-    <script src="js/droneDeploy.js?v=4"></script>
-    <script src="js/buildMenu.js?v=6"></script>
+    <script src="js/gprDeploy.js?v=5"></script>
+    <script src="js/hqBuild.js?v=5"></script>
+    <script src="js/compactorTool.js?v=5"></script>
+    <script src="js/repairTool.js?v=8"></script>
+    <script src="js/audioManager.js?v=1"></script>
+    <script src="js/droneDeploy.js?v=5"></script>
+    <script src="js/buildMenu.js?v=7"></script>
     <script src="js/zoningTool.js?v=3"></script>
     <script src="js/buildings.js?v=3"></script>
     <script src="js/economy.js?v=7"></script>
     <script src="js/icons.js?v=5"></script>
-    <script src="js/dataMap.js?v=16"></script>
-    <script src="js/hqPanel.js?v=14"></script>
-    <script src="js/hqPanel-inventory.js?v=1"></script>
-    <script src="js/hqPanel-store.js?v=1"></script>
-    <script src="js/main.js?v=16"></script>
+    <script src="js/dataMap.js?v=17"></script>
+    <script src="js/hqPanel.js?v=15"></script>
+    <script src="js/hqPanel-inventory.js?v=2"></script>
+    <script src="js/hqPanel-store.js?v=2"></script>
+    <script src="js/main.js?v=17"></script>
     <script src="js/mobileUI.js"></script>
     <script src="js/fullscreen.js?v=5"></script>
     <script src="js/orientation.js"></script>

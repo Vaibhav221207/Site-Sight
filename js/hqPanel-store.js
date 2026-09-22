@@ -9,6 +9,7 @@ var api = window.HqPanel; if(!api) return;
     if (gs.droneSystemPurchased) return;
     if (gs.cash >= gs.droneCost) {
       if (!gs.spend(gs.droneCost, "Drone System")) return;
+      if (window.AudioManager) window.AudioManager.play("buy");
       gs.inventory.droneCount += 1;
       gs.droneSystemPurchased = true;
       if (window.Main && window.Main.updateHUD) window.Main.updateHUD();
@@ -25,6 +26,7 @@ var api = window.HqPanel; if(!api) return;
           }, 900);
       }
     } else {
+      if (window.AudioManager) window.AudioManager.play("error");
       api.showMsg("Insufficient funds", false);
     }
   };
@@ -36,6 +38,7 @@ var api = window.HqPanel; if(!api) return;
     if (gs.gprSystemPurchased) return;
     if (gs.cash >= gs.gprCost) {
       if (!gs.spend(gs.gprCost, "GPR System")) return;
+      if (window.AudioManager) window.AudioManager.play("buy");
       gs.inventory.gprCount += 1;
       gs.gprSystemPurchased = true;
       if (window.Main && window.Main.updateHUD) window.Main.updateHUD();
@@ -52,6 +55,7 @@ var api = window.HqPanel; if(!api) return;
         }, 900);
       }
     } else {
+      if (window.AudioManager) window.AudioManager.play("error");
       api.showMsg("Insufficient funds", false);
     }
   };
@@ -63,6 +67,7 @@ var api = window.HqPanel; if(!api) return;
     if (gs.compactorSystemPurchased) return;
     if (gs.cash >= gs.compactorCost) {
       if (!gs.spend(gs.compactorCost, "Dynamic Compactor")) return;
+      if (window.AudioManager) window.AudioManager.play("buy");
       gs.compactorSystemPurchased = true;
       if (window.Main && window.Main.updateHUD) window.Main.updateHUD();
       api.updateOwned();
@@ -78,6 +83,7 @@ var api = window.HqPanel; if(!api) return;
         }, 900);
       }
     } else {
+      if (window.AudioManager) window.AudioManager.play("error");
       api.showMsg("Insufficient funds", false);
     }
   };
@@ -89,6 +95,7 @@ var api = window.HqPanel; if(!api) return;
     if (gs.repairRigPurchased) return;
     if (gs.cash >= gs.repairCost) {
       if (!gs.spend(gs.repairCost, "Repair Rig")) return;
+      if (window.AudioManager) window.AudioManager.play("buy");
       gs.repairRigPurchased = true;
       if (window.Main && window.Main.updateHUD) window.Main.updateHUD();
       api.updateOwned();
@@ -104,6 +111,7 @@ var api = window.HqPanel; if(!api) return;
         }, 900);
       }
     } else {
+      if (window.AudioManager) window.AudioManager.play("error");
       api.showMsg("Insufficient funds", false);
     }
   };

@@ -74,6 +74,7 @@ window.Hazards = (function () {
     };
     // mark save dirty
     try { if (window.SaveSystem && window.SaveSystem.markDirty) window.SaveSystem.markDirty(); } catch (e) {}
+    if (window.AudioManager) window.AudioManager.play("hazardAlert");
   }
 
   // ---- weight computation per tile ---------------------------------------

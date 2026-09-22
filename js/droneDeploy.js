@@ -270,6 +270,7 @@ window.DroneDeploy = (function () {
     api._fillSlots();
     // _fillSlots may have completed synchronously if queue was empty
     if (!api.deploying) releaseMode();
+    if (window.AudioManager) window.AudioManager.play("droneGo");
     return true;
   };
 
@@ -305,6 +306,7 @@ window.DroneDeploy = (function () {
       if (window.GameState && window.GameState.inventory) {
         window.GameState.inventory.deployed = { wholeMap: true };
       }
+      if (window.AudioManager) window.AudioManager.play("droneDone");
       if (typeof api.onDeployDone === "function") api.onDeployDone();
       releaseMode();
     }

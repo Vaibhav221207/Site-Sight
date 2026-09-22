@@ -62,6 +62,7 @@ window.RoadTool = (function () {
     // Stay in placement mode: roads chain one after another until the player
     // presses Cancel. Do NOT call BuildMenu.onBuildSuccess here — that ends
     // the session (correct for single buildings, wrong for roads).
+    if (window.AudioManager) window.AudioManager.play("tick");
     if (window.BuildMenu && window.BuildMenu.refresh) window.BuildMenu.refresh();
     return true;
   };

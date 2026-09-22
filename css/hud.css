@@ -66,6 +66,17 @@
   text-overflow: ellipsis;
 }
 
+.hud-mute-btn {
+  padding: 8px 12px;
+}
+.hud-mute-btn svg:not([hidden]) {
+  display: block;
+  pointer-events: none;
+}
+.hud-mute-btn svg[hidden],
+.mu-btn svg[hidden] {
+  display: none !important;
+}
 .hud-btn {
   padding: 8px 26px;
   background: #C7432B;

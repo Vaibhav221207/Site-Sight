@@ -295,6 +295,7 @@ var api = window.HqPanel; if(!api) return;
       else if (type === "repair") gs.inventory.selectedRepairId = id;
       var card = entry.querySelector ? entry.querySelector(".hq-fs-inventory-item") : entry;
       if (card) api.markSelected(card, true); else api.markSelected(entry, true);
+      if (window.AudioManager) window.AudioManager.play("uiSelect");
     }
     api.refreshDeployVisibility();
   };
@@ -375,6 +376,7 @@ var api = window.HqPanel; if(!api) return;
     if (!id) return;
     if (scanBusy()) { api.showMsg("A survey is already running — wait for it to finish", false, api.inventoryDeployContainer); return; }
     console.log("[HQ] Deploy Compactor: selected " + id + " -> entering placement mode");
+    if (window.AudioManager) window.AudioManager.play("uiClick");
     if (window.CompactorTool) window.CompactorTool.startPlacement();
     if (api.isOpen) api.close();
   };

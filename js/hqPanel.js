@@ -245,6 +245,7 @@ window.HqPanel = (function () {
 
   api.switchSection = function (name) {
     if (api.currentSection === name) return;
+    if (window.AudioManager) window.AudioManager.play("uiTab");
     var prev = api.currentSection;
     var prevBtn = api.navItems[name];
     if (prevBtn) animateNavPress(prevBtn);
@@ -408,6 +409,7 @@ window.HqPanel = (function () {
     if (fsBtn) fsBtn.style.display = 'none';
     try { api._opener = document.activeElement || null; } catch (e) { api._opener = null; }
     api.isOpen = true;
+    if (window.AudioManager) window.AudioManager.play("uiOpen");
     api.overlayEl.style.visibility = "visible";
     api.overlayEl.style.pointerEvents = "auto";
     // lock the page behind the modal so touch scroll can't escape under it
@@ -453,6 +455,7 @@ window.HqPanel = (function () {
 
   api.close = function () {
     if (!api.isOpen) return;
+    if (window.AudioManager) window.AudioManager.play("uiClose");
     if (window.TilePanel && window.TilePanel.isOpen) window.TilePanel.hide();
     var fsBtn2 = document.getElementById('fs-btn');
     if (fsBtn2) fsBtn2.style.display = '';

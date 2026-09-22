@@ -590,6 +590,7 @@ window.DataMap = (function () {
           var z = btn.getAttribute ? btn.getAttribute("data-zone") : (btn.dataset && btn.dataset.zone);
           api.pendingZone = (api.pendingZone === z) ? null : z; // re-tap cancels
           api.pendingBuilding = null;
+          if (window.AudioManager) window.AudioManager.play("uiSelect");
           renderSelection();
         });
       })(zbtns[i]);
@@ -605,6 +606,9 @@ window.DataMap = (function () {
               window.ZoningTool.zoneLabelFor(api.pendingZone) + " — $" + res.breakdown.totalCost.toLocaleString();
             api.pendingZone = null;
             api.pendingBuilding = null;
+            if (window.AudioManager) window.AudioManager.play("buy");
+          } else if (res && res.reason === "funds") {
+            if (window.AudioManager) window.AudioManager.play("error");
           }
           api.refresh();
         });
@@ -619,7 +623,9 @@ window.DataMap = (function () {
           if (res && res.ok) {
             api.lastZoneMsg = "Scrubbed " + api.selected.col + "," + api.selected.row + " clean — $" +
               (window.Economy.SCRUB_COST || 150).toLocaleString();
+            if (window.AudioManager) window.AudioManager.play("buy");
           } else if (res && res.reason === "funds") {
+            if (window.AudioManager) window.AudioManager.play("error");
             api.lastZoneMsg = "";
           }
           api.refresh();

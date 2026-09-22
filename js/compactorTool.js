@@ -54,6 +54,7 @@ window.CompactorTool = (function () {
     var muStop = document.getElementById("mu-stop");
     if (muStop) muStop.style.display = "inline-flex";
     if (window.HqPanel) window.HqPanel.showMsg("Drag to select trench / rock area for compaction (scanned hazard, not Excellent)", false);
+    if (window.AudioManager) window.AudioManager.play("uiClick");
     console.log("[Compactor] Placement mode entered — drag to select rectangular area");
   };
 
@@ -186,6 +187,7 @@ window.CompactorTool = (function () {
     if (window.BuildMenu && window.BuildMenu.onBuildSuccess) window.BuildMenu.onBuildSuccess();
 
     console.log("[Compactor] Deploying on " + validTiles.length + " tiles");
+    if (window.AudioManager) window.AudioManager.play("compactor");
     api._runSequence(validTiles, onSuccess);
     return true;
   };
